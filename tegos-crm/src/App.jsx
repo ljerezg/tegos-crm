@@ -6,6 +6,9 @@ import Inquilinos from './pages/Inquilinos.jsx'
 import Contactos from './pages/Contactos.jsx'
 import Acciones from './pages/Acciones.jsx'
 import Comercializando from './pages/Comercializando.jsx'
+import Listados from './pages/Listados.jsx'
+import Configuracion from './pages/Configuracion.jsx'
+import AdministradoresFinca from './pages/AdministradoresFinca.jsx'
 
 const NAV = [
   { section: 'Principal' },
@@ -14,11 +17,14 @@ const NAV = [
   { to: '/inmuebles', icon: 'ti-building', label: 'Inmuebles' },
   { to: '/propietarios', icon: 'ti-id-badge', label: 'Propietarios' },
   { to: '/inquilinos', icon: 'ti-users', label: 'Inquilinos' },
+  { to: '/administradores', icon: 'ti-building-community', label: 'Adm. Fincas' },
   { section: 'CRM' },
   { to: '/contactos', icon: 'ti-address-book', label: 'Contactos' },
   { to: '/acciones', icon: 'ti-activity', label: 'Acciones' },
   { section: 'Más' },
   { to: '/comercializando', icon: 'ti-home-search', label: 'Comercializando' },
+  { to: '/listados', icon: 'ti-clipboard-list', label: 'Listados' },
+  { to: '/configuracion', icon: 'ti-settings', label: 'Configuración' },
 ]
 
 export default function App() {
@@ -36,19 +42,13 @@ export default function App() {
           {NAV.map((item, i) =>
             item.section
               ? <div className="nav-section" key={i}>{item.section}</div>
-              : <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
-                >
+              : <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}>
                   <i className={`ti ${item.icon}`} />
                   {item.label}
                 </NavLink>
           )}
         </nav>
       </aside>
-
       <div className="main">
         <div className="topbar">
           <h1>{pageTitle}</h1>
@@ -59,12 +59,16 @@ export default function App() {
             <Route path="/inmuebles" element={<Inmuebles />} />
             <Route path="/propietarios" element={<Propietarios />} />
             <Route path="/inquilinos" element={<Inquilinos />} />
+            <Route path="/administradores" element={<AdministradoresFinca />} />
             <Route path="/contactos" element={<Contactos />} />
             <Route path="/acciones" element={<Acciones />} />
             <Route path="/comercializando" element={<Comercializando />} />
+            <Route path="/listados" element={<Listados />} />
+            <Route path="/configuracion" element={<Configuracion />} />
           </Routes>
         </div>
       </div>
     </div>
   )
 }
+
