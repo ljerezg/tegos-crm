@@ -271,4 +271,3 @@ export default function Inquilinos() {
     </div>
   )
 }
-
