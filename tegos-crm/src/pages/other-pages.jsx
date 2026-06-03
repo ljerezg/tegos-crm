@@ -189,23 +189,77 @@ export function Contactos() {
   )
 }
 
+const ACCION_EMPTY = { fecha: '', hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', entidad_id: '', documento: '' }
+
 export function Acciones() {
-  const [rows, setRows] = useState([])
+  const [rows, setRows] = useState({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('inquilino')
+  const [modal, setModal] = useState(false)
+  const [form, setForm] = useState(ACCION_EMPTY)
+  const [entidades, setEntidades] = useState([])
+  const [tiposContacto, setTiposContacto] = useState([])
+  const [responsables, setResponsables] = useState([])
 
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
     setLoading(true)
-    const [{ data: ai }, { data: ainq }, { data: ap }] = await Promise.all([
-      supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), inmuebles(codigo, calle)').order('fecha', { ascending: false }),
-      supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), inquilinos(nombre, apellidos)').order('fecha', { ascending: false }),
-      supabase.from('accion_persona_contacto').select('*, responsable(nombre_responsable), persona_contacto(nombre, apellidos)').order('fecha', { ascending: false }),
+    const [{ data: ai }, { data: ainq }, { data: ap }, { data: tc }, { data: resps }] = await Promise.all([
+      supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), inmuebles(codigo, calle), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
+      supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), inquilinos(nombre, apellidos), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
+      supabase.from('accion_persona_contacto').select('*, responsable(nombre_responsable), persona_contacto(nombre, apellidos), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
+      supabase.from('tipo_contacto').select('*'),
+      supabase.from('responsable').select('*'),
     ])
     setRows({ inmueble: ai || [], inquilino: ainq || [], contacto: ap || [] })
+    setTiposContacto(tc || [])
+    setResponsables(resps || [])
     setLoading(false)
+  }
+
+  async function openModal() {
+    let data = []
+    if (tab === 'inquilino') {
+      const { data: d } = await supabase.from('inquilinos').select('id, nombre, apellidos').order('nombre')
+      data = (d || []).map(r => ({ id: r.id, label: `${r.nombre || ''} ${r.apellidos || ''}`.trim() }))
+    } else if (tab === 'inmueble') {
+      const { data: d } = await supabase.from('inmuebles').select('id, codigo, calle').order('codigo')
+      data = (d || []).map(r => ({ id: r.id, label: `${r.codigo} — ${r.calle || ''}` }))
+    } else {
+      const { data: d } = await supabase.from('persona_contacto').select('id, nombre, apellidos').order('nombre')
+      data = (d || []).map(r => ({ id: r.id, label: `${r.nombre || ''} ${r.apellidos || ''}`.trim() }))
+    }
+    setEntidades(data)
+    setForm({ ...ACCION_EMPTY, fecha: new Date().toISOString().split('T')[0] })
+    setModal(true)
+  }
+
+  async function save() {
+    const tabla = tab === 'inquilino' ? 'accion_inquilino' : tab === 'inmueble' ? 'accion_inmueble' : 'accion_persona_contacto'
+    const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : 'persona_id'
+    const data = {
+      [fkField]: form.entidad_id || null,
+      tipo_contacto_id: form.tipo_contacto_id || null,
+      responsable_id: form.responsable_id || null,
+      fecha: form.fecha || null,
+      hora: form.hora || null,
+      indicaciones: form.indicaciones || null,
+      proxima_fecha: form.proxima_fecha || null,
+      proxima_accion: form.proxima_accion || null,
+      documento: form.documento || null,
+      completada: false,
+    }
+    await supabase.from(tabla).insert(data)
+    setModal(false)
+    loadAll()
+  }
+
+  async function completar(tabla, id) {
+    const t = tabla === 'inquilino' ? 'accion_inquilino' : tabla === 'inmueble' ? 'accion_inmueble' : 'accion_persona_contacto'
+    await supabase.from(t).update({ completada: true }).eq('id', id)
+    loadAll()
   }
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
@@ -213,6 +267,7 @@ export function Acciones() {
     const entidad = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}` : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`
     return [entidad, r.indicaciones].join(' ').toLowerCase().includes(search.toLowerCase())
   })
+  const f = key => e => setForm({ ...form, [key]: e.target.value })
 
   return (
     <div>
@@ -223,23 +278,34 @@ export function Acciones() {
       </div>
       <div className="card">
         <div className="card-header">
-          <h2>Acciones — {tab === 'inquilino' ? 'Inquilinos' : tab === 'inmueble' ? 'Inmuebles' : 'Contactos'} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current.length}</span></h2>
+          <h2>Acciones pendientes <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current.length}</span></h2>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+          <button className="btn btn-primary btn-sm" onClick={openModal}><i className="ti ti-plus" /> Nueva acción</button>
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
-              <thead><tr><th>Fecha</th><th>Entidad</th><th>Indicaciones</th><th>Prox. acción</th><th>Responsable</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Hora</th><th>Entidad</th><th>Tipo</th><th>Indicaciones</th><th>Próx. fecha</th><th>Próx. acción</th><th>Responsable</th><th></th></tr></thead>
               <tbody>
+                {current.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin acciones pendientes</td></tr>}
                 {current.map(r => {
                   const entidad = tab === 'inmueble' ? (r.inmuebles ? `${r.inmuebles.codigo}` : '—') : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}`.trim() || '—' : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`.trim() || '—'
                   return (
                     <tr key={r.id}>
                       <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{fmtDate(r.fecha)}</span></td>
+                      <td style={{ fontSize: 12 }}>{r.hora || '—'}</td>
                       <td><strong>{entidad}</strong></td>
-                      <td style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text2)' }}>{r.indicaciones || '—'}</td>
+                      <td>{r.tipo_contacto?.tipo_contacto ? <span className="badge badge-blue">{r.tipo_contacto.tipo_contacto}</span> : '—'}</td>
+                      <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text2)' }}>{r.indicaciones || '—'}</td>
                       <td>{r.proxima_fecha ? <span className="badge badge-yellow">{fmtDate(r.proxima_fecha)}</span> : '—'}</td>
+                      <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{r.proxima_accion || '—'}</td>
                       <td>{r.responsable?.nombre_responsable || '—'}</td>
+                      <td>
+                        <button className="btn btn-ghost btn-sm" title="Marcar completada" onClick={() => completar(tab, r.id)}>
+                          <i className="ti ti-check" style={{ color: 'var(--accent)' }} />
+                        </button>
+                        {r.documento && <a href={r.documento} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="Ver documento"><i className="ti ti-paperclip" /></a>}
+                      </td>
                     </tr>
                   )
                 })}
@@ -248,9 +314,54 @@ export function Acciones() {
           )}
         </div>
       </div>
+
+      {modal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Nueva acción — {tab === 'inquilino' ? 'Inquilino' : tab === 'inmueble' ? 'Inmueble' : 'Contacto'}</h2>
+              <button className="btn btn-ghost btn-sm" onClick={() => setModal(false)}><i className="ti ti-x" /></button>
+            </div>
+            <div className="modal-body">
+              <div className="form-grid">
+                <div className="form-group form-full">
+                  <label>{tab === 'inquilino' ? 'Inquilino' : tab === 'inmueble' ? 'Inmueble' : 'Contacto'}</label>
+                  <select value={form.entidad_id || ''} onChange={f('entidad_id')}>
+                    <option value="">— Selecciona —</option>
+                    {entidades.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+                  </select>
+                </div>
+                <div className="form-group"><label>Fecha *</label><input type="date" value={form.fecha || ''} onChange={f('fecha')} /></div>
+                <div className="form-group"><label>Hora</label><input type="time" value={form.hora || ''} onChange={f('hora')} /></div>
+                <div className="form-group"><label>Tipo de contacto</label>
+                  <select value={form.tipo_contacto_id || ''} onChange={f('tipo_contacto_id')}>
+                    <option value="">—</option>
+                    {tiposContacto.map(t => <option key={t.id} value={t.id}>{t.tipo_contacto}</option>)}
+                  </select>
+                </div>
+                <div className="form-group"><label>Responsable</label>
+                  <select value={form.responsable_id || ''} onChange={f('responsable_id')}>
+                    <option value="">—</option>
+                    {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
+                  </select>
+                </div>
+                <div className="form-group form-full"><label>Indicaciones / Notas</label><textarea value={form.indicaciones || ''} onChange={f('indicaciones')} rows={3} /></div>
+                <div className="form-group"><label>Próxima fecha</label><input type="date" value={form.proxima_fecha || ''} onChange={f('proxima_fecha')} /></div>
+                <div className="form-group"><label>Próxima acción</label><input value={form.proxima_accion || ''} onChange={f('proxima_accion')} placeholder="Qué hacer..." /></div>
+                <div className="form-group form-full"><label>Documento (URL)</label><input value={form.documento || ''} onChange={f('documento')} placeholder="https://dropbox.com/..." /></div>
+              </div>
+              <div className="form-actions">
+                <button className="btn" onClick={() => setModal(false)}>Cancelar</button>
+                <button className="btn btn-primary" onClick={save}>Guardar acción</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
 
 export function Comercializando() {
   const [rows, setRows] = useState([])
@@ -291,3 +402,4 @@ export function Comercializando() {
     </div>
   )
 }
+
