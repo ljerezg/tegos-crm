@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
 
-const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', email: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '' }
+const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '' }
 
 export default function Inquilinos() {
   const [rows, setRows] = useState([])
@@ -12,6 +12,7 @@ export default function Inquilinos() {
   const [tipos, setTipos] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('todos')
   const [sortCol, setSortCol] = useState('nombre')
   const [sortDir, setSortDir] = useState('asc')
   const [selected, setSelected] = useState(null)
@@ -24,7 +25,7 @@ export default function Inquilinos() {
 
   async function load() {
     setLoading(true)
-    const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tipos }] = await Promise.all([
+    const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }] = await Promise.all([
       supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)').order('nombre'),
       supabase.from('inmuebles').select('id, codigo, calle').order('codigo'),
       supabase.from('seguro').select('id, compania'),
@@ -35,7 +36,7 @@ export default function Inquilinos() {
     setInmuebles(inms || [])
     setSeguros(segs || [])
     setResponsables(resps || [])
-    setTipos(tipos || [])
+    setTipos(tip || [])
     setLoading(false)
   }
 
@@ -72,12 +73,15 @@ export default function Inquilinos() {
   const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
   const initials = r => nombre(r).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const f = key => e => setForm({ ...form, [key]: e.target.value })
-
   const diasRestantes = d => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null
 
   function sortedFiltered() {
-    let data = rows.filter(r => [r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo].join(' ').toLowerCase().includes(search.toLowerCase()))
-    data = [...data].sort((a, b) => {
+    let data = rows.filter(r => {
+      const matchSearch = [r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo].join(' ').toLowerCase().includes(search.toLowerCase())
+      const matchEstado = filtroEstado === 'todos' ? true : filtroEstado === 'vigor' ? !r.fecha_fin_contrato : !!r.fecha_fin_contrato
+      return matchSearch && matchEstado
+    })
+    return [...data].sort((a, b) => {
       let va = '', vb = ''
       if (sortCol === 'nombre') { va = nombre(a); vb = nombre(b) }
       else if (sortCol === 'inmueble') { va = a.inmuebles?.codigo || ''; vb = b.inmuebles?.codigo || '' }
@@ -85,7 +89,6 @@ export default function Inquilinos() {
       else if (sortCol === 'fecha_fin_contrato') { va = a.fecha_fin_contrato || ''; vb = b.fecha_fin_contrato || '' }
       return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
     })
-    return data
   }
 
   function toggleSort(col) {
@@ -93,13 +96,18 @@ export default function Inquilinos() {
     else { setSortCol(col); setSortDir('asc') }
   }
 
-  const SortIcon = ({ col }) => sortCol === col ? <i className={`ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 12 }} /> : null
+  const SortIcon = ({ col }) => sortCol === col ? <i className={`ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 12 }} /> : <i className="ti ti-selector" style={{ fontSize: 11, opacity: 0.3 }} />
 
   return (
     <div>
       <div className="card">
         <div className="card-header">
           <h2>Inquilinos <span className="badge badge-gray" style={{ marginLeft: 6 }}>{sortedFiltered().length}</span></h2>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[['todos','Todos'],['vigor','En vigor'],['finalizados','Finalizados']].map(([v,l]) => (
+              <button key={v} className={`btn btn-sm ${filtroEstado === v ? 'btn-primary' : ''}`} onClick={() => setFiltroEstado(v)}>{l}</button>
+            ))}
+          </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setErrors({}); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
         </div>
@@ -111,8 +119,8 @@ export default function Inquilinos() {
                   <th onClick={() => toggleSort('nombre')} style={{ cursor: 'pointer' }}>Nombre <SortIcon col="nombre" /></th>
                   <th onClick={() => toggleSort('inmueble')} style={{ cursor: 'pointer' }}>Inmueble <SortIcon col="inmueble" /></th>
                   <th>Móvil</th>
-                  <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio contrato <SortIcon col="fecha_contrato" /></th>
-                  <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin contrato <SortIcon col="fecha_fin_contrato" /></th>
+                  <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio <SortIcon col="fecha_contrato" /></th>
+                  <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin <SortIcon col="fecha_fin_contrato" /></th>
                   <th>Seg. rentas</th>
                 </tr>
               </thead>
@@ -157,8 +165,10 @@ export default function Inquilinos() {
                 <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_cif || '—'}</div></div>
                 <div className="field"><label>Tipo</label><div className="val">{selected.tipo_persona?.tipo || '—'}</div></div>
                 <div className="field"><label>Teléfono</label><div className="val">{selected.telefono || '—'}</div></div>
+                <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2 || '—'}</div></div>
                 <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
-                <div className="field field-full"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
+                <div className="field"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
+                <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
               </div>
               <div className="field-section">Contrato</div>
               <div className="field-grid">
@@ -176,11 +186,14 @@ export default function Inquilinos() {
                 {selected.contrato_url && <a href={selected.contrato_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }}><i className="ti ti-file-type-pdf" /> Contrato</a>}
                 {!selected.carpeta_dropbox && !selected.fianza_ivima_url && !selected.contrato_url && <span style={{ fontSize: 13, color: 'var(--text3)' }}>Sin enlaces</span>}
               </div>
-              {selected.nombre_conyuge && <>
+              {(selected.nombre_conyuge || selected.movil_conyuge) && <>
                 <div className="field-section">Cónyuge</div>
                 <div className="field-grid">
-                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim()}</div></div>
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || '—'}</div></div>
                   <div className="field"><label>Móvil</label><div className="val">{selected.movil_conyuge || '—'}</div></div>
+                  <div className="field"><label>Email</label><div className="val">{selected.email_conyuge || '—'}</div></div>
+                  <div className="field"><label>Email 2</label><div className="val">{selected.email_2_conyuge || '—'}</div></div>
+                  <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2_conyuge || '—'}</div></div>
                 </div>
               </>}
               <div className="field-section">Documentos</div>
@@ -231,8 +244,10 @@ export default function Inquilinos() {
                   </select>
                 </div>
                 <div className="form-group"><label>Teléfono</label><input value={form.telefono || ''} onChange={f('telefono')} /></div>
+                <div className="form-group"><label>Teléfono 2</label><input value={form.telefono_2 || ''} onChange={f('telefono_2')} /></div>
                 <div className="form-group"><label>Móvil</label><input value={form.movil || ''} onChange={f('movil')} /></div>
-                <div className="form-group form-full"><label>Email</label><input value={form.email || ''} onChange={f('email')} /></div>
+                <div className="form-group"><label>Email</label><input value={form.email || ''} onChange={f('email')} /></div>
+                <div className="form-group"><label>Email 2</label><input value={form.email_2 || ''} onChange={f('email_2')} /></div>
                 <div className="form-section-title">Contrato</div>
                 <div className="form-group"><label>Inmueble</label>
                   <select value={form.inmueble_id || ''} onChange={f('inmueble_id')}>
@@ -257,7 +272,11 @@ export default function Inquilinos() {
                 <div className="form-group form-full"><label>Contrato (URL PDF)</label><input value={form.contrato_url || ''} onChange={f('contrato_url')} placeholder="https://..." /></div>
                 <div className="form-section-title">Cónyuge</div>
                 <div className="form-group"><label>Nombre cónyuge</label><input value={form.nombre_conyuge || ''} onChange={f('nombre_conyuge')} /></div>
+                <div className="form-group"><label>Apellidos cónyuge</label><input value={form.apellidos_conyuge || ''} onChange={f('apellidos_conyuge')} /></div>
                 <div className="form-group"><label>Móvil cónyuge</label><input value={form.movil_conyuge || ''} onChange={f('movil_conyuge')} /></div>
+                <div className="form-group"><label>Email cónyuge</label><input value={form.email_conyuge || ''} onChange={f('email_conyuge')} /></div>
+                <div className="form-group"><label>Teléfono 2 cónyuge</label><input value={form.telefono_2_conyuge || ''} onChange={f('telefono_2_conyuge')} /></div>
+                <div className="form-group"><label>Email 2 cónyuge</label><input value={form.email_2_conyuge || ''} onChange={f('email_2_conyuge')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones || ''} onChange={f('observaciones')} /></div>
               </div>
               <div className="form-actions">

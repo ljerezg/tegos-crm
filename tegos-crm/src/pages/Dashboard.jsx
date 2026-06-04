@@ -15,21 +15,37 @@ export default function Dashboard() {
       supabase.from('inmuebles').select('*', { count: 'exact', head: true }),
       supabase.from('inquilinos').select('*', { count: 'exact', head: true }),
       supabase.from('propietarios').select('*', { count: 'exact', head: true }),
-      supabase.from('accion_inmueble').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo, calle)').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
-      supabase.from('accion_inquilino').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inquilinos(nombre, apellidos)').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
-      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, inmuebles(codigo, calle)').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null).order('fecha_contrato').limit(10),
+      supabase.from('accion_inmueble').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo)').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
+      supabase.from('accion_inquilino').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inquilinos(nombre, apellidos, inmuebles(codigo))').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
+      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, inmuebles(codigo, calle)').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null),
     ])
 
     setStats({ inmuebles: totalInm || 0, inquilinos: totalInq || 0, propietarios: totalProps || 0 })
 
-    const hoy = new Date()
+    const hoy = new Date(); hoy.setHours(0,0,0,0)
     const allAcciones = [
-      ...(accInm || []).map(a => ({ ...a, entidad: a.inmuebles ? `${a.inmuebles.codigo} · ${a.inmuebles.calle || ''}` : '—', tabla: 'accion_inmueble' })),
-      ...(accInq || []).map(a => ({ ...a, entidad: a.inquilinos ? `${a.inquilinos.nombre || ''} ${a.inquilinos.apellidos || ''}`.trim() : '—', tabla: 'accion_inquilino' })),
+      ...(accInm || []).map(a => ({ ...a, entidad: a.inmuebles?.codigo || '—', tabla: 'accion_inmueble' })),
+      ...(accInq || []).map(a => ({
+        ...a,
+        entidad: `${a.inquilinos?.nombre || ''} ${a.inquilinos?.apellidos || ''}`.trim() || '—',
+        codigo: a.inquilinos?.inmuebles?.codigo || '',
+        tabla: 'accion_inquilino'
+      })),
     ].sort((a, b) => new Date(a.proxima_fecha) - new Date(b.proxima_fecha)).slice(0, 8)
 
     setProxAcciones(allAcciones)
-    setVencimientos(contratos || [])
+
+    // Ordenar contratos por próxima actualización
+    const proximaAct = d => {
+      const inicio = new Date(d)
+      const hoyD = new Date()
+      const anios = Math.floor((hoyD - inicio) / (365.25 * 86400000))
+      const proxima = new Date(inicio)
+      proxima.setFullYear(inicio.getFullYear() + anios + 1)
+      return proxima
+    }
+    const sorted = (contratos || []).sort((a, b) => proximaAct(a.fecha_contrato) - proximaAct(b.fecha_contrato))
+    setVencimientos(sorted)
   }
 
   async function completar(accion) {
@@ -47,13 +63,6 @@ export default function Dashboard() {
     return 'badge-green'
   }
 
-  const diasDesdeInicio = d => {
-    if (!d) return null
-    const inicio = new Date(d)
-    const hoyD = new Date()
-    return Math.floor((hoyD - inicio) / 86400000)
-  }
-
   const proximaActualizacion = d => {
     if (!d) return null
     const inicio = new Date(d)
@@ -61,12 +70,13 @@ export default function Dashboard() {
     const anios = Math.floor((hoyD - inicio) / (365.25 * 86400000))
     const proxima = new Date(inicio)
     proxima.setFullYear(inicio.getFullYear() + anios + 1)
-    const diasRestantes = Math.ceil((proxima - hoyD) / 86400000)
-    return { fecha: proxima, dias: diasRestantes }
+    const dias = Math.ceil((proxima - hoyD) / 86400000)
+    return { fecha: proxima, dias }
   }
 
   return (
     <div>
+      {/* Stats - 2x2 en móvil, 4 en escritorio */}
       <div className="stats-grid">
         <div className="stat-card" onClick={() => navigate('/inmuebles')} style={{ cursor: 'pointer' }}>
           <div className="stat-label">Inmuebles</div>
@@ -86,23 +96,24 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        {/* Próximas acciones */}
-        <div className="card">
+      {/* Próximas acciones - pantalla completa en móvil */}
+      <div className="dashboard-grid">
+        <div className="card dashboard-full">
           <div className="card-header">
             <i className="ti ti-activity" style={{ color: 'var(--text3)' }} />
             <h2>Próximas acciones</h2>
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Fecha</th><th>Entidad</th><th>Acción</th><th></th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Código</th><th>Entidad</th><th>Acción</th><th></th></tr></thead>
               <tbody>
-                {proxAcciones.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 20 }}>Sin acciones pendientes</td></tr>}
+                {proxAcciones.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text3)', padding: 20 }}>Sin acciones pendientes</td></tr>}
                 {proxAcciones.map(a => (
                   <tr key={`${a.tabla}-${a.id}`}>
                     <td><span className={`badge ${accionBadge(a.proxima_fecha)}`}>{fmtDate(a.proxima_fecha)}</span></td>
-                    <td style={{ fontSize: 12, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.entidad}</td>
-                    <td style={{ fontSize: 12, color: 'var(--text2)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.proxima_accion || a.indicaciones || '—'}</td>
+                    <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 500 }}>{a.codigo || a.entidad}</span></td>
+                    <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.tabla === 'accion_inquilino' ? a.entidad : ''}</td>
+                    <td style={{ fontSize: 12, color: 'var(--text2)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.proxima_accion || a.indicaciones || '—'}</td>
                     <td>
                       <button className="btn btn-ghost btn-sm" title="Marcar completada" onClick={() => completar(a)}>
                         <i className="ti ti-check" style={{ color: 'var(--accent)' }} />
@@ -115,15 +126,15 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Contratos en vigor */}
-        <div className="card">
+        {/* Contratos en vigor - pantalla completa en móvil */}
+        <div className="card dashboard-full">
           <div className="card-header">
             <i className="ti ti-calendar-event" style={{ color: 'var(--text3)' }} />
             <h2>Contratos en vigor</h2>
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Inquilino</th><th>Inmueble</th><th>Próx. actualiz.</th></tr></thead>
+              <thead><tr><th>Inquilino</th><th>Inmueble</th><th>Próx. actualiz. renta</th></tr></thead>
               <tbody>
                 {vencimientos.length === 0 && <tr><td colSpan={3} style={{ textAlign: 'center', color: 'var(--text3)', padding: 20 }}>Sin contratos</td></tr>}
                 {vencimientos.map(c => {
@@ -133,7 +144,7 @@ export default function Dashboard() {
                     <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => navigate('/inquilinos')}>
                       <td>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}</td>
                       <td><span className="badge badge-gray">{c.inmuebles?.codigo || '—'}</span></td>
-                      <td>{act ? <span className={`badge ${badge}`}>{fmtDate(act.fecha)}</span> : '—'}</td>
+                      <td>{act ? <span className={`badge ${badge}`}>{fmtDate(act.fecha)} ({act.dias}d)</span> : '—'}</td>
                     </tr>
                   )
                 })}

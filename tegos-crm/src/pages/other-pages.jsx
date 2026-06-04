@@ -208,7 +208,7 @@ export function Acciones() {
     setLoading(true)
     const [{ data: ai }, { data: ainq }, { data: ap }, { data: tc }, { data: resps }] = await Promise.all([
       supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), inmuebles(codigo, calle), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
-      supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), inquilinos(nombre, apellidos), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
+      supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), inquilinos(nombre, apellidos, inmuebles(codigo)), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
       supabase.from('accion_persona_contacto').select('*, responsable(nombre_responsable), persona_contacto(nombre, apellidos), tipo_contacto(tipo_contacto)').eq('completada', false).order('fecha', { ascending: false }),
       supabase.from('tipo_contacto').select('*'),
       supabase.from('responsable').select('*'),
@@ -285,7 +285,7 @@ export function Acciones() {
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
-              <thead><tr><th>Fecha</th><th>Hora</th><th>Entidad</th><th>Tipo</th><th>Indicaciones</th><th>Próx. fecha</th><th>Próx. acción</th><th>Responsable</th><th></th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Hora</th><th>{tab === 'inquilino' ? 'Inquilino' : tab === 'inmueble' ? 'Inmueble' : 'Contacto'}</th>{tab === 'inquilino' && <th>Inmueble</th>}<th>Tipo</th><th>Indicaciones</th><th>Próx. fecha</th><th>Próx. acción</th><th>Responsable</th><th></th></tr></thead>
               <tbody>
                 {current.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin acciones pendientes</td></tr>}
                 {current.map(r => {
@@ -295,6 +295,7 @@ export function Acciones() {
                       <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{fmtDate(r.fecha)}</span></td>
                       <td style={{ fontSize: 12 }}>{r.hora || '—'}</td>
                       <td><strong>{entidad}</strong></td>
+                      {tab === 'inquilino' && <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.inquilinos?.inmuebles?.codigo || '—'}</span></td>}
                       <td>{r.tipo_contacto?.tipo_contacto ? <span className="badge badge-blue">{r.tipo_contacto.tipo_contacto}</span> : '—'}</td>
                       <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text2)' }}>{r.indicaciones || '—'}</td>
                       <td>{r.proxima_fecha ? <span className="badge badge-yellow">{fmtDate(r.proxima_fecha)}</span> : '—'}</td>

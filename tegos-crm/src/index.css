@@ -206,3 +206,12 @@ tbody tr:hover td { background: var(--bg); cursor: pointer; }
   .detail-panel { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
 }
+
+/* Dashboard grid - desktop 2 cols, mobile 1 col */
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dashboard-full { grid-column: 1 / -1; }
+
+@media (max-width: 768px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}

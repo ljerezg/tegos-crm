@@ -1,6 +1,35 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+function exportarExcel(rows, tab) {
+  const headers = {
+    contratos: ['Nombre','Apellidos','Móvil','Email','Fecha contrato','Inmueble','Calle','Seguro rentas'],
+    inquilinos: ['Nombre','Apellidos','DNI/NIE','Teléfono','Móvil','Email','Email 2','Fecha contrato','Fecha fin contrato','Inmueble','Fianza IVIMA','Depósito','Seg. rentas','Nº póliza','Responsable'],
+    inmuebles: ['Código','Calle','Número','Piso','Población','Provincia','CP','Seguro','Adm. finca'],
+    propietarios: ['Nombre','Apellidos','DNI/CIF','Tipo','Teléfono','Móvil','Email','Municipio','Responsable'],
+    contactos: ['Nombre','Apellidos','Móvil','Email','Clasificación','Origen','Responsable'],
+  }
+  const getRow = (r) => {
+    if (tab === 'contratos') return [r.nombre||'',r.apellidos||'',r.movil||'',r.email||'',r.fecha_contrato||'',r.inmuebles?.codigo||'',r.inmuebles?.calle||'',r.seguro?.compania||'']
+    if (tab === 'inquilinos') return [r.nombre||'',r.apellidos||'',r.dni_cif||'',r.telefono||'',r.movil||'',r.email||'',r.email_2||'',r.fecha_contrato||'',r.fecha_fin_contrato||'',r.inmuebles?.codigo||'',r.importe_fianza_ivima||'',r.importe_deposito||'',r.seguro?.compania||'',r.num_poliza_seg_rentas||'',r.responsable?.nombre_responsable||'']
+    if (tab === 'inmuebles') return [r.codigo||'',r.calle||'',r.numero_calle||'',r.piso||'',r.poblacion||'',r.provincia||'',r.codigo_postal||'',r.seguro?.compania||'',r.administrador_finca||'']
+    if (tab === 'propietarios') return [r.nombre||'',r.apellidos||'',r.dni_cif||'',r.tipo_persona?.tipo||'',r.telefono||'',r.movil||'',r.email||'',r.municipio||'',r.responsable?.nombre_responsable||'']
+    if (tab === 'contactos') return [r.nombre||'',r.apellidos||'',r.movil||'',r.email||'',r.clasificacion_contacto?.clasificacion||'',r.conocimiento?.origen||'',r.responsable?.nombre_responsable||'']
+    return []
+  }
+  const hdrs = headers[tab] || []
+  const csvRows = [hdrs, ...rows.map(getRow)]
+  const csv = csvRows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = `listado_${tab}.csv`; a.click()
+  URL.revokeObjectURL(url)
+}
+
+function imprimirListado() {
+  window.print()
+}
+
 export default function Listados() {
   const [tab, setTab] = useState('contratos')
   const [rows, setRows] = useState([])
@@ -103,6 +132,8 @@ export default function Listados() {
       <div className="card">
         <div className="card-header">
           <h2>{tabs.find(t => t.id === tab)?.label} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{rows.length}</span></h2>
+          <button className="btn btn-ghost btn-sm" onClick={imprimirListado}><i className="ti ti-printer" /> Imprimir</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => exportarExcel(rows, tab)}><i className="ti ti-table-export" /> Exportar CSV</button>
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (<>
