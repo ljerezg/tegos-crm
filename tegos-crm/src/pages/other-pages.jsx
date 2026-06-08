@@ -41,8 +41,12 @@ export function Contactos() {
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null })
-    if (modal === 'new') await supabase.from('persona_contacto').insert(data)
-    else await supabase.from('persona_contacto').update(data).eq('id', form.id)
+    if (modal === 'new') {
+      await supabase.from('persona_contacto').insert(data)
+    } else {
+      const { id, clasificacion_contacto: _, responsable: __, conocimiento: ___, ...updateData } = data
+      await supabase.from('persona_contacto').update(updateData).eq('id', form.id)
+    }
     setModal(null); load()
   }
 
@@ -97,7 +101,7 @@ export function Contactos() {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.clasificacion_contacto?.clasificacion || ''}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected }); setModal('edit') }}><i className="ti ti-edit" /></button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', conocimiento_id: selected.conocimiento_id || '', clasificacion_id: selected.clasificacion_id || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
@@ -267,7 +271,7 @@ export function Acciones() {
     const entidad = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}` : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`
     return [entidad, r.indicaciones].join(' ').toLowerCase().includes(search.toLowerCase())
   })
-  const f = key => e => setForm({ ...form, [key]: e.target.value })
+  const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
   return (
     <div>

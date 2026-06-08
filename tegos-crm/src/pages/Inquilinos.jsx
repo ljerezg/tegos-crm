@@ -56,9 +56,13 @@ export default function Inquilinos() {
     const errs = validate(form)
     if (Object.keys(errs).length) { setErrors(errs); return }
     const data = { ...form }
-    Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null })
-    if (modal === 'new') await supabase.from('inquilinos').insert(data)
-    else await supabase.from('inquilinos').update(data).eq('id', form.id)
+    Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
+    if (modal === 'new') {
+      await supabase.from('inquilinos').insert(data)
+    } else {
+      const { id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, ...updateData } = data
+      await supabase.from('inquilinos').update(updateData).eq('id', form.id)
+    }
     setModal(null); setErrors({}); load()
   }
 
@@ -72,7 +76,7 @@ export default function Inquilinos() {
   const fmtMoney = v => v != null ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'
   const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
   const initials = r => nombre(r).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  const f = key => e => setForm({ ...form, [key]: e.target.value })
+  const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
   const diasRestantes = d => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null
 
   function sortedFiltered() {
@@ -129,7 +133,7 @@ export default function Inquilinos() {
                   const dias = diasRestantes(r.fecha_fin_contrato)
                   const badge = dias === null ? null : dias < 30 ? 'badge-red' : dias < 90 ? 'badge-yellow' : 'badge-green'
                   return (
-                    <tr key={r.id} onClick={() => selectRow(r)}>
+                    <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') }}>
                       <td><strong>{nombre(r)}</strong></td>
                       <td>{r.inmuebles ? <span className="badge badge-gray">{r.inmuebles.codigo}</span> : '—'}</td>
                       <td>{r.movil || '—'}</td>
@@ -155,7 +159,7 @@ export default function Inquilinos() {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} · ${selected.inmuebles.calle}` : 'Sin inmueble'}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected }); setErrors({}); setModal('edit') }}><i className="ti ti-edit" /></button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className="ti ti-edit" /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
