@@ -64,7 +64,7 @@ export default function Propietarios() {
 
   function filtered() {
     let data = rows.filter(r => {
-      const matchSearch = [r.nombre, r.apellidos, r.email, r.movil, r.dni_cif].join(' ').toLowerCase().includes(search.toLowerCase())
+      const matchSearch = matchSearch([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif], search)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })

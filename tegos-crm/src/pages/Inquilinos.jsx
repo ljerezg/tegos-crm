@@ -81,7 +81,7 @@ export default function Inquilinos() {
 
   function sortedFiltered() {
     let data = rows.filter(r => {
-      const matchSearch = [r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo].join(' ').toLowerCase().includes(search.toLowerCase())
+      const matchSearch = matchSearch([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo], search)
       const matchEstado = filtroEstado === 'todos' ? true : filtroEstado === 'vigor' ? !r.fecha_fin_contrato : !!r.fecha_fin_contrato
       return matchSearch && matchEstado
     })

@@ -74,7 +74,7 @@ export default function Inmuebles() {
 
   function filtered() {
     let data = rows.filter(r => {
-      const matchSearch = [r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos].join(' ').toLowerCase().includes(search.toLowerCase())
+      const matchSearch = matchSearch([r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos], search)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })

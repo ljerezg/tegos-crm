@@ -1,7 +1,34 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { matchSearch } from '../lib/utils'
 
 function exportarExcel(rows, tab) {
+  try {
+    if (typeof XLSX !== 'undefined') {
+      exportarXLSX(rows, tab); return
+    }
+  } catch(e) {}
+  exportarCSV(rows, tab)
+}
+
+function exportarXLSX(rows, tab) {
+  const { ws_data, filename } = getExportData(rows, tab)
+  const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.aoa_to_sheet(ws_data)
+  XLSX.utils.book_append_sheet(wb, ws, tab)
+  XLSX.writeFile(wb, filename.replace('.csv', '.xlsx'))
+}
+
+function exportarCSV(rows, tab) {
+  const { ws_data, filename } = getExportData(rows, tab)
+  const csv = ws_data.map(row => row.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+function getExportData(rows, tab) {
   const headers = {
     contratos: ['Nombre','Apellidos','Móvil','Email','Fecha contrato','Inmueble','Calle','Seguro rentas'],
     inquilinos: ['Nombre','Apellidos','DNI/NIE','Teléfono','Móvil','Email','Email 2','Fecha contrato','Fecha fin contrato','Inmueble','Fianza IVIMA','Depósito','Seg. rentas','Nº póliza','Responsable'],
@@ -9,7 +36,7 @@ function exportarExcel(rows, tab) {
     propietarios: ['Nombre','Apellidos','DNI/CIF','Tipo','Teléfono','Móvil','Email','Municipio','Responsable'],
     contactos: ['Nombre','Apellidos','Móvil','Email','Clasificación','Origen','Responsable'],
   }
-  const getRow = (r) => {
+  const getRow = (r) => {  // eslint-disable-line no-unused-vars
     if (tab === 'contratos') return [r.nombre||'',r.apellidos||'',r.movil||'',r.email||'',r.fecha_contrato||'',r.inmuebles?.codigo||'',r.inmuebles?.calle||'',r.seguro?.compania||'']
     if (tab === 'inquilinos') return [r.nombre||'',r.apellidos||'',r.dni_cif||'',r.telefono||'',r.movil||'',r.email||'',r.email_2||'',r.fecha_contrato||'',r.fecha_fin_contrato||'',r.inmuebles?.codigo||'',r.importe_fianza_ivima||'',r.importe_deposito||'',r.seguro?.compania||'',r.num_poliza_seg_rentas||'',r.responsable?.nombre_responsable||'']
     if (tab === 'inmuebles') return [r.codigo||'',r.calle||'',r.numero_calle||'',r.piso||'',r.poblacion||'',r.provincia||'',r.codigo_postal||'',r.seguro?.compania||'',r.administrador_finca||'']
@@ -19,11 +46,8 @@ function exportarExcel(rows, tab) {
   }
   const hdrs = headers[tab] || []
   const csvRows = [hdrs, ...rows.map(getRow)]
-  const csv = csvRows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `listado_${tab}.csv`; a.click()
-  URL.revokeObjectURL(url)
+  const filename = `listado_${tab}.csv`
+  return { ws_data: csvRows, filename }
 }
 
 function imprimirListado() {
