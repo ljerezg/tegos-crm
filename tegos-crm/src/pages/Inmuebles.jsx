@@ -1,4 +1,3 @@
-import React from 'react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
@@ -6,8 +5,8 @@ import Documentos from '../components/Documentos.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 
 function useSortable(defaultCol = '', defaultDir = 'asc') {
-  const [sortCol, setSortCol] = React.useState(defaultCol)
-  const [sortDir, setSortDir] = React.useState(defaultDir)
+  const [sortCol, setSortCol] = useState(defaultCol)
+  const [sortDir, setSortDir] = useState(defaultDir)
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('asc') }
@@ -20,16 +19,13 @@ function useSortable(defaultCol = '', defaultDir = 'asc') {
       return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va))
     })
   }
-  function SortIcon({ col }) {
-    if (sortCol !== col) return React.createElement('i', { className: 'ti ti-selector', style: { fontSize: 11, marginLeft: 3, opacity: 0.3 } })
-    return React.createElement('i', { className: `ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`, style: { fontSize: 11, marginLeft: 3 } })
-  }
   function Th({ col, label }) {
-    return React.createElement('th', { onClick: () => toggleSort(col), style: { cursor: 'pointer', userSelect: 'none' } },
-      label, React.createElement(SortIcon, { col })
-    )
+    const icon = sortCol !== col
+      ? <i className="ti ti-selector" style={{ fontSize: 11, marginLeft: 3, opacity: 0.3 }} />
+      : <i className={`ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 11, marginLeft: 3 }} />
+    return <th onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>{label}{icon}</th>
   }
-  return { sortCol, sortDir, toggleSort, sortData, SortIcon, Th }
+  return { sortCol, sortDir, toggleSort, sortData, Th }
 }
 
 

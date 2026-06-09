@@ -1,11 +1,11 @@
-import React from 'react'
+import * as XLSX from 'xlsx'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { matchSearch } from '../lib/utils'
 
 function useSortable(defaultCol = '', defaultDir = 'asc') {
-  const [sortCol, setSortCol] = React.useState(defaultCol)
-  const [sortDir, setSortDir] = React.useState(defaultDir)
+  const [sortCol, setSortCol] = useState(defaultCol)
+  const [sortDir, setSortDir] = useState(defaultDir)
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('asc') }
@@ -18,29 +18,17 @@ function useSortable(defaultCol = '', defaultDir = 'asc') {
       return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va))
     })
   }
-  function SortIcon({ col }) {
-    if (sortCol !== col) return React.createElement('i', { className: 'ti ti-selector', style: { fontSize: 11, marginLeft: 3, opacity: 0.3 } })
-    return React.createElement('i', { className: `ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`, style: { fontSize: 11, marginLeft: 3 } })
-  }
   function Th({ col, label }) {
-    return React.createElement('th', { onClick: () => toggleSort(col), style: { cursor: 'pointer', userSelect: 'none' } },
-      label, React.createElement(SortIcon, { col })
-    )
+    const icon = sortCol !== col
+      ? <i className="ti ti-selector" style={{ fontSize: 11, marginLeft: 3, opacity: 0.3 }} />
+      : <i className={`ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 11, marginLeft: 3 }} />
+    return <th onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>{label}{icon}</th>
   }
-  return { sortCol, sortDir, toggleSort, sortData, SortIcon, Th }
+  return { sortCol, sortDir, toggleSort, sortData, Th }
 }
 
 
 function exportarExcel(rows, tab) {
-  try {
-    if (typeof XLSX !== 'undefined') {
-      exportarXLSX(rows, tab); return
-    }
-  } catch(e) {}
-  exportarCSV(rows, tab)
-}
-
-function exportarXLSX(rows, tab) {
   const { ws_data, filename } = getExportData(rows, tab)
   const wb = XLSX.utils.book_new()
   const ws = XLSX.utils.aoa_to_sheet(ws_data)
