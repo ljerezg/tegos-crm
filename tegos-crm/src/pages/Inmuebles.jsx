@@ -5,6 +5,16 @@ import Documentos from '../components/Documentos.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
 
+function norm(s) {
+  return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+function ms(fields, q) {
+  var n = norm(q)
+  if (!n) return true
+  return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
+}
+
+
 const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
 
 export default function Inmuebles() {
@@ -74,7 +84,7 @@ export default function Inmuebles() {
 
   function filtered() {
     let data = rows.filter(r => {
-      const matchSearch = matchSearch([r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos], search)
+      const matchSearch = ms([r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos], search)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })

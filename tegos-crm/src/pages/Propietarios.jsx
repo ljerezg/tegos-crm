@@ -3,6 +3,16 @@ import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
 
+function norm(s) {
+  return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+function ms(fields, q) {
+  var n = norm(q)
+  if (!n) return true
+  return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
+}
+
+
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', dni_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', prop_final: '', fecha_baja: '' }
 
 export default function Propietarios() {
@@ -64,7 +74,7 @@ export default function Propietarios() {
 
   function filtered() {
     let data = rows.filter(r => {
-      const matchSearch = matchSearch([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif], search)
+      const matchSearch = ms([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif], search)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })

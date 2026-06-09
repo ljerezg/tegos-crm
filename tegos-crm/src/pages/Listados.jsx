@@ -1,7 +1,6 @@
 import * as XLSX from 'xlsx'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { matchSearch } from '../lib/utils'
 import { useSortable } from '../components/SortableTable.jsx'
 
 function exportarExcel(rows, tab) {

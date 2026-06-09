@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { matchSearch } from '../lib/utils'
 import { useSortable } from '../components/SortableTable.jsx'
+
+function norm(s) {
+  return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+function ms(fields, q) {
+  var n = norm(q)
+  if (!n) return true
+  return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
+}
+
 
 const ACCION_EMPTY = { fecha: '', hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', entidad_id: '', documento: '' }
 
@@ -81,7 +90,7 @@ export function Contactos() {
   const clsBadge = cl => ({ 'Propietario': 'badge-blue', 'Cliente potencial': 'badge-yellow', 'Proveedor': 'badge-gray', 'Administrador Finca': 'badge-green' })[cl] || 'badge-gray'
 
   function filtered() {
-    let data = rows.filter(r => matchSearch([r.nombre, r.apellidos, r.email, r.movil, r.clasificacion_contacto?.clasificacion], search))
+    let data = rows.filter(r => ms([r.nombre, r.apellidos, r.email, r.movil, r.clasificacion_contacto?.clasificacion], search))
     return sortData(data, (r, col) => {
       if (col === 'nombre') return nombre(r)
       if (col === 'clasificacion') return r.clasificacion_contacto?.clasificacion
@@ -344,7 +353,7 @@ export function Acciones() {
   function current() {
     let data = (rows[tab] || []).filter(r => {
       const entidad = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}` : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`
-      const matchSearch_ = matchSearch([entidad, r.indicaciones, r.proxima_accion], search)
+      const matchSearch_ = ms([entidad, r.indicaciones, r.proxima_accion], search)
       const matchEstado = filtroEstado === 'todas' ? true : filtroEstado === 'pendientes' ? !r.completada : !!r.completada
       return matchSearch_ && matchEstado
     })
@@ -508,7 +517,7 @@ export function Comercializando() {
   }, [])
 
   function filtered() {
-    let data = rows.filter(r => matchSearch([r.descripcion, r.calle, r.poblacion, r.propietario], search))
+    let data = rows.filter(r => ms([r.descripcion, r.calle, r.poblacion, r.propietario], search))
     return sortData(data, (r, col) => {
       if (col === 'seguro') return r.seguro?.compania
       return r[col]
