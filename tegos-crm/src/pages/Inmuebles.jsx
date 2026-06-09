@@ -20,7 +20,7 @@ export default function Inmuebles() {
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
   const navigate = useNavigate()
-  const { sortData, Th } = useSortable('codigo')
+  const { sortData, sortIcon, thProps } = useSortable('codigo')
 
   useEffect(() => { load() }, [])
 
@@ -105,11 +105,11 @@ export default function Inmuebles() {
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
               <thead><tr>
-                <Th col="codigo" label="Código" />
-                <Th col="calle" label="Dirección" />
-                <Th col="poblacion" label="Población" />
-                <Th col="propietario" label="Propietario" />
-                <Th col="seguro" label="Seguro" />
+                <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
+                <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
+                <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
+                <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
+                <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
               </tr></thead>
               <tbody>
                 {filtered().map(r => (

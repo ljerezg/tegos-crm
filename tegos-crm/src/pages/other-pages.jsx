@@ -24,7 +24,7 @@ export function Contactos() {
   const [conocimientos, setConocimientos] = useState([])
   const [responsables, setResponsables] = useState([])
   const [tipos, setTipos] = useState([])
-  const { sortData, Th } = useSortable('nombre')
+  const { sortData, sortIcon, thProps } = useSortable('nombre')
 
   useEffect(() => { load() }, [])
 
@@ -163,12 +163,12 @@ export function Contactos() {
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
               <thead><tr>
-                <Th col="nombre" label="Nombre" />
-                <Th col="clasificacion" label="Clasificación" />
-                <Th col="origen" label="Origen" />
-                <Th col="movil" label="Móvil" />
-                <Th col="email" label="Email" />
-                <Th col="responsable" label="Responsable" />
+                <th {...thProps('nombre')}>Nombre <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
+                <th {...thProps('clasificacion')}>Clasificación <span style={{fontSize:10}}>{sortIcon('clasificacion')}</span></th>
+                <th {...thProps('origen')}>Origen <span style={{fontSize:10}}>{sortIcon('origen')}</span></th>
+                <th {...thProps('movil')}>Móvil <span style={{fontSize:10}}>{sortIcon('movil')}</span></th>
+                <th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th>
+                <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
               </tr></thead>
               <tbody>
                 {filtered().map(r => (
@@ -267,7 +267,7 @@ export function Acciones() {
   const [tiposContacto, setTiposContacto] = useState([])
   const [responsables, setResponsables] = useState([])
   const navigate = useNavigate()
-  const { sortData, Th } = useSortable('fecha')
+  const { sortData, sortIcon, thProps } = useSortable('fecha')
 
   useEffect(() => { loadAll() }, [])
 
@@ -391,15 +391,15 @@ export function Acciones() {
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
               <thead><tr>
-                <Th col="fecha" label="Fecha" />
+                <th {...thProps('fecha')}>Fecha <span style={{fontSize:10}}>{sortIcon('fecha')}</span></th>
                 <th>Hora</th>
                 <Th col="entidad" label={tabLabel[tab]} />
                 {tab === 'inquilino' && <th>Inmueble</th>}
-                <Th col="tipo" label="Tipo" />
+                <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th>Indicaciones</th>
-                <Th col="proxima_fecha" label="Próx. fecha" />
+                <th {...thProps('proxima_fecha')}>Próx. fecha <span style={{fontSize:10}}>{sortIcon('proxima_fecha')}</span></th>
                 <th>Próx. acción</th>
-                <Th col="responsable" label="Responsable" />
+                <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
                 <th></th>
               </tr></thead>
               <tbody>
@@ -498,7 +498,7 @@ export function Comercializando() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const { sortData, Th } = useSortable('descripcion')
+  const { sortData, sortIcon, thProps } = useSortable('descripcion')
 
   useEffect(() => {
     supabase.from('inmuebles_comercializando')
@@ -525,12 +525,12 @@ export function Comercializando() {
         {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
           <table>
             <thead><tr>
-              <Th col="descripcion" label="Código" />
-              <Th col="calle" label="Calle" />
-              <Th col="piso" label="Piso" />
-              <Th col="poblacion" label="Población" />
-              <Th col="propietario" label="Propietario" />
-              <Th col="seguro" label="Seguro" />
+              <th {...thProps('descripcion')}>Código <span style={{fontSize:10}}>{sortIcon('descripcion')}</span></th>
+              <th {...thProps('calle')}>Calle <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
+              <th {...thProps('piso')}>Piso <span style={{fontSize:10}}>{sortIcon('piso')}</span></th>
+              <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
+              <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
+              <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
             </tr></thead>
             <tbody>
               {filtered().map(r => (

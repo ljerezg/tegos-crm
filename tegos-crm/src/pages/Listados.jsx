@@ -158,10 +158,10 @@ export default function Listados() {
             {tab === 'contratos' && (
               <table>
                 <thead><tr>
-                  <Th col="nombre" label="Inquilino" />
-                  <Th col="inmueble" label="Inmueble" />
+                  <th {...thProps('nombre')}>Inquilino <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
+                  <th {...thProps('inmueble')}>Inmueble <span style={{fontSize:10}}>{sortIcon('inmueble')}</span></th>
                   <th>Móvil</th>
-                  <Th col="fecha_contrato" label="Inicio contrato" />
+                  <th {...thProps('fecha_contrato')}>Inicio contrato <span style={{fontSize:10}}>{sortIcon('fecha_contrato')}</span></th>
                   <th>Próx. actualización renta</th>
                   <th>Seg. rentas</th>
                 </tr></thead>
@@ -192,13 +192,13 @@ export default function Listados() {
             {tab === 'inquilinos' && (
               <table>
                 <thead><tr>
-                  <Th col="nombre" label="Nombre" />
-                  <Th col="inmueble" label="Inmueble" />
+                  <th {...thProps('nombre')}>Nombre <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
+                  <th {...thProps('inmueble')}>Inmueble <span style={{fontSize:10}}>{sortIcon('inmueble')}</span></th>
                   <th>DNI/NIE</th>
                   <th>Móvil</th>
                   <th>Email</th>
-                  <Th col="fecha_contrato" label="Inicio" />
-                  <Th col="fecha_fin_contrato" label="Fin" />
+                  <th {...thProps('fecha_contrato')}>Inicio <span style={{fontSize:10}}>{sortIcon('fecha_contrato')}</span></th>
+                  <th {...thProps('fecha_fin_contrato')}>Fin <span style={{fontSize:10}}>{sortIcon('fecha_fin_contrato')}</span></th>
                   <th>Responsable</th>
                 </tr></thead>
                 <tbody>
@@ -227,9 +227,9 @@ export default function Listados() {
             {tab === 'inmuebles' && (
               <table>
                 <thead><tr>
-                  <Th col="codigo" label="Código" />
-                  <Th col="calle" label="Dirección" />
-                  <Th col="poblacion" label="Población" />
+                  <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
+                  <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
+                  <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
                   <th>Seguro</th>
                   <th>Adm. finca</th>
                 </tr></thead>
@@ -250,7 +250,7 @@ export default function Listados() {
             {tab === 'propietarios' && (
               <table>
                 <thead><tr>
-                  <Th col="nombre" label="Nombre" />
+                  <th {...thProps('nombre')}>Nombre <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
                   <th>Tipo</th>
                   <th>DNI/CIF</th>
                   <th>Móvil</th>
@@ -275,7 +275,7 @@ export default function Listados() {
             {tab === 'contactos' && (
               <table>
                 <thead><tr>
-                  <Th col="nombre" label="Nombre" />
+                  <th {...thProps('nombre')}>Nombre <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
                   <th>Clasificación</th>
                   <th>Origen</th>
                   <th>Móvil</th>

@@ -16,7 +16,7 @@ export default function Propietarios() {
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [inmuebles, setInmuebles] = useState([])
-  const { sortData, Th } = useSortable('nombre')
+  const { sortData, sortIcon, thProps } = useSortable('nombre')
 
   useEffect(() => { load() }, [])
 
@@ -93,11 +93,11 @@ export default function Propietarios() {
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
               <thead><tr>
-                <Th col="nombre" label="Nombre / Razón social" />
-                <Th col="tipo" label="Tipo" />
-                <Th col="movil" label="Móvil" />
-                <Th col="email" label="Email" />
-                <Th col="responsable" label="Responsable" />
+                <th {...thProps('nombre')}>Nombre / Razón social <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
+                <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
+                <th {...thProps('movil')}>Móvil <span style={{fontSize:10}}>{sortIcon('movil')}</span></th>
+                <th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th>
+                <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
               </tr></thead>
               <tbody>
                 {filtered().map(r => (
