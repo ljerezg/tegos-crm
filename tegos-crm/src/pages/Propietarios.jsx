@@ -130,7 +130,7 @@ export default function Propietarios() {
 
       {selected && (
         <>
-          <div className="detail-overlay" onClick={() => setSelected(null)} />
+          {modal !== 'edit' && <div className="detail-overlay" onClick={() => setSelected(null)} />}
           <div className="detail-panel">
             <div className="panel-header">
               <div className="panel-avatar av-blue">{initials(selected)}</div>

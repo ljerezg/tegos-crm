@@ -143,7 +143,7 @@ export default function Inmuebles() {
 
       {selected && (
         <>
-          <div className="detail-overlay" onClick={() => setSelected(null)} />
+          {modal !== 'edit' && <div className="detail-overlay" onClick={() => setSelected(null)} />}
           <div className="detail-panel">
             <div className="panel-header">
               <div className="panel-avatar av-green">{initials(selected.codigo)}</div>
@@ -219,14 +219,27 @@ export default function Inmuebles() {
               )}
             </div>
           </div>
+        {modal === 'edit' && (
+          <div className="modal-overlay" style={{ position: 'fixed' }} onClick={e => e.target === e.currentTarget && setModal(null)}>
+            <div className="modal" style={{ maxHeight: '85vh' }}>
+              <div className="modal-header">
+                <h2>Editar — {form.codigo}</h2>
+                <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
+              </div>
+              <div className="modal-body" style={{ overflowY: 'auto', maxHeight: '70vh' }}>
+                <EditFormInmueble form={form} setForm={setForm} propietarios={propietarios} seguros={seguros} admFincas={admFincas} save={save} onCancel={() => setModal(null)} />
+              </div>
+            </div>
+          </div>
+        )}
         </>
       )}
 
-      {modal && (
+      {modal === 'new' && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="modal">
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo inmueble' : `Editar — ${form.codigo}`}</h2>
+              <h2>Nuevo inmueble</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">

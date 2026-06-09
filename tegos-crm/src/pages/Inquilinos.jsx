@@ -163,7 +163,7 @@ export default function Inquilinos() {
 
       {selected && (
         <>
-          <div className="detail-overlay" onClick={() => setSelected(null)} />
+          {modal !== 'edit' && <div className="detail-overlay" onClick={() => setSelected(null)} />}
           <div className="detail-panel">
             <div className="panel-header">
               <div className="panel-avatar av-yellow">{initials(selected)}</div>
@@ -230,10 +230,66 @@ export default function Inquilinos() {
               )}
             </div>
           </div>
+        {modal === 'edit' && (
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)} style={{ position: 'fixed' }}>
+            <div className="modal">
+              <div className="modal-header">
+                <h2>Editar inquilino</h2>
+                <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
+              </div>
+              <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                <div className="form-grid">
+                  <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} /></div>
+                  <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={e => setForm(p => ({ ...p, apellidos: e.target.value }))} /></div>
+                  <div className="form-group"><label>DNI / NIE</label><input value={form.dni_cif ?? ''} onChange={e => setForm(p => ({ ...p, dni_cif: e.target.value }))} /></div>
+                  <div className="form-group"><label>Tipo *</label>
+                    <select value={form.tipo_id ?? ''} onChange={e => setForm(p => ({ ...p, tipo_id: e.target.value }))}>
+                      <option value="">— Selecciona —</option>
+                      {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group"><label>Responsable</label>
+                    <select value={form.responsable_id ?? ''} onChange={e => setForm(p => ({ ...p, responsable_id: e.target.value }))}>
+                      <option value="">—</option>
+                      {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group"><label>Teléfono</label><input value={form.telefono ?? ''} onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))} /></div>
+                  <div className="form-group"><label>Teléfono 2</label><input value={form.telefono_2 ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2: e.target.value }))} /></div>
+                  <div className="form-group"><label>Móvil</label><input value={form.movil ?? ''} onChange={e => setForm(p => ({ ...p, movil: e.target.value }))} /></div>
+                  <div className="form-group"><label>Email</label><input value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+                  <div className="form-group"><label>Email 2</label><input value={form.email_2 ?? ''} onChange={e => setForm(p => ({ ...p, email_2: e.target.value }))} /></div>
+                  <div className="form-section-title">Contrato</div>
+                  <div className="form-group"><label>Inmueble</label>
+                    <select value={form.inmueble_id ?? ''} onChange={e => setForm(p => ({ ...p, inmueble_id: e.target.value }))}>
+                      <option value="">— Sin asignar —</option>
+                      {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} — {i.calle}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group"><label>Inicio</label><input type="date" value={form.fecha_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value }))} /></div>
+                  <div className="form-group"><label>Fin</label><input type="date" value={form.fecha_fin_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_fin_contrato: e.target.value }))} /></div>
+                  <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
+                  <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
+                  <div className="form-group"><label>Seg. rentas</label>
+                    <select value={form.seguro_rentas_id ?? ''} onChange={e => setForm(p => ({ ...p, seguro_rentas_id: e.target.value }))}>
+                      <option value="">—</option>
+                      {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
+                </div>
+                <div className="form-actions">
+                  <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
+                  <button className="btn btn-primary" onClick={save}>Guardar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         </>
       )}
 
-      {modal && (
+      {(modal === 'new' || (modal === 'edit' && !selected)) && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="modal">
             <div className="modal-header">
