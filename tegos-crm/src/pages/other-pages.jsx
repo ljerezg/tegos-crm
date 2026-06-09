@@ -402,7 +402,7 @@ export function Acciones() {
               <thead><tr>
                 <th {...thProps('fecha')}>Fecha <span style={{fontSize:10}}>{sortIcon('fecha')}</span></th>
                 <th>Hora</th>
-                <Th col="entidad" label={tabLabel[tab]} />
+                <th {...thProps('entidad')}>tabLabel[tab] <span style={{fontSize:10}}>{sortIcon('entidad')}</span></th>
                 {tab === 'inquilino' && <th>Inmueble</th>}
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th>Indicaciones</th>
