@@ -2,31 +2,7 @@ import * as XLSX from 'xlsx'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { matchSearch } from '../lib/utils'
-
-function useSortable(defaultCol = '', defaultDir = 'asc') {
-  const [sortCol, setSortCol] = useState(defaultCol)
-  const [sortDir, setSortDir] = useState(defaultDir)
-  function toggleSort(col) {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortCol(col); setSortDir('asc') }
-  }
-  function sortData(data, getValue) {
-    if (!sortCol) return data
-    return [...data].sort((a, b) => {
-      const va = getValue(a, sortCol) || ''
-      const vb = getValue(b, sortCol) || ''
-      return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va))
-    })
-  }
-  function Th({ col, label }) {
-    const icon = sortCol !== col
-      ? <i className="ti ti-selector" style={{ fontSize: 11, marginLeft: 3, opacity: 0.3 }} />
-      : <i className={`ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 11, marginLeft: 3 }} />
-    return <th onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>{label}{icon}</th>
-  }
-  return { sortCol, sortDir, toggleSort, sortData, Th }
-}
-
+import { useSortable } from '../components/SortableTable.jsx'
 
 function exportarExcel(rows, tab) {
   const { ws_data, filename } = getExportData(rows, tab)
