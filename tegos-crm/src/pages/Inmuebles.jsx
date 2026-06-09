@@ -61,8 +61,9 @@ export default function Inmuebles() {
     if (modal === 'new') {
       await supabase.from('inmuebles').insert(data)
     } else {
-      const { id, propietarios: _, seguro: __, administrador_finca: ___, ...updateData } = data
-      await supabase.from('inmuebles').update(updateData).eq('id', form.id)
+      const { id: _id, propietarios: _, seguro: __, administrador_finca: ___, ...updateData } = data
+      const { error } = await supabase.from('inmuebles').update(updateData).eq('id', form.id)
+      if (error) { alert('Error al guardar: ' + error.message); return }
     }
     setModal(null); load()
     if (selected) {

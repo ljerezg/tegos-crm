@@ -71,8 +71,9 @@ export default function Inquilinos() {
     if (modal === 'new') {
       await supabase.from('inquilinos').insert(data)
     } else {
-      const { id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, ...updateData } = data
-      await supabase.from('inquilinos').update(updateData).eq('id', form.id)
+      const { id: _id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, ...updateData } = data
+      const { error } = await supabase.from('inquilinos').update(updateData).eq('id', form.id)
+      if (error) { alert('Error al guardar: ' + error.message); return }
     }
     setModal(null); setErrors({}); load()
   }

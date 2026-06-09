@@ -55,8 +55,9 @@ export default function Propietarios() {
     if (modal === 'new') {
       await supabase.from('propietarios').insert(data)
     } else {
-      const { id, tipo_persona: _, responsable: __, ...updateData } = data
-      await supabase.from('propietarios').update(updateData).eq('id', form.id)
+      const { id: _id, tipo_persona: _, responsable: __, ...updateData } = data
+      const { error } = await supabase.from('propietarios').update(updateData).eq('id', form.id)
+      if (error) { alert('Error al guardar: ' + error.message); return }
     }
     setModal(null); load()
   }

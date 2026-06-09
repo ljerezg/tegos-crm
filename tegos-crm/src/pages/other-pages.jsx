@@ -68,10 +68,11 @@ export function Contactos() {
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
-    if (modal === 'new') {
+    const isEdit = editModal || modal === 'edit'
+    if (!isEdit) {
       await supabase.from('persona_contacto').insert(data)
     } else {
-      const { id, clasificacion_contacto: _, responsable: __, conocimiento: ___, tipo_persona: ____, ...updateData } = data
+      const { id, clasificacion_contacto: _, responsable: __, conocimiento: ___, tipo_persona: ____, administrador_finca: _____, ...updateData } = data
       await supabase.from('persona_contacto').update(updateData).eq('id', form.id)
     }
     setModal(null); setEditModal(false); load()
