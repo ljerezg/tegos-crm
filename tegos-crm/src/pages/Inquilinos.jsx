@@ -1,6 +1,35 @@
+import React from 'react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
+
+function useSortable(defaultCol = '', defaultDir = 'asc') {
+  const [sortCol, setSortCol] = React.useState(defaultCol)
+  const [sortDir, setSortDir] = React.useState(defaultDir)
+  function toggleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+  function sortData(data, getValue) {
+    if (!sortCol) return data
+    return [...data].sort((a, b) => {
+      const va = getValue(a, sortCol) || ''
+      const vb = getValue(b, sortCol) || ''
+      return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va))
+    })
+  }
+  function SortIcon({ col }) {
+    if (sortCol !== col) return React.createElement('i', { className: 'ti ti-selector', style: { fontSize: 11, marginLeft: 3, opacity: 0.3 } })
+    return React.createElement('i', { className: `ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`, style: { fontSize: 11, marginLeft: 3 } })
+  }
+  function Th({ col, label }) {
+    return React.createElement('th', { onClick: () => toggleSort(col), style: { cursor: 'pointer', userSelect: 'none' } },
+      label, React.createElement(SortIcon, { col })
+    )
+  }
+  return { sortCol, sortDir, toggleSort, sortData, SortIcon, Th }
+}
+
 
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '' }
 

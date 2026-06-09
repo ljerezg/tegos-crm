@@ -1,9 +1,37 @@
+import React from 'react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Documentos from '../components/Documentos.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
-import { useSortable } from '../components/SortableTable.jsx'
+
+function useSortable(defaultCol = '', defaultDir = 'asc') {
+  const [sortCol, setSortCol] = React.useState(defaultCol)
+  const [sortDir, setSortDir] = React.useState(defaultDir)
+  function toggleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+  function sortData(data, getValue) {
+    if (!sortCol) return data
+    return [...data].sort((a, b) => {
+      const va = getValue(a, sortCol) || ''
+      const vb = getValue(b, sortCol) || ''
+      return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va))
+    })
+  }
+  function SortIcon({ col }) {
+    if (sortCol !== col) return React.createElement('i', { className: 'ti ti-selector', style: { fontSize: 11, marginLeft: 3, opacity: 0.3 } })
+    return React.createElement('i', { className: `ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`, style: { fontSize: 11, marginLeft: 3 } })
+  }
+  function Th({ col, label }) {
+    return React.createElement('th', { onClick: () => toggleSort(col), style: { cursor: 'pointer', userSelect: 'none' } },
+      label, React.createElement(SortIcon, { col })
+    )
+  }
+  return { sortCol, sortDir, toggleSort, sortData, SortIcon, Th }
+}
+
 
 const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
 
