@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import { useSortable } from '../components/SortableTable.jsx'
 
@@ -18,7 +19,7 @@ const ACCION_EMPTY = { fecha: '', hora: '', tipo_contacto_id: '', responsable_id
 // ============================================================
 // CONTACTOS
 // ============================================================
-const CONTACTO_EMPTY = { nombre: '', apellidos: '', dni_cif: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', municipio: '', cod_postal: '', observaciones: '', tipo_id: '', responsable_id: '', conocimiento_id: '', clasificacion_id: '', referenciado_por: '', empresa_tasacion: '', edad_estimada: '', estado_civil: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '' }
+const CONTACTO_EMPTY = { nombre: '', apellidos: '', dni_cif: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', fecha_baja: '', observaciones: '', tipo_id: '', responsable_id: '', conocimiento_id: '', clasificacion_id: '', referenciado_por: '', empresa_tasacion: '', edad_estimada: '', estado_civil: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '' }
 
 export function Contactos() {
   const [rows, setRows] = useState([])
@@ -36,6 +37,7 @@ export function Contactos() {
   const { sortData, sortIcon, thProps } = useSortable('nombre')
 
   useEffect(() => { load() }, [])
+  useCtrlG(save, !!(modal || editModal))
 
   async function load() {
     setLoading(true)
@@ -221,7 +223,7 @@ export function Contactos() {
                 <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
                 <div className="field field-full"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
                 <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
-                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.municipio].filter(Boolean).join(', ') || '—'}</div></div>
+                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.numero, selected.piso, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
               </div>
               <div className="field-section">CRM</div>
               <div className="field-grid">

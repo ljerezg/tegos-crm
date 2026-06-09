@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 
 function TablaAuxiliar({ titulo, tabla, campoNombre, columnas }) {
@@ -8,6 +9,7 @@ function TablaAuxiliar({ titulo, tabla, campoNombre, columnas }) {
   const [modal, setModal] = useState(null)
 
   useEffect(() => { load() }, [tabla])
+  useCtrlG(save, !!modal)
 
   async function load() {
     setLoading(true)
@@ -19,8 +21,16 @@ function TablaAuxiliar({ titulo, tabla, campoNombre, columnas }) {
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null })
-    if (modal === 'new') await supabase.from(tabla).insert(data)
-    else await supabase.from(tabla).update(data).eq('id', form.id)
+    let error
+    if (modal === 'new') {
+      const res = await supabase.from(tabla).insert(data)
+      error = res.error
+    } else {
+      const { id, ...updateData } = data
+      const res = await supabase.from(tabla).update(updateData).eq('id', form.id)
+      error = res.error
+    }
+    if (error) { alert('Error: ' + error.message); return }
     setModal(null); load()
   }
 

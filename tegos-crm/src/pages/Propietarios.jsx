@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
@@ -29,6 +30,7 @@ export default function Propietarios() {
   const { sortData, sortIcon, thProps } = useSortable('nombre')
 
   useEffect(() => { load() }, [])
+  useCtrlG(save, !!modal)
 
   async function load() {
     setLoading(true)

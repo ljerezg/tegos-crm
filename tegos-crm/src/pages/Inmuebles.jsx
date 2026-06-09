@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Documentos from '../components/Documentos.jsx'
@@ -33,6 +34,7 @@ export default function Inmuebles() {
   const { sortData, sortIcon, thProps } = useSortable('codigo')
 
   useEffect(() => { load() }, [])
+  useCtrlG(save, !!modal)
 
   async function load() {
     setLoading(true)

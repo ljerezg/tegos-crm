@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
@@ -33,6 +34,7 @@ export default function Inquilinos() {
   const [errors, setErrors] = useState({})
 
   useEffect(() => { load() }, [])
+  useCtrlG(save, !!modal)
 
   async function load() {
     setLoading(true)

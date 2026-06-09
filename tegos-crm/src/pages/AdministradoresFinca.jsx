@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '' }
+const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
 
 export default function AdministradoresFinca() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
+  const [filtro, setFiltro] = useState('vigor')
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [contactos, setContactos] = useState([])
@@ -31,8 +32,13 @@ export default function AdministradoresFinca() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null })
     if (!data.nombre) return alert('El nombre es obligatorio')
-    if (modal === 'new') await supabase.from('administrador_finca').insert(data)
-    else await supabase.from('administrador_finca').update(data).eq('id', form.id)
+    if (modal === 'new') {
+      await supabase.from('administrador_finca').insert(data)
+    } else {
+      const { id: _id, ...updateData } = data
+      const { error } = await supabase.from('administrador_finca').update(updateData).eq('id', form.id)
+      if (error) { alert('Error: ' + error.message); return }
+    }
     setModal(null); load()
   }
 
@@ -42,7 +48,14 @@ export default function AdministradoresFinca() {
     setSelected(null); load()
   }
 
-  const filtered = rows.filter(r => [r.nombre, r.email, r.telefono, r.municipio].join(' ').toLowerCase().includes(search.toLowerCase()))
+  function filtered() {
+    return rows.filter(r => {
+      const q = (search || '').toLowerCase()
+      const matchSearch = [r.nombre, r.email, r.telefono, r.municipio].join(' ').toLowerCase().includes(q)
+      const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
+      return matchSearch && matchFiltro
+    })
+  }
   const f = key => e => setForm({ ...form, [key]: e.target.value })
   const initials = r => (r.nombre || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
@@ -50,7 +63,12 @@ export default function AdministradoresFinca() {
     <div>
       <div className="card">
         <div className="card-header">
-          <h2>Administradores de fincas <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered.length}</span></h2>
+          <h2>Administradores de fincas <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered().length}</span></h2>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[['vigor','En vigor'],['finalizados','Con baja'],['todos','Todos']].map(([v,l]) => (
+              <button key={v} className={`btn btn-sm ${filtro === v ? 'btn-primary' : ''}`} onClick={() => setFiltro(v)}>{l}</button>
+            ))}
+          </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
         </div>
@@ -59,9 +77,9 @@ export default function AdministradoresFinca() {
             <table>
               <thead><tr><th>Nombre / Razón social</th><th>Municipio</th><th>Teléfono</th><th>Email</th></tr></thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin administradores</td></tr>}
-                {filtered.map(r => (
-                  <tr key={r.id} onClick={() => selectRow(r)}>
+                {filtered().length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin administradores</td></tr>}
+                {filtered().map(r => (
+                  <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, fecha_baja: r.fecha_baja || '' }); setModal('edit') }}>
                     <td><strong>{r.nombre}</strong></td>
                     <td>{r.municipio || '—'}</td>
                     <td>{r.telefono || r.movil || '—'}</td>
@@ -135,6 +153,7 @@ export default function AdministradoresFinca() {
                 <div className="form-group"><label>Municipio</label><input value={form.municipio || ''} onChange={f('municipio')} /></div>
                 <div className="form-group"><label>Provincia</label><input value={form.provincia || ''} onChange={f('provincia')} /></div>
                 <div className="form-group"><label>Código postal</label><input value={form.cod_postal || ''} onChange={f('cod_postal')} /></div>
+                <div className="form-group"><label>Fecha baja</label><input type="date" value={form.fecha_baja || ''} onChange={f('fecha_baja')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones || ''} onChange={f('observaciones')} /></div>
               </div>
               <div className="form-actions">

@@ -98,7 +98,7 @@ export default function Usuarios() {
       <div className="card">
         <div className="card-header">
           <h2>Usuarios <span className="badge badge-gray" style={{ marginLeft: 6 }}>{usuarios.length}</span></h2>
-          <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setInmueblesAsignados([]); setModal('new') }}>
+          <button className="btn btn-primary btn-sm" onClick={() => { setForm({...EMPTY, email: '', password: '', nombre: '', rol: 'propietario', propietario_id: '', activo: true}); setInmueblesAsignados([]); setModal('new') }}>
             <i className="ti ti-plus" /> Nuevo usuario
           </button>
         </div>
