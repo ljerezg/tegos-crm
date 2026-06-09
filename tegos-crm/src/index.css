@@ -215,3 +215,18 @@ tbody tr:hover td { background: var(--bg); cursor: pointer; }
   .dashboard-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* Edit modal - positions to the left of the detail panel */
+.edit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.2);
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 420px; /* leave room for detail panel */
+}
+@media (max-width: 900px) {
+  .edit-modal-overlay { padding-right: 0; }
+}

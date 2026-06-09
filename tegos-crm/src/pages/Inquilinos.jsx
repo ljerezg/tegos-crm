@@ -231,7 +231,7 @@ export default function Inquilinos() {
             </div>
           </div>
         {modal === 'edit' && (
-          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)} style={{ position: 'fixed' }}>
+          <div className="edit-modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
             <div className="modal">
               <div className="modal-header">
                 <h2>Editar inquilino</h2>
