@@ -109,6 +109,7 @@ export default function Configuracion() {
   const tabs = [
     { id: 'responsables', label: 'Responsables' },
     { id: 'seguros', label: 'Seguros' },
+    { id: 'tipo_inmueble', label: 'Tipos de inmueble' },
     { id: 'tipo_contacto', label: 'Tipos de contacto' },
     { id: 'clasificacion', label: 'Clasificaciones' },
     { id: 'conocimiento', label: 'Orígenes' },
@@ -141,6 +142,14 @@ export default function Configuracion() {
             { field: 'telefono_2', label: 'Teléfono 2' },
             { field: 'correo_1', label: 'Email' },
           ]}
+        />
+      )}
+
+      {tab === 'tipo_inmueble' && (
+        <TablaAuxiliar
+          titulo="Tipos de inmueble"
+          tabla="tipo_inmueble"
+          columnas={[{ field: 'tipo', label: 'Tipo', full: true }]}
         />
       )}
 

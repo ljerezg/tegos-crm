@@ -70,13 +70,13 @@ export default function Inmuebles({ perfil }) {
     if (modal === 'new') {
       await supabase.from('inmuebles').insert(data)
     } else {
-      const { id: _id, propietarios: _, seguro: __, administrador_finca: ___, ...updateData } = data
+      const { id: _id, propietarios: _, seguro: __, administrador_finca: ___, tipo_inmueble: ____, ...updateData } = data
       const { error } = await supabase.from('inmuebles').update(updateData).eq('id', form.id)
       if (error) { alert('Error al guardar: ' + error.message); return }
     }
     setModal(null); load()
     if (selected) {
-      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre)').eq('id', form.id).single()
+      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').eq('id', form.id).single()
       if (updated) setSelected(updated)
     }
   }
@@ -98,6 +98,7 @@ export default function Inmuebles({ perfil }) {
       'Población': r.poblacion || '',
       'Provincia': r.provincia || '',
       'Código postal': r.codigo_postal || '',
+      'Tipo inmueble': r.tipo_inmueble?.tipo || '',
       'Propietario': propNombre(r.propietarios),
       'Administrador finca': r.administrador_finca?.nombre || '',
       'Seguro hogar': r.seguro?.compania || '',
@@ -146,6 +147,7 @@ export default function Inmuebles({ perfil }) {
       if (col === 'codigo') return r.codigo
       if (col === 'calle') return r.calle
       if (col === 'poblacion') return r.poblacion
+      if (col === 'tipo') return r.tipo_inmueble?.tipo
       if (col === 'propietario') return propNombre(r.propietarios)
       if (col === 'seguro') return r.seguro?.compania
       return r[col]
@@ -173,6 +175,7 @@ export default function Inmuebles({ perfil }) {
                 <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
                 <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
                 <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
+                <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
                 <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
               </tr></thead>
@@ -180,11 +183,12 @@ export default function Inmuebles({ perfil }) {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '' }); setModal('edit') }}
+                    onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setModal('edit') }}
                     style={{ background: selected?.id === r.id ? 'var(--accent-bg)' : '' }}>
                     <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
                     <td>{r.calle}{r.numero_calle ? ` ${r.numero_calle}` : ''}{r.piso ? `, ${r.piso}` : ''}</td>
                     <td>{r.poblacion || '—'}</td>
+                    <td>{r.tipo_inmueble?.tipo || '—'}</td>
                     <td>{propNombre(r.propietarios)}</td>
                     <td>{r.seguro?.compania ? <span className="badge badge-gray">{r.seguro.compania}</span> : '—'}</td>
                   </tr>
@@ -205,13 +209,14 @@ export default function Inmuebles({ perfil }) {
                 <h3>{selected.codigo}</h3>
                 <div className="panel-sub">{selected.calle}{selected.piso ? `, ${selected.piso}` : ''}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="panel-body">
               <div className="field-section">Localización</div>
               <div className="field-grid">
+                <div className="field"><label>Tipo inmueble</label><div className="val">{selected.tipo_inmueble?.tipo || '—'}</div></div>
                 <div className="field"><label>Calle</label><div className="val">{selected.calle || '—'}</div></div>
                 <div className="field"><label>Nº / Piso</label><div className="val">{[selected.numero_calle, selected.piso].filter(Boolean).join(', ') || '—'}</div></div>
                 <div className="field"><label>Población</label><div className="val">{selected.poblacion || '—'}</div></div>
@@ -293,6 +298,12 @@ export default function Inmuebles({ perfil }) {
                     onChange={v => setForm(prev => ({ ...prev, propietario_id: v }))}
                     placeholder="Buscar propietario..."
                   />
+                </div>
+                <div className="form-group"><label>Tipo inmueble</label>
+                  <select value={form.tipo_inmueble_id ?? ''} onChange={f('tipo_inmueble_id')}>
+                    <option value="">—</option>
+                    {tiposInmueble.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
+                  </select>
                 </div>
                 <div className="form-section-title">Localización</div>
                 <div className="form-group form-full"><label>Calle</label><input value={form.calle ?? ''} onChange={f('calle')} /></div>
