@@ -32,6 +32,7 @@ export default function Inquilinos({ perfil }) {
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
   const [errors, setErrors] = useState({})
+  const readOnly = perfil?.rol === 'visor'
 
   useEffect(() => { load() }, [])
   useCtrlG(save, !!modal)
@@ -198,7 +199,7 @@ export default function Inquilinos({ perfil }) {
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           <button className="btn btn-sm" onClick={exportExcel} title="Exportar Excel"><i className="ti ti-file-spreadsheet" /> Excel</button>
-          <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setErrors({}); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
+          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setErrors({}); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -218,7 +219,7 @@ export default function Inquilinos({ perfil }) {
                   const dias = diasRestantes(r.fecha_fin_contrato)
                   const badge = dias === null ? null : dias < 30 ? 'badge-red' : dias < 90 ? 'badge-yellow' : 'badge-green'
                   return (
-                    <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') }}>
+                    <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') } }}>
                       <td><strong>{nombre(r)}</strong></td>
                       <td>{r.inmuebles ? <span className="badge badge-gray">{r.inmuebles.codigo}</span> : '—'}</td>
                       <td>{r.movil || '—'}</td>
@@ -244,8 +245,8 @@ export default function Inquilinos({ perfil }) {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} · ${selected.inmuebles.calle}` : 'Sin inmueble'}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className="ti ti-edit" /></button>
-              <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="panel-body">
@@ -286,7 +287,7 @@ export default function Inquilinos({ perfil }) {
                 </div>
               </>}
               <div className="field-section">Documentos</div>
-              <Documentos entidadTipo="inquilino" entidadId={selected.id} />
+              <Documentos entidadTipo="inquilino" entidadId={selected.id} readOnly={readOnly} />
               <div className="field-section">Acciones recientes</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">

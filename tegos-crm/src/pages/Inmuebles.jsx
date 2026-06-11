@@ -32,6 +32,7 @@ export default function Inmuebles({ perfil }) {
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
   const navigate = useNavigate()
+  const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('codigo')
 
   useEffect(() => { load() }, [])
@@ -166,7 +167,7 @@ export default function Inmuebles({ perfil }) {
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           <button className="btn btn-sm" onClick={exportExcel} title="Exportar Excel"><i className="ti ti-file-spreadsheet" /> Excel</button>
-          <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
+          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -183,7 +184,7 @@ export default function Inmuebles({ perfil }) {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setModal('edit') }}
+                    onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setModal('edit') } }}
                     style={{ background: selected?.id === r.id ? 'var(--accent-bg)' : '' }}>
                     <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
                     <td>{r.calle}{r.numero_calle ? ` ${r.numero_calle}` : ''}{r.piso ? `, ${r.piso}` : ''}</td>
@@ -209,8 +210,8 @@ export default function Inmuebles({ perfil }) {
                 <h3>{selected.codigo}</h3>
                 <div className="panel-sub">{selected.calle}{selected.piso ? `, ${selected.piso}` : ''}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>
-              <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="panel-body">
@@ -261,7 +262,7 @@ export default function Inmuebles({ perfil }) {
                 <a href={selected.carpeta_dropbox} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }}><i className="ti ti-folder" /> Carpeta Dropbox</a>
               </>}
               <div className="field-section">Documentos</div>
-              <Documentos entidadTipo="inmueble" entidadId={selected.id} />
+              <Documentos entidadTipo="inmueble" entidadId={selected.id} readOnly={readOnly} />
               <div className="field-section">Acciones ({acciones.length})</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">

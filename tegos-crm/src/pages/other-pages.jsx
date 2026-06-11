@@ -21,7 +21,7 @@ const ACCION_EMPTY = { fecha: '', hora: '', tipo_contacto_id: '', responsable_id
 // ============================================================
 const CONTACTO_EMPTY = { nombre: '', apellidos: '', dni_cif: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', fecha_baja: '', observaciones: '', tipo_id: '', responsable_id: '', conocimiento_id: '', clasificacion_id: '', referenciado_por: '', empresa_tasacion: '', edad_estimada: '', estado_civil: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '' }
 
-export function Contactos() {
+export function Contactos({ perfil }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -35,6 +35,7 @@ export function Contactos() {
   const [responsables, setResponsables] = useState([])
   const [tipos, setTipos] = useState([])
   const { sortData, sortIcon, thProps } = useSortable('nombre')
+  const readOnly = perfil?.rol === 'visor'
 
   useEffect(() => { load() }, [])
   useCtrlG(save, !!(modal || editModal))
@@ -169,7 +170,7 @@ export function Contactos() {
         <div className="card-header">
           <h2>Contactos <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered().length}</span></h2>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-          <button className="btn btn-primary btn-sm" onClick={() => { setForm(CONTACTO_EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
+          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(CONTACTO_EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -186,7 +187,7 @@ export function Contactos() {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); openEdit(r) }}>
+                    onDoubleClick={() => { selectRow(r); if (!readOnly) openEdit(r) }}>
                     <td><strong>{nombre(r)}</strong></td>
                     <td>{r.clasificacion_contacto ? <span className={`badge ${clsBadge(r.clasificacion_contacto.clasificacion)}`}>{r.clasificacion_contacto.clasificacion}</span> : '—'}</td>
                     <td>{r.conocimiento?.origen || '—'}</td>
@@ -211,8 +212,8 @@ export function Contactos() {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.clasificacion_contacto?.clasificacion || ''}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => openEdit(selected)}><i className="ti ti-edit" /></button>
-              <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => openEdit(selected)}><i className="ti ti-edit" /></button>}
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="panel-body">
@@ -280,6 +281,7 @@ export function Acciones({ perfil }) {
   const [responsables, setResponsables] = useState([])
   const navigate = useNavigate()
   const { sortData, sortIcon, thProps } = useSortable('fecha')
+  const readOnly = perfil?.rol === 'visor'
 
   useEffect(() => { loadAll() }, [])
   useCtrlG(save, modal)
@@ -434,7 +436,7 @@ export function Acciones({ perfil }) {
         <div className="card-header">
           <h2>Acciones — {tab === 'inquilino' ? 'Inquilinos' : tab === 'inmueble' ? 'Inmuebles' : 'Contactos'} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current().length}</span></h2>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-          <button className="btn btn-primary btn-sm" onClick={() => openModal()}><i className="ti ti-plus" /> Nueva acción</button>
+          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => openModal()}><i className="ti ti-plus" /> Nueva acción</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -475,8 +477,8 @@ export function Acciones({ perfil }) {
                       <td style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{r.proxima_accion || '—'}</td>
                       <td style={{ fontSize: 12 }}>{r.responsable?.nombre_responsable || '—'}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn btn-ghost btn-sm" title="Editar" onClick={() => openModal(r)}><i className="ti ti-edit" /></button>
-                        {!r.completada && (
+                        {!readOnly && <button className="btn btn-ghost btn-sm" title="Editar" onClick={() => openModal(r)}><i className="ti ti-edit" /></button>}
+                        {!readOnly && !r.completada && (
                           <button className="btn btn-ghost btn-sm" title="Marcar completada" onClick={() => completar(tab, r.id)}>
                             <i className="ti ti-check" style={{ color: 'var(--accent)' }} />
                           </button>

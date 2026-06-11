@@ -4,7 +4,7 @@ import { useCtrlG } from '../lib/useCtrlG'
 
 const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
 
-export default function AdministradoresFinca() {
+export default function AdministradoresFinca({ perfil }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -13,6 +13,7 @@ export default function AdministradoresFinca() {
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [contactos, setContactos] = useState([])
+  const readOnly = perfil?.rol === 'visor'
 
   useEffect(() => { load() }, [])
   useCtrlG(save, !!modal)
@@ -72,7 +73,7 @@ export default function AdministradoresFinca() {
             ))}
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-          <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
+          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -81,7 +82,7 @@ export default function AdministradoresFinca() {
               <tbody>
                 {filtered().length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin administradores</td></tr>}
                 {filtered().map(r => (
-                  <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, fecha_baja: r.fecha_baja || '' }); setModal('edit') }}>
+                  <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, fecha_baja: r.fecha_baja || '' }); setModal('edit') } }}>
                     <td><strong>{r.nombre}</strong></td>
                     <td>{r.municipio || '—'}</td>
                     <td>{r.telefono || r.movil || '—'}</td>
@@ -101,8 +102,8 @@ export default function AdministradoresFinca() {
             <div className="panel-header">
               <div className="panel-avatar av-blue">{initials(selected)}</div>
               <div style={{ flex: 1 }}><h3>{selected.nombre}</h3><div className="panel-sub">{selected.municipio || ''}</div></div>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected }); setModal('edit') }}><i className="ti ti-edit" /></button>
-              <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected }); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="panel-body">
