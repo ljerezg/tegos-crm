@@ -177,7 +177,7 @@ function imprimirListado() {
   window.print()
 }
 
-export default function Listados() {
+export default function Listados({ perfil }) {
   const [tab, setTab] = useState('contratos')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -190,27 +190,55 @@ export default function Listados() {
     setLoading(true)
     setSortCol('')
     let data = []
+
+    // Si es propietario, obtener sus inmueble_ids
+    let inmuebleIds = null
+    if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
+      const { data: inmsDelProp } = await supabase
+        .from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id)
+      inmuebleIds = (inmsDelProp || []).map(i => i.id)
+    }
+
     if (t === 'contratos') {
-      const { data: d } = await supabase.from('inquilinos')
+      let q = supabase.from('inquilinos')
         .select('id, nombre, apellidos, dni_cif, movil, email, telefono, fecha_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, inmuebles(codigo, calle, piso), seguro(compania)')
         .is('fecha_fin_contrato', null)
         .not('fecha_contrato', 'is', null)
         .order('fecha_contrato')
+      if (inmuebleIds !== null) {
+        if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1)
+        else q = q.in('inmueble_id', inmuebleIds)
+      }
+      const { data: d } = await q
       data = d || []
     } else if (t === 'inquilinos') {
-      const { data: d } = await supabase.from('inquilinos')
+      let q = supabase.from('inquilinos')
         .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, fecha_contrato, fecha_fin_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, carpeta_dropbox, contrato_url, observaciones, nombre_conyuge, apellidos_conyuge, movil_conyuge, email_conyuge, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)')
         .order('nombre')
+      if (inmuebleIds !== null) {
+        if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1)
+        else q = q.in('inmueble_id', inmuebleIds)
+      }
+      const { data: d } = await q
       data = d || []
     } else if (t === 'inmuebles') {
-      const { data: d } = await supabase.from('inmuebles')
+      let q = supabase.from('inmuebles')
         .select('id, codigo, calle, numero_calle, piso, poblacion, provincia, codigo_postal, registro, num_finca_registral_vivienda, cru, num_catastro_vivienda, num_garaje_1, num_garaje_2, num_trastero, num_poliza_seg_hogar, cia_electrica, cups_electricidad, titular_contrato_electricidad, cia_gas, cups_gas, titular_contrato_gas, cia_agua, num_contrato_agua, titular_contrato_agua, carpeta_dropbox, observaciones, fecha_baja, seguro(compania), administrador_finca(nombre), propietarios(nombre, apellidos)')
         .order('codigo')
+      if (inmuebleIds !== null) {
+        if (inmuebleIds.length === 0) q = q.eq('id', -1)
+        else q = q.in('id', inmuebleIds)
+      }
+      const { data: d } = await q
       data = d || []
     } else if (t === 'propietarios') {
-      const { data: d } = await supabase.from('propietarios')
+      let q = supabase.from('propietarios')
         .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, calle, numero, piso, municipio, provincia, cod_postal, fecha_baja, nombre_conyuge, apellidos_conyuge, dni_conyuge, movil_conyuge, email_conyuge, otra_persona_contacto, relacion_otra_persona, movil_otra_persona, email_otra_persona, observaciones, tipo_persona(tipo), responsable(nombre_responsable)')
         .order('nombre')
+      if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
+        q = q.eq('id', perfil.propietario_id)
+      }
+      const { data: d } = await q
       // Fetch inmuebles por propietario
       const { data: inms } = await supabase.from('inmuebles').select('propietario_id, codigo')
       const inmMap = {}
