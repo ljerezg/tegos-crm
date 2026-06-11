@@ -1,0 +1,22 @@
+-- Punto 5: 2º y 3º inquilino por contrato (YA EJECUTADA en Supabase el 2026-06-11)
+ALTER TABLE inquilinos
+  ADD COLUMN IF NOT EXISTS nombre_inq2 text,
+  ADD COLUMN IF NOT EXISTS apellidos_inq2 text,
+  ADD COLUMN IF NOT EXISTS dni_inq2 text,
+  ADD COLUMN IF NOT EXISTS tipo_inq2_id integer REFERENCES tipo_persona(id),
+  ADD COLUMN IF NOT EXISTS relacion_inq2 text,
+  ADD COLUMN IF NOT EXISTS telefono_inq2 text,
+  ADD COLUMN IF NOT EXISTS telefono_2_inq2 text,
+  ADD COLUMN IF NOT EXISTS movil_inq2 text,
+  ADD COLUMN IF NOT EXISTS email_inq2 text,
+  ADD COLUMN IF NOT EXISTS email_2_inq2 text,
+  ADD COLUMN IF NOT EXISTS nombre_inq3 text,
+  ADD COLUMN IF NOT EXISTS apellidos_inq3 text,
+  ADD COLUMN IF NOT EXISTS dni_inq3 text,
+  ADD COLUMN IF NOT EXISTS tipo_inq3_id integer REFERENCES tipo_persona(id),
+  ADD COLUMN IF NOT EXISTS relacion_inq3 text,
+  ADD COLUMN IF NOT EXISTS telefono_inq3 text,
+  ADD COLUMN IF NOT EXISTS telefono_2_inq3 text,
+  ADD COLUMN IF NOT EXISTS movil_inq3 text,
+  ADD COLUMN IF NOT EXISTS email_inq3 text,
+  ADD COLUMN IF NOT EXISTS email_2_inq3 text;
