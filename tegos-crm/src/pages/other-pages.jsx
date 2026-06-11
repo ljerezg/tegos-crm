@@ -282,6 +282,7 @@ export function Acciones() {
   const { sortData, sortIcon, thProps } = useSortable('fecha')
 
   useEffect(() => { loadAll() }, [])
+  useCtrlG(save, modal)
 
   async function loadAll() {
     setLoading(true)
@@ -405,7 +406,7 @@ export function Acciones() {
               <thead><tr>
                 <th {...thProps('fecha')}>Fecha <span style={{fontSize:10}}>{sortIcon('fecha')}</span></th>
                 <th>Hora</th>
-                <th {...thProps('entidad')}>tabLabel[tab] <span style={{fontSize:10}}>{sortIcon('entidad')}</span></th>
+                <th {...thProps('entidad')}>{tabLabel[tab]} <span style={{fontSize:10}}>{sortIcon('entidad')}</span></th>
                 {tab === 'inquilino' && <th>Inmueble</th>}
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th>Indicaciones</th>
@@ -514,7 +515,7 @@ export function Comercializando() {
 
   useEffect(() => {
     supabase.from('inmuebles_comercializando')
-      .select('*, seguro(compania)')
+      .select('*, seguro(compania), inmuebles(codigo, propietarios(nombre, apellidos))')
       .order('descripcion')
       .then(({ data }) => { setRows(data || []); setLoading(false) })
   }, [])

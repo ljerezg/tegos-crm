@@ -16,7 +16,7 @@ function ms(fields, q) {
 
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', dni_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', prop_final: '', fecha_baja: '' }
 
-export default function Propietarios() {
+export default function Propietarios({ perfil }) {
   const [rows, setRows] = useState([])
   const [tipos, setTipos] = useState([])
   const [responsables, setResponsables] = useState([])
@@ -35,7 +35,11 @@ export default function Propietarios() {
   async function load() {
     setLoading(true)
     const [{ data: props }, { data: tipos }, { data: resps }] = await Promise.all([
-      supabase.from('propietarios').select('*, tipo_persona(tipo), responsable(nombre_responsable)').order('nombre'),
+      (() => {
+        let q = supabase.from('propietarios').select('*, tipo_persona(tipo), responsable(nombre_responsable)').order('nombre')
+        if (perfil?.rol === 'propietario' && perfil?.propietario_id) q = q.eq('id', perfil.propietario_id)
+        return q
+      })(),
       supabase.from('tipo_persona').select('*'),
       supabase.from('responsable').select('*'),
     ])
@@ -194,7 +198,7 @@ export default function Propietarios() {
       )}
 
       {modal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
+        <div className={modal === 'edit' && selected ? "edit-modal-overlay" : "modal-overlay"} onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="modal">
             <div className="modal-header">
               <h2>{modal === 'new' ? 'Nuevo propietario' : `Editar — ${nombre(form)}`}</h2>

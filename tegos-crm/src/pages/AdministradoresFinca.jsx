@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useCtrlG } from '../lib/useCtrlG'
 
 const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
 
@@ -14,6 +15,7 @@ export default function AdministradoresFinca() {
   const [contactos, setContactos] = useState([])
 
   useEffect(() => { load() }, [])
+  useCtrlG(save, !!modal)
 
   async function load() {
     setLoading(true)

@@ -18,7 +18,7 @@ function ms(fields, q) {
 
 const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
 
-export default function Inmuebles() {
+export default function Inmuebles({ perfil }) {
   const [rows, setRows] = useState([])
   const [propietarios, setPropietarios] = useState([])
   const [seguros, setSeguros] = useState([])
@@ -39,7 +39,11 @@ export default function Inmuebles() {
   async function load() {
     setLoading(true)
     const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }] = await Promise.all([
-      supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre)').order('codigo'),
+      (() => {
+        let q = supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre)').order('codigo')
+        if (perfil?.rol === 'propietario' && perfil?.propietario_id) q = q.eq('propietario_id', perfil.propietario_id)
+        return q
+      })(),
       supabase.from('propietarios').select('id, nombre, apellidos').order('nombre'),
       supabase.from('seguro').select('id, compania').order('compania'),
       supabase.from('administrador_finca').select('id, nombre').order('nombre'),
@@ -226,7 +230,7 @@ export default function Inmuebles() {
       )}
 
       {modal && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
+        <div className={modal === 'edit' && selected ? "edit-modal-overlay" : "modal-overlay"} onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="modal">
             <div className="modal-header">
               <h2>{modal === 'new' ? 'Nuevo inmueble' : `Editar — ${form.codigo}`}</h2>

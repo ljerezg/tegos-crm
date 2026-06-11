@@ -16,7 +16,7 @@ function ms(fields, q) {
 
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '' }
 
-export default function Inquilinos() {
+export default function Inquilinos({ perfil }) {
   const [rows, setRows] = useState([])
   const [inmuebles, setInmuebles] = useState([])
   const [seguros, setSeguros] = useState([])
@@ -39,7 +39,13 @@ export default function Inquilinos() {
   async function load() {
     setLoading(true)
     const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }] = await Promise.all([
-      supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)').order('nombre'),
+      (() => {
+        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)').order('nombre')
+        if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
+          q = q.eq('inmuebles.propietario_id', perfil.propietario_id)
+        }
+        return q
+      })(),
       supabase.from('inmuebles').select('id, codigo, calle').order('codigo'),
       supabase.from('seguro').select('id, compania'),
       supabase.from('responsable').select('*'),
@@ -55,7 +61,7 @@ export default function Inquilinos() {
 
   async function selectRow(row) {
     setSelected(row)
-    const { data } = await supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inquilino_id', row.id).order('fecha', { ascending: false }).limit(10)
+    const { data } = await supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inquilino_id', row.id).order('fecha', { ascending: false })
     setAcciones(data || [])
   }
 

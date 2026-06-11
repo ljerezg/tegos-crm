@@ -4,20 +4,16 @@ import { supabase } from '../lib/supabase'
 import { useSortable } from '../components/SortableTable.jsx'
 
 function exportarExcel(rows, tab) {
-  const { ws_data, filename } = getExportData(rows, tab)
-  const wb = XLSX.utils.book_new()
-  const ws = XLSX.utils.aoa_to_sheet(ws_data)
-  XLSX.utils.book_append_sheet(wb, ws, tab)
-  XLSX.writeFile(wb, filename.replace('.csv', '.xlsx'))
-}
-
-function exportarCSV(rows, tab) {
-  const { ws_data, filename } = getExportData(rows, tab)
-  const csv = ws_data.map(row => row.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\n')
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = filename; a.click()
-  URL.revokeObjectURL(url)
+  try {
+    const { ws_data, filename } = getExportData(rows, tab)
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(ws_data)
+    XLSX.utils.book_append_sheet(wb, ws, tab)
+    XLSX.writeFile(wb, filename.replace('.csv', '.xlsx'))
+  } catch(e) {
+    console.error('Error exportando Excel:', e)
+    alert('Error al exportar: ' + e.message)
+  }
 }
 
 function getExportData(rows, tab) {
@@ -115,6 +111,14 @@ export default function Listados() {
     </th>
   )
 
+  function thProps(col) {
+    return { onClick: () => toggleSort(col), style: { cursor: 'pointer', userSelect: 'none' } }
+  }
+  function sortIcon(col) {
+    if (sortCol !== col) return '↕'
+    return sortDir === 'asc' ? '↑' : '↓'
+  }
+
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
   const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
 
@@ -149,7 +153,7 @@ export default function Listados() {
         <div className="card-header">
           <h2>{tabs.find(t => t.id === tab)?.label} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{rows.length}</span></h2>
           <button className="btn btn-ghost btn-sm" onClick={imprimirListado}><i className="ti ti-printer" /> Imprimir</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => exportarExcel(rows, tab)}><i className="ti ti-table-export" /> Exportar CSV</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => exportarExcel(rows, tab)}><i className="ti ti-table-export" /> Exportar Excel</button>
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (<>

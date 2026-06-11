@@ -76,10 +76,10 @@ export default function App({ perfil }) {
         <div className="content">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/inmuebles" element={<Inmuebles />} />
-            <Route path="/propietarios" element={<Propietarios />} />
-            <Route path="/inquilinos" element={<Inquilinos />} />
-            <Route path="/acciones" element={<Acciones />} />
+            <Route path="/inmuebles" element={<Inmuebles perfil={perfil} />} />
+            <Route path="/propietarios" element={<Propietarios perfil={perfil} />} />
+            <Route path="/inquilinos" element={<Inquilinos perfil={perfil} />} />
+            <Route path="/acciones" element={<Acciones perfil={perfil} />} />
             <Route path="/listados" element={<Listados perfil={perfil} />} />
             {esAdmin && <Route path="/administradores" element={<AdministradoresFinca />} />}
             {esAdmin && <Route path="/contactos" element={<Contactos />} />}
