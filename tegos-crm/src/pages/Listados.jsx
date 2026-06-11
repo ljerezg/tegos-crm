@@ -1,41 +1,176 @@
 import * as XLSX from 'xlsx'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useSortable } from '../components/SortableTable.jsx'
+
+function norm(s) {
+  return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
 
 function exportarExcel(rows, tab) {
   try {
-    const { ws_data, filename } = getExportData(rows, tab)
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : ''
+    const fmtMoney = v => v != null && v !== '' ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : ''
+    const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim()
+
+    const proximaActualizacion = d => {
+      if (!d) return ''
+      const inicio = new Date(d)
+      const hoyD = new Date()
+      const anios = Math.floor((hoyD - inicio) / (365.25 * 86400000))
+      const proxima = new Date(inicio)
+      proxima.setFullYear(inicio.getFullYear() + anios + 1)
+      return fmtDate(proxima)
+    }
+
+    let headers = []
+    let getRow = () => []
+
+    if (tab === 'contratos') {
+      headers = ['Inquilino', 'DNI/NIE', 'Móvil', 'Email', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Próx. actualización renta', 'Seg. rentas', 'Nº póliza seg. rentas', 'Fianza IVIMA', 'Depósito']
+      getRow = r => [
+        nombre(r),
+        r.dni_cif || '',
+        r.movil || '',
+        r.email || '',
+        r.inmuebles?.codigo || '',
+        r.inmuebles?.calle || '',
+        fmtDate(r.fecha_contrato),
+        proximaActualizacion(r.fecha_contrato),
+        r.seguro?.compania || '',
+        r.num_poliza_seg_rentas || '',
+        fmtMoney(r.importe_fianza_ivima),
+        fmtMoney(r.importe_deposito),
+      ]
+    } else if (tab === 'inquilinos') {
+      headers = ['Nombre', 'Apellidos', 'DNI/NIE', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Fin contrato', 'Fianza IVIMA', 'Depósito', 'Seg. rentas', 'Nº póliza', 'Nombre cónyuge', 'Apellidos cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Carpeta Dropbox', 'Contrato (URL)', 'Observaciones']
+      getRow = r => [
+        r.nombre || '',
+        r.apellidos || '',
+        r.dni_cif || '',
+        r.tipo_persona?.tipo || '',
+        r.responsable?.nombre_responsable || '',
+        r.telefono || '',
+        r.telefono_2 || '',
+        r.movil || '',
+        r.email || '',
+        r.email_2 || '',
+        r.inmuebles?.codigo || '',
+        r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
+        fmtDate(r.fecha_contrato),
+        fmtDate(r.fecha_fin_contrato),
+        fmtMoney(r.importe_fianza_ivima),
+        fmtMoney(r.importe_deposito),
+        r.seguro?.compania || '',
+        r.num_poliza_seg_rentas || '',
+        r.nombre_conyuge || '',
+        r.apellidos_conyuge || '',
+        r.movil_conyuge || '',
+        r.email_conyuge || '',
+        r.carpeta_dropbox || '',
+        r.contrato_url || '',
+        r.observaciones || '',
+      ]
+    } else if (tab === 'inmuebles') {
+      headers = ['Código', 'Calle', 'Número', 'Piso', 'Población', 'Provincia', 'Código postal', 'Propietario', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
+      getRow = r => [
+        r.codigo || '',
+        r.calle || '',
+        r.numero_calle || '',
+        r.piso || '',
+        r.poblacion || '',
+        r.provincia || '',
+        r.codigo_postal || '',
+        r.propietarios ? `${r.propietarios.nombre || ''} ${r.propietarios.apellidos || ''}`.trim() : '',
+        r.administrador_finca?.nombre || '',
+        r.seguro?.compania || '',
+        r.num_poliza_seg_hogar || '',
+        r.registro || '',
+        r.num_finca_registral_vivienda || '',
+        r.cru || '',
+        r.num_catastro_vivienda || '',
+        r.num_garaje_1 || '',
+        r.num_garaje_2 || '',
+        r.num_trastero || '',
+        r.cia_electrica || '',
+        r.cups_electricidad || '',
+        r.titular_contrato_electricidad || '',
+        r.cia_gas || '',
+        r.cups_gas || '',
+        r.titular_contrato_gas || '',
+        r.cia_agua || '',
+        r.num_contrato_agua || '',
+        r.titular_contrato_agua || '',
+        r.carpeta_dropbox || '',
+        r.observaciones || '',
+        fmtDate(r.fecha_baja),
+      ]
+    } else if (tab === 'propietarios') {
+      headers = ['Nombre', 'Apellidos', 'DNI/CIF', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Calle', 'Número', 'Piso', 'Municipio', 'Provincia', 'Código postal', 'Fecha baja', 'Nombre cónyuge', 'Apellidos cónyuge', 'DNI cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Observaciones', 'Inmuebles']
+      getRow = r => [
+        r.nombre || '',
+        r.apellidos || '',
+        r.dni_cif || '',
+        r.tipo_persona?.tipo || '',
+        r.responsable?.nombre_responsable || '',
+        r.telefono || '',
+        r.telefono_2 || '',
+        r.movil || '',
+        r.email || '',
+        r.email_2 || '',
+        r.calle || '',
+        r.numero || '',
+        r.piso || '',
+        r.municipio || '',
+        r.provincia || '',
+        r.cod_postal || '',
+        fmtDate(r.fecha_baja),
+        r.nombre_conyuge || '',
+        r.apellidos_conyuge || '',
+        r.dni_conyuge || '',
+        r.movil_conyuge || '',
+        r.email_conyuge || '',
+        r.otra_persona_contacto || '',
+        r.relacion_otra_persona || '',
+        r.movil_otra_persona || '',
+        r.email_otra_persona || '',
+        r.observaciones || '',
+        (r.inmuebles_list || []).map(i => i.codigo).join(' | '),
+      ]
+    } else if (tab === 'contactos') {
+      headers = ['Nombre', 'Apellidos', 'DNI/CIF', 'Tipo', 'Clasificación', 'Responsable', 'Origen conocimiento', 'Referenciado por', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Dirección', 'Fecha baja', 'Nombre cónyuge', 'Apellidos cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Observaciones']
+      getRow = r => [
+        r.nombre || '',
+        r.apellidos || '',
+        r.dni_cif || '',
+        r.tipo_persona?.tipo || '',
+        r.clasificacion_contacto?.clasificacion || '',
+        r.responsable?.nombre_responsable || '',
+        r.conocimiento?.origen || '',
+        r.referenciado_por || '',
+        r.telefono || '',
+        r.telefono_2 || '',
+        r.movil || '',
+        r.email || '',
+        r.email_2 || '',
+        [r.calle, r.numero, r.piso, r.municipio, r.provincia, r.cod_postal].filter(Boolean).join(', '),
+        fmtDate(r.fecha_baja),
+        r.nombre_conyuge || '',
+        r.apellidos_conyuge || '',
+        r.movil_conyuge || '',
+        r.email_conyuge || '',
+        r.observaciones || '',
+      ]
+    }
+
+    const ws_data = [headers, ...rows.map(getRow)]
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.aoa_to_sheet(ws_data)
     XLSX.utils.book_append_sheet(wb, ws, tab)
-    XLSX.writeFile(wb, filename.replace('.csv', '.xlsx'))
+    XLSX.writeFile(wb, `listado_${tab}.xlsx`)
   } catch(e) {
     console.error('Error exportando Excel:', e)
     alert('Error al exportar: ' + e.message)
   }
-}
-
-function getExportData(rows, tab) {
-  const headers = {
-    contratos: ['Nombre','Apellidos','Móvil','Email','Fecha contrato','Inmueble','Calle','Seguro rentas'],
-    inquilinos: ['Nombre','Apellidos','DNI/NIE','Teléfono','Móvil','Email','Email 2','Fecha contrato','Fecha fin contrato','Inmueble','Fianza IVIMA','Depósito','Seg. rentas','Nº póliza','Responsable'],
-    inmuebles: ['Código','Calle','Número','Piso','Población','Provincia','CP','Seguro','Adm. finca'],
-    propietarios: ['Nombre','Apellidos','DNI/CIF','Tipo','Teléfono','Móvil','Email','Municipio','Responsable'],
-    contactos: ['Nombre','Apellidos','Móvil','Email','Clasificación','Origen','Responsable'],
-  }
-  const getRow = (r) => {  // eslint-disable-line no-unused-vars
-    if (tab === 'contratos') return [r.nombre||'',r.apellidos||'',r.movil||'',r.email||'',r.fecha_contrato||'',r.inmuebles?.codigo||'',r.inmuebles?.calle||'',r.seguro?.compania||'']
-    if (tab === 'inquilinos') return [r.nombre||'',r.apellidos||'',r.dni_cif||'',r.telefono||'',r.movil||'',r.email||'',r.email_2||'',r.fecha_contrato||'',r.fecha_fin_contrato||'',r.inmuebles?.codigo||'',r.importe_fianza_ivima||'',r.importe_deposito||'',r.seguro?.compania||'',r.num_poliza_seg_rentas||'',r.responsable?.nombre_responsable||'']
-    if (tab === 'inmuebles') return [r.codigo||'',r.calle||'',r.numero_calle||'',r.piso||'',r.poblacion||'',r.provincia||'',r.codigo_postal||'',r.seguro?.compania||'',r.administrador_finca||'']
-    if (tab === 'propietarios') return [r.nombre||'',r.apellidos||'',r.dni_cif||'',r.tipo_persona?.tipo||'',r.telefono||'',r.movil||'',r.email||'',r.municipio||'',r.responsable?.nombre_responsable||'']
-    if (tab === 'contactos') return [r.nombre||'',r.apellidos||'',r.movil||'',r.email||'',r.clasificacion_contacto?.clasificacion||'',r.conocimiento?.origen||'',r.responsable?.nombre_responsable||'']
-    return []
-  }
-  const hdrs = headers[tab] || []
-  const csvRows = [hdrs, ...rows.map(getRow)]
-  const filename = `listado_${tab}.csv`
-  return { ws_data: csvRows, filename }
 }
 
 function imprimirListado() {
@@ -57,29 +192,36 @@ export default function Listados() {
     let data = []
     if (t === 'contratos') {
       const { data: d } = await supabase.from('inquilinos')
-        .select('id, nombre, apellidos, movil, email, fecha_contrato, inmuebles(codigo, calle), seguro(compania)')
+        .select('id, nombre, apellidos, dni_cif, movil, email, telefono, fecha_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, inmuebles(codigo, calle, piso), seguro(compania)')
         .is('fecha_fin_contrato', null)
         .not('fecha_contrato', 'is', null)
         .order('fecha_contrato')
       data = d || []
     } else if (t === 'inquilinos') {
       const { data: d } = await supabase.from('inquilinos')
-        .select('id, nombre, apellidos, dni_cif, movil, email, fecha_contrato, fecha_fin_contrato, inmuebles(codigo, calle), responsable(nombre_responsable)')
+        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, fecha_contrato, fecha_fin_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, carpeta_dropbox, contrato_url, observaciones, nombre_conyuge, apellidos_conyuge, movil_conyuge, email_conyuge, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)')
         .order('nombre')
       data = d || []
     } else if (t === 'inmuebles') {
       const { data: d } = await supabase.from('inmuebles')
-        .select('id, codigo, calle, numero_calle, piso, poblacion, seguro(compania), administrador_finca')
+        .select('id, codigo, calle, numero_calle, piso, poblacion, provincia, codigo_postal, registro, num_finca_registral_vivienda, cru, num_catastro_vivienda, num_garaje_1, num_garaje_2, num_trastero, num_poliza_seg_hogar, cia_electrica, cups_electricidad, titular_contrato_electricidad, cia_gas, cups_gas, titular_contrato_gas, cia_agua, num_contrato_agua, titular_contrato_agua, carpeta_dropbox, observaciones, fecha_baja, seguro(compania), administrador_finca(nombre), propietarios(nombre, apellidos)')
         .order('codigo')
       data = d || []
     } else if (t === 'propietarios') {
       const { data: d } = await supabase.from('propietarios')
-        .select('id, nombre, apellidos, dni_cif, movil, email, tipo_persona(tipo), responsable(nombre_responsable)')
+        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, calle, numero, piso, municipio, provincia, cod_postal, fecha_baja, nombre_conyuge, apellidos_conyuge, dni_conyuge, movil_conyuge, email_conyuge, otra_persona_contacto, relacion_otra_persona, movil_otra_persona, email_otra_persona, observaciones, tipo_persona(tipo), responsable(nombre_responsable)')
         .order('nombre')
-      data = d || []
+      // Fetch inmuebles por propietario
+      const { data: inms } = await supabase.from('inmuebles').select('propietario_id, codigo')
+      const inmMap = {}
+      ;(inms || []).forEach(i => {
+        if (!inmMap[i.propietario_id]) inmMap[i.propietario_id] = []
+        inmMap[i.propietario_id].push(i)
+      })
+      data = (d || []).map(r => ({ ...r, inmuebles_list: inmMap[r.id] || [] }))
     } else if (t === 'contactos') {
       const { data: d } = await supabase.from('persona_contacto')
-        .select('id, nombre, apellidos, movil, email, clasificacion_contacto(clasificacion), responsable(nombre_responsable), conocimiento(origen)')
+        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, calle, numero, piso, municipio, provincia, cod_postal, fecha_baja, referenciado_por, observaciones, nombre_conyuge, apellidos_conyuge, movil_conyuge, email_conyuge, clasificacion_contacto(clasificacion), responsable(nombre_responsable), conocimiento(origen), tipo_persona(tipo)')
         .order('nombre')
       data = d || []
     }
@@ -100,16 +242,6 @@ export default function Listados() {
       return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
     })
   }
-
-  const SortIcon = ({ col }) => sortCol === col
-    ? <i className={`ti ti-chevron-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 11, marginLeft: 3 }} />
-    : <i className="ti ti-selector" style={{ fontSize: 11, marginLeft: 3, opacity: 0.3 }} />
-
-  const Th = ({ col, label }) => (
-    <th onClick={() => toggleSort(col)} style={{ cursor: 'pointer', userSelect: 'none' }}>
-      {label}<SortIcon col={col} />
-    </th>
-  )
 
   function thProps(col) {
     return { onClick: () => toggleSort(col), style: { cursor: 'pointer', userSelect: 'none' } }
@@ -243,7 +375,7 @@ export default function Listados() {
                       <td>{[r.calle, r.numero_calle, r.piso].filter(Boolean).join(', ') || '—'}</td>
                       <td>{r.poblacion || '—'}</td>
                       <td>{r.seguro?.compania || '—'}</td>
-                      <td>{r.administrador_finca || '—'}</td>
+                      <td>{r.administrador_finca?.nombre || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
