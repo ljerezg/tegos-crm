@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { subirDocumento, obtenerDocumentos, eliminarDocumento } from '../lib/documentos'
 
-export default function Documentos({ entidadTipo, entidadId }) {
+export default function Documentos({ entidadTipo, entidadId, readOnly }) {
   const [docs, setDocs] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -50,9 +50,9 @@ export default function Documentos({ entidadTipo, entidadId }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>{docs.length} documento{docs.length !== 1 ? 's' : ''}</span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(!showForm)}>
+        {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(!showForm)}>
           <i className="ti ti-plus" /> Añadir
-        </button>
+        </button>}
       </div>
 
       {showForm && (
@@ -87,9 +87,9 @@ export default function Documentos({ entidadTipo, entidadId }) {
               <a href={doc.url_archivo} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="Abrir">
                 <i className="ti ti-external-link" />
               </a>
-              <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={() => eliminar(doc)}>
+              {!readOnly && <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={() => eliminar(doc)}>
                 <i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} />
-              </button>
+              </button>}
             </div>
           ))
       )}
