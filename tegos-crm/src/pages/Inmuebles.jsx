@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import Documentos from '../components/Documentos.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
+import * as XLSX from 'xlsx'
 
 function norm(s) {
   return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -14,7 +15,6 @@ function ms(fields, q) {
   if (!n) return true
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
-
 
 const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
 
@@ -84,6 +84,50 @@ export default function Inmuebles({ perfil }) {
     setSelected(null); load()
   }
 
+  async function exportExcel() {
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : ''
+
+    const data = filtered().map(r => ({
+      'Código': r.codigo || '',
+      'Calle': r.calle || '',
+      'Número': r.numero_calle || '',
+      'Piso': r.piso || '',
+      'Población': r.poblacion || '',
+      'Provincia': r.provincia || '',
+      'Código postal': r.codigo_postal || '',
+      'Propietario': propNombre(r.propietarios),
+      'Administrador finca': r.administrador_finca?.nombre || '',
+      'Seguro hogar': r.seguro?.compania || '',
+      'Nº póliza': r.num_poliza_seg_hogar || '',
+      'Registro': r.registro || '',
+      'Nº finca registral': r.num_finca_registral_vivienda || '',
+      'CRU': r.cru || '',
+      'Referencia catastral': r.num_catastro_vivienda || '',
+      'Nº garaje 1': r.num_garaje_1 || '',
+      'Nº garaje 2': r.num_garaje_2 || '',
+      'Nº trastero': r.num_trastero || '',
+      'Cía. eléctrica': r.cia_electrica || '',
+      'Nº contrato electricidad': r.num_contrato_electricidad || '',
+      'CUPS electricidad': r.cups_electricidad || '',
+      'Titular electricidad': r.titular_contrato_electricidad || '',
+      'Cía. gas': r.cia_gas || '',
+      'Nº contrato gas': r.num_contrato_gas || '',
+      'CUPS gas': r.cups_gas || '',
+      'Titular gas': r.titular_contrato_gas || '',
+      'Cía. agua': r.cia_agua || '',
+      'Nº contrato agua': r.num_contrato_agua || '',
+      'Titular agua': r.titular_contrato_agua || '',
+      'Carpeta Dropbox': r.carpeta_dropbox || '',
+      'Observaciones': r.observaciones || '',
+      'Fecha baja': fmtDate(r.fecha_baja),
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Inmuebles')
+    XLSX.writeFile(wb, 'Inmuebles.xlsx')
+  }
+
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
   const propNombre = p => p ? `${p.nombre || ''} ${p.apellidos || ''}`.trim() : '—'
   const initials = s => s ? s.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'
@@ -116,6 +160,7 @@ export default function Inmuebles({ perfil }) {
             ))}
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+          <button className="btn btn-sm" onClick={exportExcel} title="Exportar Excel"><i className="ti ti-file-spreadsheet" /> Excel</button>
           <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
         </div>
         <div className="table-wrap">
@@ -225,7 +270,6 @@ export default function Inmuebles({ perfil }) {
               )}
             </div>
           </div>
-
         </>
       )}
 
@@ -310,3 +354,4 @@ export default function Inmuebles({ perfil }) {
     </div>
   )
 }
+
