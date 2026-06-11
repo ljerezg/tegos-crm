@@ -38,15 +38,34 @@ export default function Inquilinos({ perfil }) {
 
   async function load() {
     setLoading(true)
+
+    // Si es propietario, primero obtenemos sus inmueble_ids
+    let inmuebleIds = null
+    if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
+      const { data: inmsDelProp } = await supabase
+        .from('inmuebles')
+        .select('id')
+        .eq('propietario_id', perfil.propietario_id)
+      inmuebleIds = (inmsDelProp || []).map(i => i.id)
+    }
+
     const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }] = await Promise.all([
       (() => {
         let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)').order('nombre')
-        if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
-          q = q.eq('inmuebles.propietario_id', perfil.propietario_id)
+        if (inmuebleIds !== null) {
+          if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1) // sin resultados
+          else q = q.in('inmueble_id', inmuebleIds)
         }
         return q
       })(),
-      supabase.from('inmuebles').select('id, codigo, calle').order('codigo'),
+      (() => {
+        let q = supabase.from('inmuebles').select('id, codigo, calle').order('codigo')
+        if (inmuebleIds !== null) {
+          if (inmuebleIds.length === 0) return Promise.resolve({ data: [] })
+          q = q.in('id', inmuebleIds)
+        }
+        return q
+      })(),
       supabase.from('seguro').select('id, compania'),
       supabase.from('responsable').select('*'),
       supabase.from('tipo_persona').select('*'),

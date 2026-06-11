@@ -16,13 +16,14 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
-const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
+const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', tipo_inmueble_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
 
 export default function Inmuebles({ perfil }) {
   const [rows, setRows] = useState([])
   const [propietarios, setPropietarios] = useState([])
   const [seguros, setSeguros] = useState([])
   const [admFincas, setAdmFincas] = useState([])
+  const [tiposInmueble, setTiposInmueble] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filtro, setFiltro] = useState('vigor')
@@ -38,20 +39,22 @@ export default function Inmuebles({ perfil }) {
 
   async function load() {
     setLoading(true)
-    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }] = await Promise.all([
+    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }] = await Promise.all([
       (() => {
-        let q = supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre)').order('codigo')
+        let q = supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
         if (perfil?.rol === 'propietario' && perfil?.propietario_id) q = q.eq('propietario_id', perfil.propietario_id)
         return q
       })(),
       supabase.from('propietarios').select('id, nombre, apellidos').order('nombre'),
       supabase.from('seguro').select('id, compania').order('compania'),
       supabase.from('administrador_finca').select('id, nombre').order('nombre'),
+      supabase.from('tipo_inmueble').select('*').order('tipo'),
     ])
     setRows(inmuebles || [])
     setPropietarios(props || [])
     setSeguros(segs || [])
     setAdmFincas(adms || [])
+    setTiposInmueble(tipsinm || [])
     setLoading(false)
   }
 

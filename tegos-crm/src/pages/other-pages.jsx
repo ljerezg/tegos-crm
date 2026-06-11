@@ -266,7 +266,7 @@ export function Contactos() {
 // ============================================================
 // ACCIONES
 // ============================================================
-export function Acciones() {
+export function Acciones({ perfil }) {
   const [rows, setRows] = useState({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -286,14 +286,50 @@ export function Acciones() {
 
   async function loadAll() {
     setLoading(true)
+
+    // Si es propietario, obtener sus inmueble_ids para filtrar
+    let inmuebleIds = null
+    if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
+      const { data: inmsDelProp } = await supabase
+        .from('inmuebles')
+        .select('id')
+        .eq('propietario_id', perfil.propietario_id)
+      inmuebleIds = (inmsDelProp || []).map(i => i.id)
+    }
+
+    const buildInmuebleQuery = () => {
+      let q = supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), inmuebles(id, codigo, calle), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false })
+      if (inmuebleIds !== null) {
+        if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1)
+        else q = q.in('inmueble_id', inmuebleIds)
+      }
+      return q
+    }
+
+    const buildInquilinoQuery = () => {
+      let q = supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), inquilinos(id, nombre, apellidos, inmuebles(id, codigo)), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false })
+      if (inmuebleIds !== null) {
+        // filtrar acciones de inquilinos que viven en inmuebles del propietario
+        // se hace post-fetch ya que Supabase no permite filtrar por relación anidada
+      }
+      return q
+    }
+
     const [{ data: ai }, { data: ainq }, { data: ap }, { data: tc }, { data: resps }] = await Promise.all([
-      supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), inmuebles(id, codigo, calle), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false }),
-      supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), inquilinos(id, nombre, apellidos, inmuebles(id, codigo)), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false }),
+      buildInmuebleQuery(),
+      buildInquilinoQuery(),
       supabase.from('accion_persona_contacto').select('*, responsable(nombre_responsable), persona_contacto(id, nombre, apellidos), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false }),
       supabase.from('tipo_contacto').select('*'),
       supabase.from('responsable').select('*'),
     ])
-    setRows({ inmueble: ai || [], inquilino: ainq || [], contacto: ap || [] })
+
+    // Filtrar acciones de inquilinos post-fetch si es propietario
+    let ainqFiltrado = ainq || []
+    if (inmuebleIds !== null) {
+      ainqFiltrado = ainqFiltrado.filter(a => inmuebleIds.includes(a.inquilinos?.inmuebles?.id))
+    }
+
+    setRows({ inmueble: ai || [], inquilino: ainqFiltrado, contacto: ap || [] })
     setTiposContacto(tc || [])
     setResponsables(resps || [])
     setLoading(false)
