@@ -14,7 +14,7 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
-const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '' }
+const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
 
 export default function Inquilinos({ perfil }) {
   const [rows, setRows] = useState([])
@@ -33,8 +33,10 @@ export default function Inquilinos({ perfil }) {
   const [acciones, setAcciones] = useState([])
   const [errors, setErrors] = useState({})
   const readOnly = perfil?.rol === 'visor'
+  const [tabInq, setTabInq] = useState('1')
 
   useEffect(() => { load() }, [])
+  useEffect(() => { if (modal) setTabInq('1') }, [modal])
   useCtrlG(save, !!modal)
 
   async function load() {
@@ -141,6 +143,26 @@ export default function Inquilinos({ perfil }) {
       'Email cónyuge': r.email_conyuge || '',
       'Teléfono 2 cónyuge': r.telefono_2_conyuge || '',
       'Email 2 cónyuge': r.email_2_conyuge || '',
+      '2º inq. Nombre': r.nombre_inq2 || '',
+      '2º inq. Apellidos': r.apellidos_inq2 || '',
+      '2º inq. DNI': r.dni_inq2 || '',
+      '2º inq. Tipo': tipos.find(t => t.id === r.tipo_inq2_id)?.tipo || '',
+      '2º inq. Relación': r.relacion_inq2 || '',
+      '2º inq. Teléfono': r.telefono_inq2 || '',
+      '2º inq. Teléfono 2': r.telefono_2_inq2 || '',
+      '2º inq. Móvil': r.movil_inq2 || '',
+      '2º inq. Email': r.email_inq2 || '',
+      '2º inq. Email 2': r.email_2_inq2 || '',
+      '3º inq. Nombre': r.nombre_inq3 || '',
+      '3º inq. Apellidos': r.apellidos_inq3 || '',
+      '3º inq. DNI': r.dni_inq3 || '',
+      '3º inq. Tipo': tipos.find(t => t.id === r.tipo_inq3_id)?.tipo || '',
+      '3º inq. Relación': r.relacion_inq3 || '',
+      '3º inq. Teléfono': r.telefono_inq3 || '',
+      '3º inq. Teléfono 2': r.telefono_2_inq3 || '',
+      '3º inq. Móvil': r.movil_inq3 || '',
+      '3º inq. Email': r.email_inq3 || '',
+      '3º inq. Email 2': r.email_2_inq3 || '',
       'Otra persona contacto': r.otra_persona_contacto || '',
       'Relación otra persona': r.relacion_otra_persona || '',
       'Móvil otra persona': r.movil_otra_persona || '',
@@ -163,6 +185,34 @@ export default function Inquilinos({ perfil }) {
   const initials = r => nombre(r).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
   const diasRestantes = d => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null
+
+  const extraInqGrid = suf => (
+    <div className="form-grid">
+      <div className="form-group"><label>Nombre</label><input value={form[`nombre_${suf}`] ?? ''} onChange={f(`nombre_${suf}`)} /></div>
+      <div className="form-group"><label>Apellidos</label><input value={form[`apellidos_${suf}`] ?? ''} onChange={f(`apellidos_${suf}`)} /></div>
+      <div className="form-group"><label>DNI / NIE</label><input value={form[`dni_${suf}`] ?? ''} onChange={f(`dni_${suf}`)} /></div>
+      <div className="form-group"><label>Tipo</label>
+        <select value={form[`tipo_${suf}_id`] ?? ''} onChange={f(`tipo_${suf}_id`)}>
+          <option value="">—</option>
+          {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
+        </select>
+      </div>
+      <div className="form-group"><label>Relación</label><input value={form[`relacion_${suf}`] ?? ''} onChange={f(`relacion_${suf}`)} placeholder="Ej: pareja, compañero piso..." /></div>
+      <div className="form-group"><label>Teléfono</label><input value={form[`telefono_${suf}`] ?? ''} onChange={f(`telefono_${suf}`)} /></div>
+      <div className="form-group"><label>Teléfono 2</label><input value={form[`telefono_2_${suf}`] ?? ''} onChange={f(`telefono_2_${suf}`)} /></div>
+      <div className="form-group"><label>Móvil</label><input value={form[`movil_${suf}`] ?? ''} onChange={f(`movil_${suf}`)} /></div>
+      <div className="form-group"><label>Email</label><input value={form[`email_${suf}`] ?? ''} onChange={f(`email_${suf}`)} /></div>
+      <div className="form-group"><label>Email 2</label><input value={form[`email_2_${suf}`] ?? ''} onChange={f(`email_2_${suf}`)} /></div>
+    </div>
+  )
+
+  const inqTabs = (
+    <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino']].map(([v,l]) => (
+        <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-primary' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
+      ))}
+    </div>
+  )
 
   function sortedFiltered() {
     let data = rows.filter(r => {
@@ -286,6 +336,30 @@ export default function Inquilinos({ perfil }) {
                   <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2_conyuge || '—'}</div></div>
                 </div>
               </>}
+              {(selected.nombre_inq2 || selected.movil_inq2) && <>
+                <div className="field-section">2º inquilino</div>
+                <div className="field-grid">
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_inq2 || ''} ${selected.apellidos_inq2 || ''}`.trim() || '—'}</div></div>
+                  <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq2 || '—'}</div></div>
+                  <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq2_id)?.tipo || '—'}</div></div>
+                  <div className="field"><label>Relación</label><div className="val">{selected.relacion_inq2 || '—'}</div></div>
+                  <div className="field"><label>Teléfono</label><div className="val">{selected.telefono_inq2 || '—'}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_inq2 || '—'}</div></div>
+                  <div className="field field-full"><label>Email</label><div className="val">{selected.email_inq2 || '—'}</div></div>
+                </div>
+              </>}
+              {(selected.nombre_inq3 || selected.movil_inq3) && <>
+                <div className="field-section">3º inquilino</div>
+                <div className="field-grid">
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_inq3 || ''} ${selected.apellidos_inq3 || ''}`.trim() || '—'}</div></div>
+                  <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq3 || '—'}</div></div>
+                  <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq3_id)?.tipo || '—'}</div></div>
+                  <div className="field"><label>Relación</label><div className="val">{selected.relacion_inq3 || '—'}</div></div>
+                  <div className="field"><label>Teléfono</label><div className="val">{selected.telefono_inq3 || '—'}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_inq3 || '—'}</div></div>
+                  <div className="field field-full"><label>Email</label><div className="val">{selected.email_inq3 || '—'}</div></div>
+                </div>
+              </>}
               <div className="field-section">Documentos</div>
               <Documentos entidadTipo="inquilino" entidadId={selected.id} readOnly={readOnly} />
               <div className="field-section">Acciones recientes</div>
@@ -312,7 +386,10 @@ export default function Inquilinos({ perfil }) {
                   <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
                 </div>
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                  <div className="form-grid">
+                  {inqTabs}
+                  {tabInq === '2' && extraInqGrid('inq2')}
+                  {tabInq === '3' && extraInqGrid('inq3')}
+                  {tabInq === '1' && <div className="form-grid">
                     <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} /></div>
                     <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={e => setForm(p => ({ ...p, apellidos: e.target.value }))} /></div>
                     <div className="form-group"><label>DNI / NIE</label><input value={form.dni_cif ?? ''} onChange={e => setForm(p => ({ ...p, dni_cif: e.target.value }))} /></div>
@@ -351,7 +428,7 @@ export default function Inquilinos({ perfil }) {
                       </select>
                     </div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
-                  </div>
+                  </div>}
                   <div className="form-actions">
                     <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                     <button className="btn btn-primary" onClick={save}>Guardar</button>
@@ -371,7 +448,10 @@ export default function Inquilinos({ perfil }) {
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
-              <div className="form-grid">
+              {inqTabs}
+              {tabInq === '2' && extraInqGrid('inq2')}
+              {tabInq === '3' && extraInqGrid('inq3')}
+              {tabInq === '1' && <div className="form-grid">
                 <div className="form-group"><label>Nombre</label><input value={form.nombre || ''} onChange={f('nombre')} /></div>
                 <div className="form-group"><label>Apellidos</label><input value={form.apellidos || ''} onChange={f('apellidos')} /></div>
                 <div className="form-group"><label>DNI / NIE</label><input value={form.dni_cif || ''} onChange={f('dni_cif')} /></div>
@@ -424,7 +504,7 @@ export default function Inquilinos({ perfil }) {
                 <div className="form-group"><label>Teléfono 2 cónyuge</label><input value={form.telefono_2_conyuge || ''} onChange={f('telefono_2_conyuge')} /></div>
                 <div className="form-group"><label>Email 2 cónyuge</label><input value={form.email_2_conyuge || ''} onChange={f('email_2_conyuge')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones || ''} onChange={f('observaciones')} /></div>
-              </div>
+              </div>}
               <div className="form-actions">
                 <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                 <button className="btn btn-primary" onClick={save}>Guardar</button>
