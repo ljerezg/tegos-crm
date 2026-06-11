@@ -15,6 +15,8 @@ import Usuarios from './pages/Usuarios.jsx'
 export default function App({ perfil }) {
   const location = useLocation()
   const esAdmin = perfil?.rol === 'administrador'
+  const esVisor = perfil?.rol === 'visor'
+  const veTodo = esAdmin || esVisor
 
   const NAV = [
     { section: 'Principal' },
@@ -23,12 +25,12 @@ export default function App({ perfil }) {
     { to: '/inmuebles', icon: 'ti-building', label: 'Inmuebles' },
     { to: '/propietarios', icon: 'ti-id-badge', label: 'Propietarios' },
     { to: '/inquilinos', icon: 'ti-users', label: 'Inquilinos' },
-    ...(esAdmin ? [{ to: '/administradores', icon: 'ti-building-community', label: 'Adm. Fincas' }] : []),
+    ...(veTodo ? [{ to: '/administradores', icon: 'ti-building-community', label: 'Adm. Fincas' }] : []),
     { section: 'CRM' },
-    ...(esAdmin ? [{ to: '/contactos', icon: 'ti-address-book', label: 'Contactos' }] : []),
+    ...(veTodo ? [{ to: '/contactos', icon: 'ti-address-book', label: 'Contactos' }] : []),
     { to: '/acciones', icon: 'ti-activity', label: 'Acciones' },
     { section: 'Más' },
-    ...(esAdmin ? [{ to: '/comercializando', icon: 'ti-home-search', label: 'Comercializando' }] : []),
+    ...(veTodo ? [{ to: '/comercializando', icon: 'ti-home-search', label: 'Comercializando' }] : []),
     { to: '/listados', icon: 'ti-clipboard-list', label: 'Listados' },
     ...(esAdmin ? [
       { to: '/configuracion', icon: 'ti-settings', label: 'Configuración' },
@@ -81,9 +83,9 @@ export default function App({ perfil }) {
             <Route path="/inquilinos" element={<Inquilinos perfil={perfil} />} />
             <Route path="/acciones" element={<Acciones perfil={perfil} />} />
             <Route path="/listados" element={<Listados perfil={perfil} />} />
-            {esAdmin && <Route path="/administradores" element={<AdministradoresFinca />} />}
-            {esAdmin && <Route path="/contactos" element={<Contactos />} />}
-            {esAdmin && <Route path="/comercializando" element={<Comercializando />} />}
+            {veTodo && <Route path="/administradores" element={<AdministradoresFinca perfil={perfil} />} />}
+            {veTodo && <Route path="/contactos" element={<Contactos perfil={perfil} />} />}
+            {veTodo && <Route path="/comercializando" element={<Comercializando />} />}
             {esAdmin && <Route path="/configuracion" element={<Configuracion />} />}
             {esAdmin && <Route path="/usuarios" element={<Usuarios />} />}
             <Route path="*" element={<Navigate to="/" />} />
