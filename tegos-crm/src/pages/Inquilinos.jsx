@@ -3,6 +3,7 @@ import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
+import * as XLSX from 'xlsx'
 
 function norm(s) {
   return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -12,7 +13,6 @@ function ms(fields, q) {
   if (!n) return true
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
-
 
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '' }
 
@@ -92,6 +92,51 @@ export default function Inquilinos({ perfil }) {
     setSelected(null); load()
   }
 
+  function exportExcel() {
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : ''
+    const fmtMoney = v => v != null && v !== '' ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : ''
+
+    const data = sortedFiltered().map(r => ({
+      'Nombre': r.nombre || '',
+      'Apellidos': r.apellidos || '',
+      'DNI / NIE': r.dni_cif || '',
+      'Tipo': r.tipo_persona?.tipo || '',
+      'Responsable': r.responsable?.nombre_responsable || '',
+      'Teléfono': r.telefono || '',
+      'Teléfono 2': r.telefono_2 || '',
+      'Móvil': r.movil || '',
+      'Email': r.email || '',
+      'Email 2': r.email_2 || '',
+      'Inmueble': r.inmuebles?.codigo || '',
+      'Dirección inmueble': r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
+      'Inicio contrato': fmtDate(r.fecha_contrato),
+      'Fin contrato': fmtDate(r.fecha_fin_contrato),
+      'Fianza IVIMA': fmtMoney(r.importe_fianza_ivima),
+      'Depósito': fmtMoney(r.importe_deposito),
+      'Seg. rentas': r.seguro?.compania || '',
+      'Nº póliza seg. rentas': r.num_poliza_seg_rentas || '',
+      'Nombre cónyuge': r.nombre_conyuge || '',
+      'Apellidos cónyuge': r.apellidos_conyuge || '',
+      'Móvil cónyuge': r.movil_conyuge || '',
+      'Email cónyuge': r.email_conyuge || '',
+      'Teléfono 2 cónyuge': r.telefono_2_conyuge || '',
+      'Email 2 cónyuge': r.email_2_conyuge || '',
+      'Otra persona contacto': r.otra_persona_contacto || '',
+      'Relación otra persona': r.relacion_otra_persona || '',
+      'Móvil otra persona': r.movil_otra_persona || '',
+      'Email otra persona': r.email_otra_persona || '',
+      'Carpeta Dropbox': r.carpeta_dropbox || '',
+      'Fianza IVIMA (URL)': r.fianza_ivima_url || '',
+      'Contrato (URL)': r.contrato_url || '',
+      'Observaciones': r.observaciones || '',
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Inquilinos')
+    XLSX.writeFile(wb, 'Inquilinos.xlsx')
+  }
+
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
   const fmtMoney = v => v != null ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'
   const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
@@ -133,6 +178,7 @@ export default function Inquilinos({ perfil }) {
             ))}
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+          <button className="btn btn-sm" onClick={exportExcel} title="Exportar Excel"><i className="ti ti-file-spreadsheet" /> Excel</button>
           <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setErrors({}); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
         </div>
         <div className="table-wrap">
@@ -238,62 +284,62 @@ export default function Inquilinos({ perfil }) {
               )}
             </div>
           </div>
-        {modal === 'edit' && (
-          <div className="edit-modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
-            <div className="modal">
-              <div className="modal-header">
-                <h2>Editar inquilino</h2>
-                <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
-              </div>
-              <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                <div className="form-grid">
-                  <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} /></div>
-                  <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={e => setForm(p => ({ ...p, apellidos: e.target.value }))} /></div>
-                  <div className="form-group"><label>DNI / NIE</label><input value={form.dni_cif ?? ''} onChange={e => setForm(p => ({ ...p, dni_cif: e.target.value }))} /></div>
-                  <div className="form-group"><label>Tipo *</label>
-                    <select value={form.tipo_id ?? ''} onChange={e => setForm(p => ({ ...p, tipo_id: e.target.value }))}>
-                      <option value="">— Selecciona —</option>
-                      {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group"><label>Responsable</label>
-                    <select value={form.responsable_id ?? ''} onChange={e => setForm(p => ({ ...p, responsable_id: e.target.value }))}>
-                      <option value="">—</option>
-                      {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group"><label>Teléfono</label><input value={form.telefono ?? ''} onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))} /></div>
-                  <div className="form-group"><label>Teléfono 2</label><input value={form.telefono_2 ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2: e.target.value }))} /></div>
-                  <div className="form-group"><label>Móvil</label><input value={form.movil ?? ''} onChange={e => setForm(p => ({ ...p, movil: e.target.value }))} /></div>
-                  <div className="form-group"><label>Email</label><input value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
-                  <div className="form-group"><label>Email 2</label><input value={form.email_2 ?? ''} onChange={e => setForm(p => ({ ...p, email_2: e.target.value }))} /></div>
-                  <div className="form-section-title">Contrato</div>
-                  <div className="form-group"><label>Inmueble</label>
-                    <select value={form.inmueble_id ?? ''} onChange={e => setForm(p => ({ ...p, inmueble_id: e.target.value }))}>
-                      <option value="">— Sin asignar —</option>
-                      {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} — {i.calle}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group"><label>Inicio</label><input type="date" value={form.fecha_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value }))} /></div>
-                  <div className="form-group"><label>Fin</label><input type="date" value={form.fecha_fin_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_fin_contrato: e.target.value }))} /></div>
-                  <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
-                  <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
-                  <div className="form-group"><label>Seg. rentas</label>
-                    <select value={form.seguro_rentas_id ?? ''} onChange={e => setForm(p => ({ ...p, seguro_rentas_id: e.target.value }))}>
-                      <option value="">—</option>
-                      {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
+          {modal === 'edit' && (
+            <div className="edit-modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
+              <div className="modal">
+                <div className="modal-header">
+                  <h2>Editar inquilino</h2>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
                 </div>
-                <div className="form-actions">
-                  <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
-                  <button className="btn btn-primary" onClick={save}>Guardar</button>
+                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                  <div className="form-grid">
+                    <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} /></div>
+                    <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={e => setForm(p => ({ ...p, apellidos: e.target.value }))} /></div>
+                    <div className="form-group"><label>DNI / NIE</label><input value={form.dni_cif ?? ''} onChange={e => setForm(p => ({ ...p, dni_cif: e.target.value }))} /></div>
+                    <div className="form-group"><label>Tipo *</label>
+                      <select value={form.tipo_id ?? ''} onChange={e => setForm(p => ({ ...p, tipo_id: e.target.value }))}>
+                        <option value="">— Selecciona —</option>
+                        {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group"><label>Responsable</label>
+                      <select value={form.responsable_id ?? ''} onChange={e => setForm(p => ({ ...p, responsable_id: e.target.value }))}>
+                        <option value="">—</option>
+                        {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group"><label>Teléfono</label><input value={form.telefono ?? ''} onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))} /></div>
+                    <div className="form-group"><label>Teléfono 2</label><input value={form.telefono_2 ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2: e.target.value }))} /></div>
+                    <div className="form-group"><label>Móvil</label><input value={form.movil ?? ''} onChange={e => setForm(p => ({ ...p, movil: e.target.value }))} /></div>
+                    <div className="form-group"><label>Email</label><input value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+                    <div className="form-group"><label>Email 2</label><input value={form.email_2 ?? ''} onChange={e => setForm(p => ({ ...p, email_2: e.target.value }))} /></div>
+                    <div className="form-section-title">Contrato</div>
+                    <div className="form-group"><label>Inmueble</label>
+                      <select value={form.inmueble_id ?? ''} onChange={e => setForm(p => ({ ...p, inmueble_id: e.target.value }))}>
+                        <option value="">— Sin asignar —</option>
+                        {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} — {i.calle}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group"><label>Inicio</label><input type="date" value={form.fecha_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value }))} /></div>
+                    <div className="form-group"><label>Fin</label><input type="date" value={form.fecha_fin_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_fin_contrato: e.target.value }))} /></div>
+                    <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
+                    <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
+                    <div className="form-group"><label>Seg. rentas</label>
+                      <select value={form.seguro_rentas_id ?? ''} onChange={e => setForm(p => ({ ...p, seguro_rentas_id: e.target.value }))}>
+                        <option value="">—</option>
+                        {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
+                  </div>
+                  <div className="form-actions">
+                    <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
+                    <button className="btn btn-primary" onClick={save}>Guardar</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
         </>
       )}
 
@@ -370,3 +416,4 @@ export default function Inquilinos({ perfil }) {
     </div>
   )
 }
+
