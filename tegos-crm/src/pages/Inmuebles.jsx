@@ -489,16 +489,37 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-group"><label>Compañía</label><input value={form.cia_electrica ?? ''} onChange={f('cia_electrica')} /></div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_electricidad ?? ''} onChange={f('num_contrato_electricidad')} /></div>
                 <div className="form-group"><label>CUPS</label><input value={form.cups_electricidad ?? ''} onChange={f('cups_electricidad')} /></div>
-                <div className="form-group"><label>Titular</label><input value={form.titular_contrato_electricidad ?? ''} onChange={f('titular_contrato_electricidad')} /></div>
+                <div className="form-group"><label>Titular</label>
+                  <select value={form.titular_contrato_electricidad ?? ''} onChange={f('titular_contrato_electricidad')}>
+                    <option value="">—</option>
+                    <option value="Propietario">Propietario</option>
+                    <option value="Inquilino">Inquilino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
                 <div className="form-section-title">Suministros — Gas</div>
                 <div className="form-group"><label>Compañía</label><input value={form.cia_gas ?? ''} onChange={f('cia_gas')} /></div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_gas ?? ''} onChange={f('num_contrato_gas')} /></div>
                 <div className="form-group"><label>CUPS</label><input value={form.cups_gas ?? ''} onChange={f('cups_gas')} /></div>
-                <div className="form-group"><label>Titular</label><input value={form.titular_contrato_gas ?? ''} onChange={f('titular_contrato_gas')} /></div>
+                <div className="form-group"><label>Titular</label>
+                  <select value={form.titular_contrato_gas ?? ''} onChange={f('titular_contrato_gas')}>
+                    <option value="">—</option>
+                    <option value="Propietario">Propietario</option>
+                    <option value="Inquilino">Inquilino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
                 <div className="form-section-title">Suministros — Agua</div>
                 <div className="form-group"><label>Compañía</label><input value={form.cia_agua ?? ''} onChange={f('cia_agua')} /></div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_agua ?? ''} onChange={f('num_contrato_agua')} /></div>
-                <div className="form-group form-full"><label>Titular</label><input value={form.titular_contrato_agua ?? ''} onChange={f('titular_contrato_agua')} /></div>
+                <div className="form-group form-full"><label>Titular</label>
+                  <select value={form.titular_contrato_agua ?? ''} onChange={f('titular_contrato_agua')}>
+                    <option value="">—</option>
+                    <option value="Propietario">Propietario</option>
+                    <option value="Inquilino">Inquilino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
                 <div className="form-section-title">Garajes y trastero</div>
                 <div className="form-group"><label>Garaje 1</label><input value={form.num_garaje_1 ?? ''} onChange={f('num_garaje_1')} /></div>
                 <div className="form-group"><label>Garaje 2</label><input value={form.num_garaje_2 ?? ''} onChange={f('num_garaje_2')} /></div>
