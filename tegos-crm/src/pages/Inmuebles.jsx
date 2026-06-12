@@ -33,6 +33,8 @@ export default function Inmuebles({ perfil }) {
   const [acciones, setAcciones] = useState([])
   const [otrosProps, setOtrosProps] = useState([])
   const [tiposContacto, setTiposContacto] = useState([])
+  const [ciasEnergia, setCiasEnergia] = useState([])
+  const [ciasAgua, setCiasAgua] = useState([])
   const [responsables, setResponsables] = useState([])
   const [tabInm, setTabInm] = useState('datos')
   const [nuevaAccion, setNuevaAccion] = useState(null)
@@ -55,7 +57,7 @@ export default function Inmuebles({ perfil }) {
       ])
       inmuebleIds = [...new Set([...(dir || []).map(i => i.id), ...(co || []).map(i => i.inmueble_id)])]
     }
-    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }, { data: tc }, { data: resps }] = await Promise.all([
+    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }, { data: tc }, { data: resps }, { data: cen }, { data: cag }] = await Promise.all([
       (() => {
         let q = supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
         if (inmuebleIds !== null) {
@@ -70,6 +72,8 @@ export default function Inmuebles({ perfil }) {
       supabase.from('tipo_inmueble').select('*').order('tipo'),
       supabase.from('tipo_contacto').select('*'),
       supabase.from('responsable').select('*'),
+      supabase.from('cia_energia').select('*').order('nombre'),
+      supabase.from('cia_agua').select('*').order('nombre'),
     ])
     setRows(inmuebles || [])
     setPropietarios(props || [])
@@ -78,6 +82,8 @@ export default function Inmuebles({ perfil }) {
     setTiposInmueble(tipsinm || [])
     setTiposContacto(tc || [])
     setResponsables(resps || [])
+    setCiasEnergia(cen || [])
+    setCiasAgua(cag || [])
     setLoading(false)
   }
 
@@ -486,7 +492,13 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-group"><label>CRU</label><input value={form.cru ?? ''} onChange={f('cru')} /></div>
                 <div className="form-group"><label>Referencia catastral</label><input value={form.num_catastro_vivienda ?? ''} onChange={f('num_catastro_vivienda')} /></div>
                 <div className="form-section-title">Suministros — Electricidad</div>
-                <div className="form-group"><label>Compañía</label><input value={form.cia_electrica ?? ''} onChange={f('cia_electrica')} /></div>
+                <div className="form-group"><label>Compañía</label>
+                  <select value={form.cia_electrica ?? ''} onChange={f('cia_electrica')}>
+                    <option value="">—</option>
+                    {form.cia_electrica && !ciasEnergia.some(c => c.nombre === form.cia_electrica) && <option value={form.cia_electrica}>{form.cia_electrica}</option>}
+                    {ciasEnergia.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
+                  </select>
+                </div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_electricidad ?? ''} onChange={f('num_contrato_electricidad')} /></div>
                 <div className="form-group"><label>CUPS</label><input value={form.cups_electricidad ?? ''} onChange={f('cups_electricidad')} /></div>
                 <div className="form-group"><label>Titular</label>
@@ -498,7 +510,13 @@ export default function Inmuebles({ perfil }) {
                   </select>
                 </div>
                 <div className="form-section-title">Suministros — Gas</div>
-                <div className="form-group"><label>Compañía</label><input value={form.cia_gas ?? ''} onChange={f('cia_gas')} /></div>
+                <div className="form-group"><label>Compañía</label>
+                  <select value={form.cia_gas ?? ''} onChange={f('cia_gas')}>
+                    <option value="">—</option>
+                    {form.cia_gas && !ciasEnergia.some(c => c.nombre === form.cia_gas) && <option value={form.cia_gas}>{form.cia_gas}</option>}
+                    {ciasEnergia.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
+                  </select>
+                </div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_gas ?? ''} onChange={f('num_contrato_gas')} /></div>
                 <div className="form-group"><label>CUPS</label><input value={form.cups_gas ?? ''} onChange={f('cups_gas')} /></div>
                 <div className="form-group"><label>Titular</label>
@@ -510,7 +528,13 @@ export default function Inmuebles({ perfil }) {
                   </select>
                 </div>
                 <div className="form-section-title">Suministros — Agua</div>
-                <div className="form-group"><label>Compañía</label><input value={form.cia_agua ?? ''} onChange={f('cia_agua')} /></div>
+                <div className="form-group"><label>Compañía</label>
+                  <select value={form.cia_agua ?? ''} onChange={f('cia_agua')}>
+                    <option value="">—</option>
+                    {form.cia_agua && !ciasAgua.some(c => c.nombre === form.cia_agua) && <option value={form.cia_agua}>{form.cia_agua}</option>}
+                    {ciasAgua.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
+                  </select>
+                </div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_agua ?? ''} onChange={f('num_contrato_agua')} /></div>
                 <div className="form-group form-full"><label>Titular</label>
                   <select value={form.titular_contrato_agua ?? ''} onChange={f('titular_contrato_agua')}>

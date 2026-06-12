@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
 
-const TABLAS_BACKUP = ['inmuebles', 'propietarios', 'inquilinos', 'inmueble_propietarios', 'persona_contacto', 'administrador_finca', 'accion_inmueble', 'accion_inquilino', 'accion_persona_contacto', 'accion_propietario', 'inmuebles_comercializando', 'documento', 'seguro', 'tipo_persona', 'tipo_inmueble', 'tipo_contacto', 'responsable', 'conocimiento', 'clasificacion_contacto', 'perfil_usuario', 'usuario_inmuebles']
+const TABLAS_BACKUP = ['inmuebles', 'propietarios', 'inquilinos', 'inmueble_propietarios', 'persona_contacto', 'administrador_finca', 'accion_inmueble', 'accion_inquilino', 'accion_persona_contacto', 'accion_propietario', 'inmuebles_comercializando', 'documento', 'seguro', 'tipo_persona', 'tipo_inmueble', 'cia_energia', 'cia_agua', 'tipo_contacto', 'responsable', 'conocimiento', 'clasificacion_contacto', 'perfil_usuario', 'usuario_inmuebles']
 
 function CopiaSeguridad() {
   const [generando, setGenerando] = useState(false)
@@ -231,6 +231,8 @@ export default function Configuracion() {
     { id: 'responsables', label: 'Responsables' },
     { id: 'seguros', label: 'Seguros' },
     { id: 'tipo_inmueble', label: 'Tipos de inmueble' },
+    { id: 'cia_energia', label: 'Cías. Luz y Gas' },
+    { id: 'cia_agua', label: 'Cías. Agua' },
     { id: 'tipo_contacto', label: 'Tipos de contacto' },
     { id: 'clasificacion', label: 'Clasificaciones' },
     { id: 'conocimiento', label: 'Orígenes' },
@@ -272,6 +274,22 @@ export default function Configuracion() {
           titulo="Tipos de inmueble"
           tabla="tipo_inmueble"
           columnas={[{ field: 'tipo', label: 'Tipo', full: true }]}
+        />
+      )}
+
+      {tab === 'cia_energia' && (
+        <TablaAuxiliar
+          titulo="Compañías de Gas y Electricidad"
+          tabla="cia_energia"
+          columnas={[{ field: 'nombre', label: 'Compañía', full: true }]}
+        />
+      )}
+
+      {tab === 'cia_agua' && (
+        <TablaAuxiliar
+          titulo="Compañías de Agua"
+          tabla="cia_agua"
+          columnas={[{ field: 'nombre', label: 'Compañía', full: true }]}
         />
       )}
 
