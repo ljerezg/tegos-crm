@@ -90,7 +90,7 @@ export default function Usuarios() {
   }
 
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
-  const rolBadge = rol => ({ administrador: 'badge-blue', propietario: 'badge-green', personalizado: 'badge-yellow' })[rol] || 'badge-gray'
+  const rolBadge = rol => ({ administrador: 'badge-blue', propietario: 'badge-green', personalizado: 'badge-yellow', visor: 'badge-gray' })[rol] || 'badge-gray'
   const nombreProp = p => p ? `${p.nombre || ''} ${p.apellidos || ''}`.trim() : '—'
 
   return (
@@ -152,6 +152,7 @@ export default function Usuarios() {
                     <option value="administrador">Administrador</option>
                     <option value="propietario">Propietario</option>
                     <option value="personalizado">Personalizado</option>
+                    <option value="visor">Visor (solo lectura)</option>
                   </select>
                 </div>
                 {(form.rol === 'propietario' || form.rol === 'personalizado') && (
