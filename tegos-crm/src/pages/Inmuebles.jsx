@@ -32,11 +32,17 @@ export default function Inmuebles({ perfil }) {
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
   const [otrosProps, setOtrosProps] = useState([])
+  const [tiposContacto, setTiposContacto] = useState([])
+  const [responsables, setResponsables] = useState([])
+  const [tabInm, setTabInm] = useState('datos')
+  const [nuevaAccion, setNuevaAccion] = useState(null)
+  const [guardandoAccion, setGuardandoAccion] = useState(false)
   const navigate = useNavigate()
   const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('codigo')
 
   useEffect(() => { load() }, [])
+  useEffect(() => { if (modal) { setTabInm('datos'); setNuevaAccion(null) } }, [modal])
   useCtrlG(save, !!modal)
 
   async function load() {
@@ -49,7 +55,7 @@ export default function Inmuebles({ perfil }) {
       ])
       inmuebleIds = [...new Set([...(dir || []).map(i => i.id), ...(co || []).map(i => i.inmueble_id)])]
     }
-    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }] = await Promise.all([
+    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }, { data: tc }, { data: resps }] = await Promise.all([
       (() => {
         let q = supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
         if (inmuebleIds !== null) {
@@ -62,19 +68,54 @@ export default function Inmuebles({ perfil }) {
       supabase.from('seguro').select('id, compania').order('compania'),
       supabase.from('administrador_finca').select('id, nombre').order('nombre'),
       supabase.from('tipo_inmueble').select('*').order('tipo'),
+      supabase.from('tipo_contacto').select('*'),
+      supabase.from('responsable').select('*'),
     ])
     setRows(inmuebles || [])
     setPropietarios(props || [])
     setSeguros(segs || [])
     setAdmFincas(adms || [])
     setTiposInmueble(tipsinm || [])
+    setTiposContacto(tc || [])
+    setResponsables(resps || [])
     setLoading(false)
+  }
+
+  async function loadAcciones(inmuebleId) {
+    const { data } = await supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inmueble_id', inmuebleId).order('fecha', { ascending: false })
+    setAcciones(data || [])
   }
 
   async function selectRow(row) {
     setSelected(row)
-    const { data } = await supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inmueble_id', row.id).order('fecha', { ascending: false })
-    setAcciones(data || [])
+    loadAcciones(row.id)
+  }
+
+  async function guardarAccion() {
+    if (!form.id) return
+    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acción'); return }
+    setGuardandoAccion(true)
+    const { error } = await supabase.from('accion_inmueble').insert({
+      inmueble_id: form.id,
+      fecha: nuevaAccion.fecha || null,
+      hora: nuevaAccion.hora || null,
+      tipo_contacto_id: nuevaAccion.tipo_contacto_id || null,
+      responsable_id: nuevaAccion.responsable_id || null,
+      indicaciones: nuevaAccion.indicaciones || null,
+      proxima_fecha: nuevaAccion.proxima_fecha || null,
+      proxima_accion: nuevaAccion.proxima_accion || null,
+      documento: nuevaAccion.documento || null,
+      completada: false,
+    })
+    setGuardandoAccion(false)
+    if (error) { alert('Error al guardar la acción: ' + error.message); return }
+    setNuevaAccion(null)
+    loadAcciones(form.id)
+  }
+
+  async function completarAccion(id) {
+    await supabase.from('accion_inmueble').update({ completada: true }).eq('id', id)
+    if (form.id) loadAcciones(form.id)
   }
 
   async function save() {
@@ -161,6 +202,58 @@ export default function Inmuebles({ perfil }) {
   const propNombre = p => p ? `${p.nombre || ''} ${p.apellidos || ''}`.trim() : '—'
   const initials = s => s ? s.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
+
+  const fA = key => e => setNuevaAccion(prev => ({ ...prev, [key]: e.target.value }))
+
+  const accionesTab = (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
+        {!nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+      </div>
+      {nuevaAccion && (
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
+          <div className="form-grid">
+            <div className="form-group"><label>Fecha *</label><input type="date" value={nuevaAccion.fecha ?? ''} onChange={fA('fecha')} /></div>
+            <div className="form-group"><label>Hora</label><input type="time" value={nuevaAccion.hora ?? ''} onChange={fA('hora')} /></div>
+            <div className="form-group"><label>Tipo de contacto</label>
+              <select value={nuevaAccion.tipo_contacto_id ?? ''} onChange={fA('tipo_contacto_id')}>
+                <option value="">—</option>
+                {tiposContacto.map(t => <option key={t.id} value={t.id}>{t.tipo_contacto}</option>)}
+              </select>
+            </div>
+            <div className="form-group"><label>Responsable</label>
+              <select value={nuevaAccion.responsable_id ?? ''} onChange={fA('responsable_id')}>
+                <option value="">—</option>
+                {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
+              </select>
+            </div>
+            <div className="form-group form-full"><label>Indicaciones / Notas</label><textarea value={nuevaAccion.indicaciones ?? ''} onChange={fA('indicaciones')} rows={3} /></div>
+            <div className="form-group"><label>Próxima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
+            <div className="form-group"><label>Próxima acción</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
+            <div className="form-group form-full"><label>Documento (URL)</label><input value={nuevaAccion.documento ?? ''} onChange={fA('documento')} placeholder="https://..." /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
+            <button className="btn btn-sm" onClick={() => setNuevaAccion(null)}>Cancelar</button>
+            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acción'}</button>
+          </div>
+        </div>
+      )}
+      {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
+        <div className="timeline">
+          {acciones.map(a => (
+            <div className="tl-item" key={a.id}>
+              <div className="tl-dot" style={{ background: a.completada ? 'var(--accent)' : 'var(--border2)' }} />
+              <div className="tl-content">
+                <div className="tl-text">{a.indicaciones || '—'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
+                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} · {a.tipo_contacto?.tipo_contacto || ''} · {a.responsable?.nombre_responsable || '—'}{a.proxima_fecha ? ` · Próx: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' — ' + a.proxima_accion : ''}` : ''}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 
   function filtered() {
     let data = rows.filter(r => {
@@ -315,7 +408,15 @@ export default function Inmuebles({ perfil }) {
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
-              <div className="form-grid">
+              {modal === 'edit' && form.id && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`]].map(([v,l]) => (
+                    <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-primary' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
+                  ))}
+                </div>
+              )}
+              {modal === 'edit' && tabInm === 'acc' && accionesTab}
+              {(modal !== 'edit' || tabInm === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Código *</label><input value={form.codigo ?? ''} onChange={f('codigo')} /></div>
                 <div className="form-group"><label>Propietario</label>
                   <SearchSelect
@@ -404,11 +505,11 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-section-title">Enlace</div>
                 <div className="form-group form-full"><label>Carpeta Dropbox (URL)</label><input value={form.carpeta_dropbox ?? ''} onChange={f('carpeta_dropbox')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
-              </div>
-              <div className="form-actions">
+              </div>}
+              {(modal !== 'edit' || tabInm !== 'acc') && <div className="form-actions">
                 <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                 <button className="btn btn-primary" onClick={save}>Guardar</button>
-              </div>
+              </div>}
             </div>
           </div>
         </div>
