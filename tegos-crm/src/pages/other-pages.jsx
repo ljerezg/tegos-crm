@@ -415,9 +415,16 @@ export function Acciones({ perfil }) {
       return q
     }
 
-    const [{ data: ai }, { data: ainq }, { data: ap }, { data: tc }, { data: resps }] = await Promise.all([
+    const buildPropietarioQuery = () => {
+      let q = supabase.from('accion_propietario').select('*, responsable(nombre_responsable), propietarios(id, nombre, apellidos), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false })
+      if (perfil?.rol === 'propietario' && perfil?.propietario_id) q = q.eq('propietario_id', perfil.propietario_id)
+      return q
+    }
+
+    const [{ data: ai }, { data: ainq }, { data: aprop }, { data: ap }, { data: tc }, { data: resps }] = await Promise.all([
       buildInmuebleQuery(),
       buildInquilinoQuery(),
+      buildPropietarioQuery(),
       supabase.from('accion_persona_contacto').select('*, responsable(nombre_responsable), persona_contacto(id, nombre, apellidos), tipo_contacto(tipo_contacto)').order('fecha', { ascending: false }),
       supabase.from('tipo_contacto').select('*'),
       supabase.from('responsable').select('*'),
@@ -429,7 +436,7 @@ export function Acciones({ perfil }) {
       ainqFiltrado = ainqFiltrado.filter(a => inmuebleIds.includes(a.inquilinos?.inmuebles?.id))
     }
 
-    setRows({ inmueble: ai || [], inquilino: ainqFiltrado, contacto: ap || [] })
+    setRows({ inmueble: ai || [], inquilino: ainqFiltrado, propietario: aprop || [], contacto: ap || [] })
     setTiposContacto(tc || [])
     setResponsables(resps || [])
     setLoading(false)
@@ -443,13 +450,16 @@ export function Acciones({ perfil }) {
     } else if (tab === 'inmueble') {
       const { data: d } = await supabase.from('inmuebles').select('id, codigo, calle').order('codigo')
       data = (d || []).map(r => ({ id: r.id, label: `${r.codigo} — ${r.calle || ''}` }))
+    } else if (tab === 'propietario') {
+      const { data: d } = await supabase.from('propietarios').select('id, nombre, apellidos').order('nombre')
+      data = (d || []).map(r => ({ id: r.id, label: `${r.nombre || ''} ${r.apellidos || ''}`.trim() }))
     } else {
       const { data: d } = await supabase.from('persona_contacto').select('id, nombre, apellidos').order('nombre')
       data = (d || []).map(r => ({ id: r.id, label: `${r.nombre || ''} ${r.apellidos || ''}`.trim() }))
     }
     setEntidades(data)
     if (editRow) {
-      const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : 'persona_id'
+      const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : tab === 'propietario' ? 'propietario_id' : 'persona_id'
       setEditData(editRow)
       setForm({ ...ACCION_EMPTY, ...editRow, entidad_id: editRow[fkField] || '', fecha: editRow.fecha || '', hora: editRow.hora || '', proxima_fecha: editRow.proxima_fecha || '' })
     } else {
@@ -460,8 +470,8 @@ export function Acciones({ perfil }) {
   }
 
   async function save() {
-    const tabla = tab === 'inquilino' ? 'accion_inquilino' : tab === 'inmueble' ? 'accion_inmueble' : 'accion_persona_contacto'
-    const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : 'persona_id'
+    const tabla = tab === 'inquilino' ? 'accion_inquilino' : tab === 'inmueble' ? 'accion_inmueble' : tab === 'propietario' ? 'accion_propietario' : 'accion_persona_contacto'
+    const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : tab === 'propietario' ? 'propietario_id' : 'persona_id'
     const data = {
       [fkField]: form.entidad_id || null,
       tipo_contacto_id: form.tipo_contacto_id || null,
@@ -482,7 +492,7 @@ export function Acciones({ perfil }) {
   }
 
   async function completar(tabla, id) {
-    const t = tabla === 'inquilino' ? 'accion_inquilino' : tabla === 'inmueble' ? 'accion_inmueble' : 'accion_persona_contacto'
+    const t = tabla === 'inquilino' ? 'accion_inquilino' : tabla === 'inmueble' ? 'accion_inmueble' : tabla === 'propietario' ? 'accion_propietario' : 'accion_persona_contacto'
     await supabase.from(t).update({ completada: true }).eq('id', id)
     loadAll()
   }
@@ -492,7 +502,7 @@ export function Acciones({ perfil }) {
 
   function current() {
     let data = (rows[tab] || []).filter(r => {
-      const entidad = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}` : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`
+      const entidad = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}` : tab === 'propietario' ? `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}` : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`
       const matchSearch_ = ms([entidad, r.indicaciones, r.proxima_accion], search)
       const matchEstado = filtroEstado === 'todas' ? true : filtroEstado === 'pendientes' ? !r.completada : !!r.completada
       return matchSearch_ && matchEstado
@@ -502,7 +512,7 @@ export function Acciones({ perfil }) {
       if (col === 'proxima_fecha') return r.proxima_fecha
       if (col === 'responsable') return r.responsable?.nombre_responsable
       if (col === 'tipo') return r.tipo_contacto?.tipo_contacto
-      if (col === 'entidad') return tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? r.inquilinos?.nombre : r.persona_contacto?.nombre
+      if (col === 'entidad') return tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? r.inquilinos?.nombre : tab === 'propietario' ? r.propietarios?.nombre : r.persona_contacto?.nombre
       return r[col]
     })
   }
@@ -516,12 +526,12 @@ export function Acciones({ perfil }) {
     return 'badge-green'
   }
 
-  const tabLabel = { inquilino: 'Inquilino', inmueble: 'Inmueble', contacto: 'Contacto' }
+  const tabLabel = { inquilino: 'Inquilino', inmueble: 'Inmueble', propietario: 'Propietario', contacto: 'Contacto' }
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        {[['inquilino', 'Inquilinos'], ['inmueble', 'Inmuebles'], ['contacto', 'Contactos']].map(([k, l]) => (
+        {[['inquilino', 'Inquilinos'], ['inmueble', 'Inmuebles'], ['propietario', 'Propietarios'], ['contacto', 'Contactos']].map(([k, l]) => (
           <button key={k} className={`btn ${tab === k ? 'btn-primary' : ''}`} onClick={() => setTab(k)}>{l}</button>
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
@@ -532,7 +542,7 @@ export function Acciones({ perfil }) {
       </div>
       <div className="card">
         <div className="card-header">
-          <h2>Acciones — {tab === 'inquilino' ? 'Inquilinos' : tab === 'inmueble' ? 'Inmuebles' : 'Contactos'} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current().length}</span></h2>
+          <h2>Acciones — {tab === 'inquilino' ? 'Inquilinos' : tab === 'inmueble' ? 'Inmuebles' : tab === 'propietario' ? 'Propietarios' : 'Contactos'} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current().length}</span></h2>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => openModal()}><i className="ti ti-plus" /> Nueva acción</button>}
         </div>
@@ -554,8 +564,8 @@ export function Acciones({ perfil }) {
               <tbody>
                 {current().length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin acciones</td></tr>}
                 {current().map(r => {
-                  const entidad = tab === 'inmueble' ? r.inmuebles : tab === 'inquilino' ? r.inquilinos : r.persona_contacto
-                  const entidadNombre = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}`.trim() : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`.trim()
+                  const entidad = tab === 'inmueble' ? r.inmuebles : tab === 'inquilino' ? r.inquilinos : tab === 'propietario' ? r.propietarios : r.persona_contacto
+                  const entidadNombre = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}`.trim() : tab === 'propietario' ? `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}`.trim() : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`.trim()
                   const codigoInm = tab === 'inquilino' ? r.inquilinos?.inmuebles?.codigo : null
 
                   return (
@@ -565,7 +575,7 @@ export function Acciones({ perfil }) {
                       <td>
                         <span
                           style={{ fontWeight: 500, cursor: entidad?.id ? 'pointer' : 'default', color: entidad?.id ? 'var(--info-text)' : 'inherit' }}
-                          onClick={() => entidad?.id && navigate(`/${tab === 'inmueble' ? 'inmuebles' : tab === 'inquilino' ? 'inquilinos' : 'contactos'}`)}
+                          onClick={() => entidad?.id && navigate(`/${tab === 'inmueble' ? 'inmuebles' : tab === 'inquilino' ? 'inquilinos' : tab === 'propietario' ? 'propietarios' : 'contactos'}`)}
                         >{entidadNombre || '—'}</span>
                       </td>
                       {tab === 'inquilino' && <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{codigoInm || '—'}</span></td>}
