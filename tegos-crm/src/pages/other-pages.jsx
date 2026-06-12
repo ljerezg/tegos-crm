@@ -373,6 +373,7 @@ export function Acciones({ perfil }) {
   const [filtroEstado, setFiltroEstado] = useState('pendientes')
   const [modal, setModal] = useState(false)
   const [editData, setEditData] = useState(null)
+  const [accionTipo, setAccionTipo] = useState('inquilino')
   const [form, setForm] = useState({ ...ACCION_EMPTY, fecha: '' })
   const [entidades, setEntidades] = useState([])
   const [tiposContacto, setTiposContacto] = useState([])
@@ -436,21 +437,28 @@ export function Acciones({ perfil }) {
       ainqFiltrado = ainqFiltrado.filter(a => inmuebleIds.includes(a.inquilinos?.inmuebles?.id))
     }
 
-    setRows({ inmueble: ai || [], inquilino: ainqFiltrado, propietario: aprop || [], contacto: ap || [] })
+    setRows({
+      inmueble: (ai || []).map(r => ({ ...r, _tipo: 'inmueble' })),
+      inquilino: ainqFiltrado.map(r => ({ ...r, _tipo: 'inquilino' })),
+      propietario: (aprop || []).map(r => ({ ...r, _tipo: 'propietario' })),
+      contacto: (ap || []).map(r => ({ ...r, _tipo: 'contacto' })),
+    })
     setTiposContacto(tc || [])
     setResponsables(resps || [])
     setLoading(false)
   }
 
-  async function openModal(editRow = null) {
+  async function openModal(editRow = null, tipoRow = null) {
+    const t = tipoRow || (tab === 'todos' ? 'inquilino' : tab)
+    setAccionTipo(t)
     let data = []
-    if (tab === 'inquilino') {
+    if (t === 'inquilino') {
       const { data: d } = await supabase.from('inquilinos').select('id, nombre, apellidos').order('nombre')
       data = (d || []).map(r => ({ id: r.id, label: `${r.nombre || ''} ${r.apellidos || ''}`.trim() }))
-    } else if (tab === 'inmueble') {
+    } else if (t === 'inmueble') {
       const { data: d } = await supabase.from('inmuebles').select('id, codigo, calle').order('codigo')
       data = (d || []).map(r => ({ id: r.id, label: `${r.codigo} — ${r.calle || ''}` }))
-    } else if (tab === 'propietario') {
+    } else if (t === 'propietario') {
       const { data: d } = await supabase.from('propietarios').select('id, nombre, apellidos').order('nombre')
       data = (d || []).map(r => ({ id: r.id, label: `${r.nombre || ''} ${r.apellidos || ''}`.trim() }))
     } else {
@@ -459,7 +467,7 @@ export function Acciones({ perfil }) {
     }
     setEntidades(data)
     if (editRow) {
-      const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : tab === 'propietario' ? 'propietario_id' : 'persona_id'
+      const fkField = t === 'inquilino' ? 'inquilino_id' : t === 'inmueble' ? 'inmueble_id' : t === 'propietario' ? 'propietario_id' : 'persona_id'
       setEditData(editRow)
       setForm({ ...ACCION_EMPTY, ...editRow, entidad_id: editRow[fkField] || '', fecha: editRow.fecha || '', hora: editRow.hora || '', proxima_fecha: editRow.proxima_fecha || '' })
     } else {
@@ -470,8 +478,8 @@ export function Acciones({ perfil }) {
   }
 
   async function save() {
-    const tabla = tab === 'inquilino' ? 'accion_inquilino' : tab === 'inmueble' ? 'accion_inmueble' : tab === 'propietario' ? 'accion_propietario' : 'accion_persona_contacto'
-    const fkField = tab === 'inquilino' ? 'inquilino_id' : tab === 'inmueble' ? 'inmueble_id' : tab === 'propietario' ? 'propietario_id' : 'persona_id'
+    const tabla = accionTipo === 'inquilino' ? 'accion_inquilino' : accionTipo === 'inmueble' ? 'accion_inmueble' : accionTipo === 'propietario' ? 'accion_propietario' : 'accion_persona_contacto'
+    const fkField = accionTipo === 'inquilino' ? 'inquilino_id' : accionTipo === 'inmueble' ? 'inmueble_id' : accionTipo === 'propietario' ? 'propietario_id' : 'persona_id'
     const data = {
       [fkField]: form.entidad_id || null,
       tipo_contacto_id: form.tipo_contacto_id || null,
@@ -500,10 +508,21 @@ export function Acciones({ perfil }) {
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
+  const tipoDe = r => (tab === 'todos' ? r._tipo : tab)
+  const nombreEntidad = r => {
+    const t = tipoDe(r)
+    if (t === 'inmueble') return r.inmuebles?.codigo || ''
+    if (t === 'inquilino') return `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}`.trim()
+    if (t === 'propietario') return `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}`.trim()
+    return `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`.trim()
+  }
+
   function current() {
-    let data = (rows[tab] || []).filter(r => {
-      const entidad = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}` : tab === 'propietario' ? `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}` : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`
-      const matchSearch_ = ms([entidad, r.indicaciones, r.proxima_accion], search)
+    const base = tab === 'todos'
+      ? [...(rows.inquilino || []), ...(rows.inmueble || []), ...(rows.propietario || []), ...(rows.contacto || [])]
+      : (rows[tab] || [])
+    let data = base.filter(r => {
+      const matchSearch_ = ms([nombreEntidad(r), r.indicaciones, r.proxima_accion], search)
       const matchEstado = filtroEstado === 'todas' ? true : filtroEstado === 'pendientes' ? !r.completada : !!r.completada
       return matchSearch_ && matchEstado
     })
@@ -512,7 +531,7 @@ export function Acciones({ perfil }) {
       if (col === 'proxima_fecha') return r.proxima_fecha
       if (col === 'responsable') return r.responsable?.nombre_responsable
       if (col === 'tipo') return r.tipo_contacto?.tipo_contacto
-      if (col === 'entidad') return tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? r.inquilinos?.nombre : tab === 'propietario' ? r.propietarios?.nombre : r.persona_contacto?.nombre
+      if (col === 'entidad') return nombreEntidad(r)
       return r[col]
     })
   }
@@ -526,12 +545,12 @@ export function Acciones({ perfil }) {
     return 'badge-green'
   }
 
-  const tabLabel = { inquilino: 'Inquilino', inmueble: 'Inmueble', propietario: 'Propietario', contacto: 'Contacto' }
+  const tabLabel = { inquilino: 'Inquilino', inmueble: 'Inmueble', propietario: 'Propietario', contacto: 'Contacto', todos: 'Entidad' }
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        {[['inquilino', 'Inquilinos'], ['inmueble', 'Inmuebles'], ['propietario', 'Propietarios'], ['contacto', 'Contactos']].map(([k, l]) => (
+        {[['todos', 'Todos'], ['inquilino', 'Inquilinos'], ['inmueble', 'Inmuebles'], ['propietario', 'Propietarios'], ['contacto', 'Contactos']].map(([k, l]) => (
           <button key={k} className={`btn ${tab === k ? 'btn-primary' : ''}`} onClick={() => setTab(k)}>{l}</button>
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
@@ -542,9 +561,9 @@ export function Acciones({ perfil }) {
       </div>
       <div className="card">
         <div className="card-header">
-          <h2>Acciones — {tab === 'inquilino' ? 'Inquilinos' : tab === 'inmueble' ? 'Inmuebles' : tab === 'propietario' ? 'Propietarios' : 'Contactos'} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current().length}</span></h2>
+          <h2>Acciones — {tab === 'todos' ? 'Todas' : tab === 'inquilino' ? 'Inquilinos' : tab === 'inmueble' ? 'Inmuebles' : tab === 'propietario' ? 'Propietarios' : 'Contactos'} <span className="badge badge-gray" style={{ marginLeft: 6 }}>{current().length}</span></h2>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
-          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => openModal()}><i className="ti ti-plus" /> Nueva acción</button>}
+          {!readOnly && tab !== 'todos' && <button className="btn btn-primary btn-sm" onClick={() => openModal()}><i className="ti ti-plus" /> Nueva acción</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -552,8 +571,9 @@ export function Acciones({ perfil }) {
               <thead><tr>
                 <th {...thProps('fecha')}>Fecha <span style={{fontSize:10}}>{sortIcon('fecha')}</span></th>
                 <th>Hora</th>
+                {tab === 'todos' && <th>Sección</th>}
                 <th {...thProps('entidad')}>{tabLabel[tab]} <span style={{fontSize:10}}>{sortIcon('entidad')}</span></th>
-                {tab === 'inquilino' && <th>Inmueble</th>}
+                {(tab === 'inquilino' || tab === 'todos') && <th>Inmueble</th>}
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th>Indicaciones</th>
                 <th {...thProps('proxima_fecha')}>Próx. fecha <span style={{fontSize:10}}>{sortIcon('proxima_fecha')}</span></th>
@@ -562,32 +582,34 @@ export function Acciones({ perfil }) {
                 <th></th>
               </tr></thead>
               <tbody>
-                {current().length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin acciones</td></tr>}
+                {current().length === 0 && <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin acciones</td></tr>}
                 {current().map(r => {
-                  const entidad = tab === 'inmueble' ? r.inmuebles : tab === 'inquilino' ? r.inquilinos : tab === 'propietario' ? r.propietarios : r.persona_contacto
-                  const entidadNombre = tab === 'inmueble' ? r.inmuebles?.codigo : tab === 'inquilino' ? `${r.inquilinos?.nombre || ''} ${r.inquilinos?.apellidos || ''}`.trim() : tab === 'propietario' ? `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}`.trim() : `${r.persona_contacto?.nombre || ''} ${r.persona_contacto?.apellidos || ''}`.trim()
-                  const codigoInm = tab === 'inquilino' ? r.inquilinos?.inmuebles?.codigo : null
+                  const t = tipoDe(r)
+                  const entidad = t === 'inmueble' ? r.inmuebles : t === 'inquilino' ? r.inquilinos : t === 'propietario' ? r.propietarios : r.persona_contacto
+                  const entidadNombre = nombreEntidad(r)
+                  const codigoInm = t === 'inquilino' ? r.inquilinos?.inmuebles?.codigo : null
 
                   return (
-                    <tr key={r.id} style={{ opacity: r.completada ? 0.6 : 1 }}>
+                    <tr key={`${t}-${r.id}`} style={{ opacity: r.completada ? 0.6 : 1 }}>
                       <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{fmtDate(r.fecha)}</span></td>
                       <td style={{ fontSize: 12 }}>{r.hora ? r.hora.slice(0,5) : '—'}</td>
+                      {tab === 'todos' && <td><span className="badge badge-blue" style={{ fontSize: 11 }}>{tabLabel[t]}</span></td>}
                       <td>
                         <span
                           style={{ fontWeight: 500, cursor: entidad?.id ? 'pointer' : 'default', color: entidad?.id ? 'var(--info-text)' : 'inherit' }}
-                          onClick={() => entidad?.id && navigate(`/${tab === 'inmueble' ? 'inmuebles' : tab === 'inquilino' ? 'inquilinos' : tab === 'propietario' ? 'propietarios' : 'contactos'}`)}
+                          onClick={() => entidad?.id && navigate(`/${t === 'inmueble' ? 'inmuebles' : t === 'inquilino' ? 'inquilinos' : t === 'propietario' ? 'propietarios' : 'contactos'}`)}
                         >{entidadNombre || '—'}</span>
                       </td>
-                      {tab === 'inquilino' && <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{codigoInm || '—'}</span></td>}
+                      {(tab === 'inquilino' || tab === 'todos') && <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{codigoInm || '—'}</span></td>}
                       <td>{r.tipo_contacto?.tipo_contacto ? <span className="badge badge-blue">{r.tipo_contacto.tipo_contacto}</span> : '—'}</td>
                       <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text2)', fontSize: 12 }}>{r.indicaciones || '—'}</td>
                       <td>{r.proxima_fecha ? <span className={`badge ${accionBadge(r.proxima_fecha)}`}>{fmtDate(r.proxima_fecha)}</span> : '—'}</td>
                       <td style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 12 }}>{r.proxima_accion || '—'}</td>
                       <td style={{ fontSize: 12 }}>{r.responsable?.nombre_responsable || '—'}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        {!readOnly && <button className="btn btn-ghost btn-sm" title="Editar" onClick={() => openModal(r)}><i className="ti ti-edit" /></button>}
+                        {!readOnly && <button className="btn btn-ghost btn-sm" title="Editar" onClick={() => openModal(r, t)}><i className="ti ti-edit" /></button>}
                         {!readOnly && !r.completada && (
-                          <button className="btn btn-ghost btn-sm" title="Marcar completada" onClick={() => completar(tab, r.id)}>
+                          <button className="btn btn-ghost btn-sm" title="Marcar completada" onClick={() => completar(t, r.id)}>
                             <i className="ti ti-check" style={{ color: 'var(--accent)' }} />
                           </button>
                         )}
@@ -607,13 +629,13 @@ export function Acciones({ perfil }) {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(false)}>
           <div className="modal">
             <div className="modal-header">
-              <h2>{editData ? 'Editar acción' : `Nueva acción — ${tabLabel[tab]}`}</h2>
+              <h2>{editData ? 'Editar acción' : `Nueva acción — ${tabLabel[accionTipo]}`}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(false)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
               <div className="form-grid">
                 <div className="form-group form-full">
-                  <label>{tabLabel[tab]}</label>
+                  <label>{tabLabel[accionTipo]}</label>
                   <select value={form.entidad_id ?? ''} onChange={f('entidad_id')}>
                     <option value="">— Selecciona —</option>
                     {entidades.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
