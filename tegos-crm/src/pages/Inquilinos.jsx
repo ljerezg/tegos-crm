@@ -34,9 +34,12 @@ export default function Inquilinos({ perfil }) {
   const [errors, setErrors] = useState({})
   const readOnly = perfil?.rol === 'visor'
   const [tabInq, setTabInq] = useState('1')
+  const [tiposContacto, setTiposContacto] = useState([])
+  const [nuevaAccion, setNuevaAccion] = useState(null)
+  const [guardandoAccion, setGuardandoAccion] = useState(false)
 
   useEffect(() => { load() }, [])
-  useEffect(() => { if (modal) setTabInq('1') }, [modal])
+  useEffect(() => { if (modal) { setTabInq('1'); setNuevaAccion(null) } }, [modal])
   useCtrlG(save, !!modal)
 
   async function load() {
@@ -52,7 +55,7 @@ export default function Inquilinos({ perfil }) {
       inmuebleIds = [...new Set([...(inmsDelProp || []).map(i => i.id), ...(inmsCo || []).map(i => i.inmueble_id)])]
     }
 
-    const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }] = await Promise.all([
+    const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }, { data: tc }] = await Promise.all([
       (() => {
         let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)').order('nombre')
         if (inmuebleIds !== null) {
@@ -72,19 +75,53 @@ export default function Inquilinos({ perfil }) {
       supabase.from('seguro').select('id, compania'),
       supabase.from('responsable').select('*'),
       supabase.from('tipo_persona').select('*'),
+      supabase.from('tipo_contacto').select('*'),
     ])
     setRows(inqs || [])
     setInmuebles(inms || [])
     setSeguros(segs || [])
     setResponsables(resps || [])
     setTipos(tip || [])
+    setTiposContacto(tc || [])
     setLoading(false)
+  }
+
+  async function loadAcciones(inquilinoId) {
+    const { data } = await supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inquilino_id', inquilinoId).order('fecha', { ascending: false })
+    setAcciones(data || [])
   }
 
   async function selectRow(row) {
     setSelected(row)
-    const { data } = await supabase.from('accion_inquilino').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inquilino_id', row.id).order('fecha', { ascending: false })
-    setAcciones(data || [])
+    loadAcciones(row.id)
+  }
+
+  async function guardarAccion() {
+    if (!form.id) return
+    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acción'); return }
+    setGuardandoAccion(true)
+    const payload = {
+      inquilino_id: form.id,
+      fecha: nuevaAccion.fecha || null,
+      hora: nuevaAccion.hora || null,
+      tipo_contacto_id: nuevaAccion.tipo_contacto_id || null,
+      responsable_id: nuevaAccion.responsable_id || null,
+      indicaciones: nuevaAccion.indicaciones || null,
+      proxima_fecha: nuevaAccion.proxima_fecha || null,
+      proxima_accion: nuevaAccion.proxima_accion || null,
+      documento: nuevaAccion.documento || null,
+      completada: false,
+    }
+    const { error } = await supabase.from('accion_inquilino').insert(payload)
+    setGuardandoAccion(false)
+    if (error) { alert('Error al guardar la acción: ' + error.message); return }
+    setNuevaAccion(null)
+    loadAcciones(form.id)
+  }
+
+  async function completarAccion(id) {
+    await supabase.from('accion_inquilino').update({ completada: true }).eq('id', id)
+    if (form.id) loadAcciones(form.id)
   }
 
   function validate(data) {
@@ -206,11 +243,63 @@ export default function Inquilinos({ perfil }) {
     </div>
   )
 
-  const inqTabs = (
+  const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino']].map(([v,l]) => (
+      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['acc', `Acciones (${acciones.length})`]] : [])].map(([v,l]) => (
         <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-primary' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
+    </div>
+  )
+
+  const fA = key => e => setNuevaAccion(prev => ({ ...prev, [key]: e.target.value }))
+
+  const accionesTab = (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
+        {!nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+      </div>
+      {nuevaAccion && (
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
+          <div className="form-grid">
+            <div className="form-group"><label>Fecha *</label><input type="date" value={nuevaAccion.fecha ?? ''} onChange={fA('fecha')} /></div>
+            <div className="form-group"><label>Hora</label><input type="time" value={nuevaAccion.hora ?? ''} onChange={fA('hora')} /></div>
+            <div className="form-group"><label>Tipo de contacto</label>
+              <select value={nuevaAccion.tipo_contacto_id ?? ''} onChange={fA('tipo_contacto_id')}>
+                <option value="">—</option>
+                {tiposContacto.map(t => <option key={t.id} value={t.id}>{t.tipo_contacto}</option>)}
+              </select>
+            </div>
+            <div className="form-group"><label>Responsable</label>
+              <select value={nuevaAccion.responsable_id ?? ''} onChange={fA('responsable_id')}>
+                <option value="">—</option>
+                {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
+              </select>
+            </div>
+            <div className="form-group form-full"><label>Indicaciones / Notas</label><textarea value={nuevaAccion.indicaciones ?? ''} onChange={fA('indicaciones')} rows={3} /></div>
+            <div className="form-group"><label>Próxima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
+            <div className="form-group"><label>Próxima acción</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
+            <div className="form-group form-full"><label>Documento (URL)</label><input value={nuevaAccion.documento ?? ''} onChange={fA('documento')} placeholder="https://..." /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
+            <button className="btn btn-sm" onClick={() => setNuevaAccion(null)}>Cancelar</button>
+            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acción'}</button>
+          </div>
+        </div>
+      )}
+      {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
+        <div className="timeline">
+          {acciones.map(a => (
+            <div className="tl-item" key={a.id}>
+              <div className="tl-dot" style={{ background: a.completada ? 'var(--accent)' : 'var(--border2)' }} />
+              <div className="tl-content">
+                <div className="tl-text">{a.indicaciones || '—'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
+                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} · {a.tipo_contacto?.tipo_contacto || ''} · {a.responsable?.nombre_responsable || '—'}{a.proxima_fecha ? ` · Próx: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' — ' + a.proxima_accion : ''}` : ''}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 
@@ -386,7 +475,8 @@ export default function Inquilinos({ perfil }) {
                   <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
                 </div>
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                  {inqTabs}
+                  {inqTabs(true)}
+                  {tabInq === 'acc' && accionesTab}
                   {tabInq === '2' && extraInqGrid('inq2')}
                   {tabInq === '3' && extraInqGrid('inq3')}
                   {tabInq === '1' && <div className="form-grid">
@@ -429,10 +519,10 @@ export default function Inquilinos({ perfil }) {
                     </div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
-                  <div className="form-actions">
+                  {tabInq !== 'acc' && <div className="form-actions">
                     <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                     <button className="btn btn-primary" onClick={save}>Guardar</button>
-                  </div>
+                  </div>}
                 </div>
               </div>
             </div>
@@ -448,7 +538,7 @@ export default function Inquilinos({ perfil }) {
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
-              {inqTabs}
+              {inqTabs(false)}
               {tabInq === '2' && extraInqGrid('inq2')}
               {tabInq === '3' && extraInqGrid('inq3')}
               {tabInq === '1' && <div className="form-grid">
