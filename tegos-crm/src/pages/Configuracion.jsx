@@ -1,6 +1,59 @@
 import { useEffect, useState } from 'react'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
+import * as XLSX from 'xlsx'
+
+const TABLAS_BACKUP = ['inmuebles', 'propietarios', 'inquilinos', 'inmueble_propietarios', 'persona_contacto', 'administrador_finca', 'accion_inmueble', 'accion_inquilino', 'accion_persona_contacto', 'inmuebles_comercializando', 'documento', 'seguro', 'tipo_persona', 'tipo_inmueble', 'tipo_contacto', 'responsable', 'conocimiento', 'clasificacion_contacto', 'perfil_usuario', 'usuario_inmuebles']
+
+function CopiaSeguridad() {
+  const [generando, setGenerando] = useState(false)
+  const [resumen, setResumen] = useState(null)
+
+  async function generar() {
+    setGenerando(true)
+    setResumen(null)
+    try {
+      const wb = XLSX.utils.book_new()
+      let total = 0
+      const fallidas = []
+      for (const tabla of TABLAS_BACKUP) {
+        const { data, error } = await supabase.from(tabla).select('*')
+        if (error) { fallidas.push(tabla); continue }
+        const filas = data || []
+        total += filas.length
+        const ws = filas.length > 0 ? XLSX.utils.json_to_sheet(filas) : XLSX.utils.aoa_to_sheet([['(sin datos)']])
+        XLSX.utils.book_append_sheet(wb, ws, tabla.slice(0, 31))
+      }
+      const ahora = new Date()
+      const fecha = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}_${String(ahora.getHours()).padStart(2, '0')}${String(ahora.getMinutes()).padStart(2, '0')}`
+      XLSX.writeFile(wb, `copia_seguridad_tegos_${fecha}.xlsx`)
+      setResumen({ total, hojas: wb.SheetNames.length, fallidas })
+    } catch (e) {
+      alert('Error al generar la copia: ' + e.message)
+    }
+    setGenerando(false)
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card-header">
+        <h2>Copia de seguridad</h2>
+        <button className="btn btn-primary btn-sm" onClick={generar} disabled={generando}>
+          {generando ? <><i className="ti ti-loader ti-spin" /> Generando...</> : <><i className="ti ti-database-export" /> Descargar copia</>}
+        </button>
+      </div>
+      <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text2)' }}>
+        <p style={{ margin: 0 }}>Descarga un archivo Excel con todos los datos de la base de datos: una hoja por tabla ({TABLAS_BACKUP.length} tablas). Guárdalo en un lugar seguro (Dropbox, disco externo...).</p>
+        {resumen && (
+          <p style={{ margin: '10px 0 0', color: 'var(--accent)' }}>
+            <i className="ti ti-check" /> Copia generada: {resumen.total} registros en {resumen.hojas} hojas.
+            {resumen.fallidas.length > 0 && <span style={{ color: 'var(--danger-text)' }}> No se pudieron leer: {resumen.fallidas.join(', ')}</span>}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function TablaAuxiliar({ titulo, tabla, campoNombre, columnas }) {
   const [rows, setRows] = useState([])
@@ -113,6 +166,7 @@ export default function Configuracion() {
     { id: 'tipo_contacto', label: 'Tipos de contacto' },
     { id: 'clasificacion', label: 'Clasificaciones' },
     { id: 'conocimiento', label: 'Orígenes' },
+    { id: 'backup', label: 'Copia de seguridad' },
   ]
 
   return (
@@ -176,6 +230,8 @@ export default function Configuracion() {
           columnas={[{ field: 'origen', label: 'Origen', full: true }]}
         />
       )}
+
+      {tab === 'backup' && <CopiaSeguridad />}
     </div>
   )
 }

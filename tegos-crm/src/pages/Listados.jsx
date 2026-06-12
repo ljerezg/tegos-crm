@@ -42,7 +42,7 @@ function exportarExcel(rows, tab) {
         fmtMoney(r.importe_deposito),
       ]
     } else if (tab === 'inquilinos') {
-      headers = ['Nombre', 'Apellidos', 'DNI/NIE', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Fin contrato', 'Fianza IVIMA', 'Depósito', 'Seg. rentas', 'Nº póliza', 'Nombre cónyuge', 'Apellidos cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Carpeta Dropbox', 'Contrato (URL)', 'Observaciones']
+      headers = ['Nombre', 'Apellidos', 'DNI/NIE', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Fin contrato', 'Fianza IVIMA', 'Depósito', 'Seg. rentas', 'Nº póliza', 'Nombre cónyuge', 'Apellidos cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Teléfono 2 cónyuge', 'Email 2 cónyuge', '2º inq. Nombre', '2º inq. Apellidos', '2º inq. DNI', '2º inq. Tipo', '2º inq. Relación', '2º inq. Teléfono', '2º inq. Teléfono 2', '2º inq. Móvil', '2º inq. Email', '2º inq. Email 2', '3º inq. Nombre', '3º inq. Apellidos', '3º inq. DNI', '3º inq. Tipo', '3º inq. Relación', '3º inq. Teléfono', '3º inq. Teléfono 2', '3º inq. Móvil', '3º inq. Email', '3º inq. Email 2', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Carpeta Dropbox', 'Fianza IVIMA (URL)', 'Contrato (URL)', 'Observaciones']
       getRow = r => [
         r.nombre || '',
         r.apellidos || '',
@@ -66,12 +66,39 @@ function exportarExcel(rows, tab) {
         r.apellidos_conyuge || '',
         r.movil_conyuge || '',
         r.email_conyuge || '',
+        r.telefono_2_conyuge || '',
+        r.email_2_conyuge || '',
+        r.nombre_inq2 || '',
+        r.apellidos_inq2 || '',
+        r.dni_inq2 || '',
+        r.tipo_inq2?.tipo || '',
+        r.relacion_inq2 || '',
+        r.telefono_inq2 || '',
+        r.telefono_2_inq2 || '',
+        r.movil_inq2 || '',
+        r.email_inq2 || '',
+        r.email_2_inq2 || '',
+        r.nombre_inq3 || '',
+        r.apellidos_inq3 || '',
+        r.dni_inq3 || '',
+        r.tipo_inq3?.tipo || '',
+        r.relacion_inq3 || '',
+        r.telefono_inq3 || '',
+        r.telefono_2_inq3 || '',
+        r.movil_inq3 || '',
+        r.email_inq3 || '',
+        r.email_2_inq3 || '',
+        r.otra_persona_contacto || '',
+        r.relacion_otra_persona || '',
+        r.movil_otra_persona || '',
+        r.email_otra_persona || '',
         r.carpeta_dropbox || '',
+        r.fianza_ivima_url || '',
         r.contrato_url || '',
         r.observaciones || '',
       ]
     } else if (tab === 'inmuebles') {
-      headers = ['Código', 'Calle', 'Número', 'Piso', 'Población', 'Provincia', 'Código postal', 'Propietario', 'Otros propietarios', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
+      headers = ['Código', 'Calle', 'Número', 'Piso', 'Población', 'Provincia', 'Código postal', 'Tipo inmueble', 'Propietario', 'Otros propietarios', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
       getRow = r => [
         r.codigo || '',
         r.calle || '',
@@ -80,6 +107,7 @@ function exportarExcel(rows, tab) {
         r.poblacion || '',
         r.provincia || '',
         r.codigo_postal || '',
+        r.tipo_inmueble?.tipo || '',
         r.propietarios ? `${r.propietarios.nombre || ''} ${r.propietarios.apellidos || ''}`.trim() : '',
         (r.inmueble_propietarios || []).map(x => `${x.propietarios?.nombre || ''} ${x.propietarios?.apellidos || ''}`.trim()).join(' | '),
         r.administrador_finca?.nombre || '',
@@ -106,7 +134,7 @@ function exportarExcel(rows, tab) {
         fmtDate(r.fecha_baja),
       ]
     } else if (tab === 'propietarios') {
-      headers = ['Nombre', 'Apellidos', 'DNI/CIF', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Calle', 'Número', 'Piso', 'Municipio', 'Provincia', 'Código postal', 'Fecha baja', 'Nombre cónyuge', 'Apellidos cónyuge', 'DNI cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Observaciones', 'Inmuebles']
+      headers = ['Nombre', 'Apellidos', 'DNI/CIF', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Calle', 'Número', 'Piso', 'Municipio', 'Provincia', 'Código postal', 'Fecha baja', 'Nombre cónyuge', 'Apellidos cónyuge', 'DNI cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Teléfono 2 cónyuge', 'Email 2 cónyuge', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Observaciones', 'Inmuebles']
       getRow = r => [
         r.nombre || '',
         r.apellidos || '',
@@ -130,6 +158,8 @@ function exportarExcel(rows, tab) {
         r.dni_conyuge || '',
         r.movil_conyuge || '',
         r.email_conyuge || '',
+        r.telefono_2_conyuge || '',
+        r.email_2_conyuge || '',
         r.otra_persona_contacto || '',
         r.relacion_otra_persona || '',
         r.movil_otra_persona || '',
@@ -216,7 +246,7 @@ export default function Listados({ perfil }) {
       data = d || []
     } else if (t === 'inquilinos') {
       let q = supabase.from('inquilinos')
-        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, fecha_contrato, fecha_fin_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, carpeta_dropbox, contrato_url, observaciones, nombre_conyuge, apellidos_conyuge, movil_conyuge, email_conyuge, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)')
+        .select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo), tipo_inq2:tipo_persona!inquilinos_tipo_inq2_id_fkey(tipo), tipo_inq3:tipo_persona!inquilinos_tipo_inq3_id_fkey(tipo)')
         .order('nombre')
       if (inmuebleIds !== null) {
         if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1)
@@ -226,7 +256,7 @@ export default function Listados({ perfil }) {
       data = d || []
     } else if (t === 'inmuebles') {
       let q = supabase.from('inmuebles')
-        .select('id, codigo, calle, numero_calle, piso, poblacion, provincia, codigo_postal, registro, num_finca_registral_vivienda, cru, num_catastro_vivienda, num_garaje_1, num_garaje_2, num_trastero, num_poliza_seg_hogar, cia_electrica, cups_electricidad, titular_contrato_electricidad, cia_gas, cups_gas, titular_contrato_gas, cia_agua, num_contrato_agua, titular_contrato_agua, carpeta_dropbox, observaciones, fecha_baja, seguro(compania), administrador_finca(nombre), propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietarios(nombre, apellidos))')
+        .select('id, codigo, calle, numero_calle, piso, poblacion, provincia, codigo_postal, registro, num_finca_registral_vivienda, cru, num_catastro_vivienda, num_garaje_1, num_garaje_2, num_trastero, num_poliza_seg_hogar, cia_electrica, cups_electricidad, titular_contrato_electricidad, cia_gas, cups_gas, titular_contrato_gas, cia_agua, num_contrato_agua, titular_contrato_agua, carpeta_dropbox, observaciones, fecha_baja, tipo_inmueble(tipo), seguro(compania), administrador_finca(nombre), propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietarios(nombre, apellidos))')
         .order('codigo')
       if (inmuebleIds !== null) {
         if (inmuebleIds.length === 0) q = q.eq('id', -1)
@@ -236,7 +266,7 @@ export default function Listados({ perfil }) {
       data = d || []
     } else if (t === 'propietarios') {
       let q = supabase.from('propietarios')
-        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, calle, numero, piso, municipio, provincia, cod_postal, fecha_baja, nombre_conyuge, apellidos_conyuge, dni_conyuge, movil_conyuge, email_conyuge, otra_persona_contacto, relacion_otra_persona, movil_otra_persona, email_otra_persona, observaciones, tipo_persona(tipo), responsable(nombre_responsable)')
+        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, calle, numero, piso, municipio, provincia, cod_postal, fecha_baja, nombre_conyuge, apellidos_conyuge, dni_conyuge, movil_conyuge, email_conyuge, telefono_2_conyuge, email_2_conyuge, otra_persona_contacto, relacion_otra_persona, movil_otra_persona, email_otra_persona, observaciones, tipo_persona(tipo), responsable(nombre_responsable)')
         .order('nombre')
       if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
         q = q.eq('id', perfil.propietario_id)
