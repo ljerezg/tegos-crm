@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Routes, Route, NavLink, useLocation, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import Dashboard from './pages/Dashboard.jsx'
@@ -14,6 +15,7 @@ import Usuarios from './pages/Usuarios.jsx'
 
 export default function App({ perfil }) {
   const location = useLocation()
+  const [menuAbierto, setMenuAbierto] = useState(false)
   const esAdmin = perfil?.rol === 'administrador'
   const esVisor = perfil?.rol === 'visor'
   const veTodo = esAdmin || esVisor
@@ -46,7 +48,8 @@ export default function App({ perfil }) {
 
   return (
     <div className="layout">
-      <aside className="sidebar">
+      {menuAbierto && <div className="sidebar-backdrop" onClick={() => setMenuAbierto(false)} />}
+      <aside className={`sidebar ${menuAbierto ? 'sidebar-open' : ''}`}>
         <div className="sidebar-logo">
           <img src="/logo-tegos.svg" alt="Tegos" className="logo-img" />
           <div className="logo-sub">Gestión de alquileres</div>
@@ -55,7 +58,7 @@ export default function App({ perfil }) {
           {NAV.map((item, i) =>
             item.section
               ? <div className="nav-section" key={i}>{item.section}</div>
-              : <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}>
+              : <NavLink key={item.to} to={item.to} end={item.to === '/'} onClick={() => setMenuAbierto(false)} className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}>
                   <i className={`ti ${item.icon}`} />
                   {item.label}
                 </NavLink>
@@ -73,6 +76,8 @@ export default function App({ perfil }) {
       </aside>
       <div className="main">
         <div className="topbar">
+          <button className="btn btn-ghost btn-sm nav-burger" onClick={() => setMenuAbierto(v => !v)} aria-label="Abrir menú"><i className="ti ti-menu-2" style={{ fontSize: 20 }} /></button>
+          <img src="/logo-tegos.svg" alt="Tegos" className="topbar-logo" />
           <h1>{pageTitle}</h1>
         </div>
         <div className="content">
