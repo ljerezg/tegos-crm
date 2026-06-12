@@ -205,7 +205,7 @@ export function Contactos({ perfil }) {
           {editModal && form.id && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
               {[['datos','Datos'],['acc',`Acciones (${acciones.length})`]].map(([v,l]) => (
-                <button key={v} className={`btn btn-sm ${tabCont === v ? 'btn-primary' : ''}`} onClick={() => setTabCont(v)}>{l}</button>
+                <button key={v} className={`btn btn-sm ${tabCont === v ? 'btn-tab-active' : ''}`} onClick={() => setTabCont(v)}>{l}</button>
               ))}
             </div>
           )}

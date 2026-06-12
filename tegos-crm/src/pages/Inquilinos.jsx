@@ -252,7 +252,7 @@ export default function Inquilinos({ perfil }) {
   const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
       {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['acc', `Acciones (${acciones.length})`]] : [])].map(([v,l]) => (
-        <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-primary' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
+        <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
     </div>
   )

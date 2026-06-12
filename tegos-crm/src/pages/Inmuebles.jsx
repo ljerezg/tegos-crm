@@ -411,7 +411,7 @@ export default function Inmuebles({ perfil }) {
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                   {[['datos','Datos'],['acc',`Acciones (${acciones.length})`]].map(([v,l]) => (
-                    <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-primary' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
+                    <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
                   ))}
                 </div>
               )}
