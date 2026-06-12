@@ -383,12 +383,13 @@ export default function Propietarios({ perfil }) {
             <div className="modal-body">
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`]].map(([v,l]) => (
+                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tabProp === v ? 'btn-tab-active' : ''}`} onClick={() => setTabProp(v)}>{l}</button>
                   ))}
                 </div>
               )}
               {modal === 'edit' && tabProp === 'acc' && accionesTab}
+              {modal === 'edit' && tabProp === 'docs' && <Documentos entidadTipo="propietario" entidadId={form.id} readOnly={readOnly} />}
               {(modal !== 'edit' || tabProp === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={f('nombre')} /></div>
                 <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={f('apellidos')} /></div>
@@ -431,7 +432,7 @@ export default function Propietarios({ perfil }) {
                 <div className="form-group form-full"><label>Email</label><input value={form.email_otra_persona ?? ''} onChange={f('email_otra_persona')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
               </div>}
-              {(modal !== 'edit' || tabProp !== 'acc') && <div className="form-actions">
+              {(modal !== 'edit' || tabProp === 'datos') && <div className="form-actions">
                 <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                 <button className="btn btn-primary" onClick={save}>Guardar</button>
               </div>}

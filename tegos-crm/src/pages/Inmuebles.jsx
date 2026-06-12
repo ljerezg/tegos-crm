@@ -410,12 +410,13 @@ export default function Inmuebles({ perfil }) {
             <div className="modal-body">
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`]].map(([v,l]) => (
+                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
                   ))}
                 </div>
               )}
               {modal === 'edit' && tabInm === 'acc' && accionesTab}
+              {modal === 'edit' && tabInm === 'docs' && <Documentos entidadTipo="inmueble" entidadId={form.id} readOnly={readOnly} />}
               {(modal !== 'edit' || tabInm === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Código *</label><input value={form.codigo ?? ''} onChange={f('codigo')} /></div>
                 <div className="form-group"><label>Propietario</label>
@@ -506,7 +507,7 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-group form-full"><label>Carpeta Dropbox (URL)</label><input value={form.carpeta_dropbox ?? ''} onChange={f('carpeta_dropbox')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
               </div>}
-              {(modal !== 'edit' || tabInm !== 'acc') && <div className="form-actions">
+              {(modal !== 'edit' || tabInm === 'datos') && <div className="form-actions">
                 <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                 <button className="btn btn-primary" onClick={save}>Guardar</button>
               </div>}

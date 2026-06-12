@@ -251,7 +251,7 @@ export default function Inquilinos({ perfil }) {
 
   const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['acc', `Acciones (${acciones.length})`]] : [])].map(([v,l]) => (
+      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos']] : [])].map(([v,l]) => (
         <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
     </div>
@@ -483,6 +483,7 @@ export default function Inquilinos({ perfil }) {
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                   {inqTabs(true)}
                   {tabInq === 'acc' && accionesTab}
+                  {tabInq === 'docs' && <Documentos entidadTipo="inquilino" entidadId={form.id} readOnly={readOnly} />}
                   {tabInq === '2' && extraInqGrid('inq2')}
                   {tabInq === '3' && extraInqGrid('inq3')}
                   {tabInq === '1' && <div className="form-grid">
@@ -525,7 +526,7 @@ export default function Inquilinos({ perfil }) {
                     </div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
-                  {tabInq !== 'acc' && <div className="form-actions">
+                  {tabInq !== 'acc' && tabInq !== 'docs' && <div className="form-actions">
                     <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                     <button className="btn btn-primary" onClick={save}>Guardar</button>
                   </div>}
