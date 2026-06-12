@@ -54,7 +54,7 @@ export default function Inquilinos({ perfil }) {
 
     const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }] = await Promise.all([
       (() => {
-        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)').order('nombre')
+        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)').order('nombre')
         if (inmuebleIds !== null) {
           if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1) // sin resultados
           else q = q.in('inmueble_id', inmuebleIds)

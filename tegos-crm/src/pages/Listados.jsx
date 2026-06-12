@@ -213,7 +213,7 @@ export default function Listados({ perfil }) {
       data = d || []
     } else if (t === 'inquilinos') {
       let q = supabase.from('inquilinos')
-        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, fecha_contrato, fecha_fin_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, carpeta_dropbox, contrato_url, observaciones, nombre_conyuge, apellidos_conyuge, movil_conyuge, email_conyuge, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona(tipo)')
+        .select('id, nombre, apellidos, dni_cif, telefono, telefono_2, movil, email, email_2, fecha_contrato, fecha_fin_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, carpeta_dropbox, contrato_url, observaciones, nombre_conyuge, apellidos_conyuge, movil_conyuge, email_conyuge, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)')
         .order('nombre')
       if (inmuebleIds !== null) {
         if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1)
