@@ -132,11 +132,17 @@ export default function Inquilinos({ perfil }) {
 
   async function save() {
     const errs = validate(form)
-    if (Object.keys(errs).length) { setErrors(errs); return }
+    if (Object.keys(errs).length) {
+      setErrors(errs)
+      setTabInq('1')
+      alert('Falta el campo obligatorio "Tipo" en la pestaña Inquilino 1')
+      return
+    }
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
     if (modal === 'new') {
-      await supabase.from('inquilinos').insert(data)
+      const { error } = await supabase.from('inquilinos').insert(data)
+      if (error) { alert('Error al guardar: ' + error.message); return }
     } else {
       const { id: _id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, ...updateData } = data
       const { error } = await supabase.from('inquilinos').update(updateData).eq('id', form.id)
