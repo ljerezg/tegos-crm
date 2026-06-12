@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
+import JSZip from 'jszip'
 
 const TABLAS_BACKUP = ['inmuebles', 'propietarios', 'inquilinos', 'inmueble_propietarios', 'persona_contacto', 'administrador_finca', 'accion_inmueble', 'accion_inquilino', 'accion_persona_contacto', 'accion_propietario', 'inmuebles_comercializando', 'documento', 'seguro', 'tipo_persona', 'tipo_inmueble', 'tipo_contacto', 'responsable', 'conocimiento', 'clasificacion_contacto', 'perfil_usuario', 'usuario_inmuebles']
 
 function CopiaSeguridad() {
   const [generando, setGenerando] = useState(false)
   const [resumen, setResumen] = useState(null)
+  const [descargandoDocs, setDescargandoDocs] = useState(false)
+  const [resumenDocs, setResumenDocs] = useState(null)
 
   async function generar() {
     setGenerando(true)
@@ -34,20 +37,85 @@ function CopiaSeguridad() {
     setGenerando(false)
   }
 
+  async function descargarDocumentos() {
+    setDescargandoDocs(true)
+    setResumenDocs(null)
+    try {
+      const [{ data: docs }, { data: inms }, { data: props }, { data: inqs }] = await Promise.all([
+        supabase.from('documento').select('*').order('entidad_tipo'),
+        supabase.from('inmuebles').select('id, codigo'),
+        supabase.from('propietarios').select('id, nombre, apellidos'),
+        supabase.from('inquilinos').select('id, nombre, apellidos'),
+      ])
+      if (!docs || docs.length === 0) { alert('No hay documentos para descargar'); setDescargandoDocs(false); return }
+      const limpiar = s => (s || '').toString().replace(/[\\/:*?"<>|]/g, '-').trim() || 'sin_nombre'
+      const nombreEntidad = d => {
+        if (d.entidad_tipo === 'inmueble') { const x = (inms || []).find(i => i.id === d.entidad_id); return x ? limpiar(x.codigo) : `id_${d.entidad_id}` }
+        if (d.entidad_tipo === 'propietario') { const x = (props || []).find(p => p.id === d.entidad_id); return x ? limpiar(`${x.nombre || ''} ${x.apellidos || ''}`.trim()) : `id_${d.entidad_id}` }
+        if (d.entidad_tipo === 'inquilino') { const x = (inqs || []).find(p => p.id === d.entidad_id); return x ? limpiar(`${x.nombre || ''} ${x.apellidos || ''}`.trim()) : `id_${d.entidad_id}` }
+        return `${d.entidad_tipo}_${d.entidad_id}`
+      }
+      const zip = new JSZip()
+      const usados = new Set()
+      let ok = 0
+      const fallidos = []
+      for (const d of docs) {
+        try {
+          const resp = await fetch(d.url_archivo)
+          if (!resp.ok) throw new Error('HTTP ' + resp.status)
+          const blob = await resp.blob()
+          const ext = limpiar((d.url_archivo.split('?')[0].split('.').pop() || 'bin'))
+          let ruta = `${d.entidad_tipo}s/${nombreEntidad(d)}/${limpiar(d.nombre)}.${ext}`
+          let n = 2
+          while (usados.has(ruta)) { ruta = `${d.entidad_tipo}s/${nombreEntidad(d)}/${limpiar(d.nombre)} (${n}).${ext}`; n++ }
+          usados.add(ruta)
+          zip.file(ruta, blob)
+          ok++
+          setResumenDocs({ progreso: `Descargando ${ok} de ${docs.length}...` })
+        } catch (e) {
+          fallidos.push(d.nombre)
+        }
+      }
+      const contenido = await zip.generateAsync({ type: 'blob' })
+      const ahora = new Date()
+      const fecha = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(contenido)
+      a.download = `documentos_tegos_${fecha}.zip`
+      a.click()
+      URL.revokeObjectURL(a.href)
+      setResumenDocs({ total: ok, fallidos })
+    } catch (e) {
+      alert('Error al descargar documentos: ' + e.message)
+    }
+    setDescargandoDocs(false)
+  }
+
   return (
     <div className="card" style={{ marginBottom: 20 }}>
       <div className="card-header">
         <h2>Copia de seguridad</h2>
         <button className="btn btn-primary btn-sm" onClick={generar} disabled={generando}>
-          {generando ? <><i className="ti ti-loader ti-spin" /> Generando...</> : <><i className="ti ti-database-export" /> Descargar copia</>}
+          {generando ? <><i className="ti ti-loader ti-spin" /> Generando...</> : <><i className="ti ti-database-export" /> Descargar datos (Excel)</>}
+        </button>
+        <button className="btn btn-primary btn-sm" onClick={descargarDocumentos} disabled={descargandoDocs}>
+          {descargandoDocs ? <><i className="ti ti-loader ti-spin" /> {resumenDocs?.progreso || 'Preparando...'}</> : <><i className="ti ti-file-zip" /> Descargar documentos (ZIP)</>}
         </button>
       </div>
       <div style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text2)' }}>
-        <p style={{ margin: 0 }}>Descarga un archivo Excel con todos los datos de la base de datos: una hoja por tabla ({TABLAS_BACKUP.length} tablas). Guárdalo en un lugar seguro (Dropbox, disco externo...).</p>
+        <p style={{ margin: 0 }}><strong>Datos (Excel):</strong> todas las tablas de la base de datos, una hoja por tabla ({TABLAS_BACKUP.length} tablas).</p>
+        <p style={{ margin: '6px 0 0' }}><strong>Documentos (ZIP):</strong> todos los archivos subidos (contratos, escrituras, etc.), organizados en carpetas por inmueble, propietario e inquilino con sus nombres.</p>
+        <p style={{ margin: '6px 0 0' }}>Guarda ambos en un lugar seguro (Dropbox, disco externo...).</p>
         {resumen && (
           <p style={{ margin: '10px 0 0', color: 'var(--accent)' }}>
             <i className="ti ti-check" /> Copia generada: {resumen.total} registros en {resumen.hojas} hojas.
             {resumen.fallidas.length > 0 && <span style={{ color: 'var(--danger-text)' }}> No se pudieron leer: {resumen.fallidas.join(', ')}</span>}
+          </p>
+        )}
+        {resumenDocs && resumenDocs.total != null && (
+          <p style={{ margin: '10px 0 0', color: 'var(--accent)' }}>
+            <i className="ti ti-check" /> Documentos descargados: {resumenDocs.total}.
+            {resumenDocs.fallidos.length > 0 && <span style={{ color: 'var(--danger-text)' }}> No se pudieron descargar: {resumenDocs.fallidos.join(', ')}</span>}
           </p>
         )}
       </div>
