@@ -12,6 +12,9 @@
   --text2: #5a5a52;
   --text3: #9a9a8e;
   --accent: #1a6b3c;
+  --brand: #8E1104;
+  --brand-2: #BE3325;
+  --brand-bg: #FCEBEB;
   --accent-bg: #e8f4ed;
   --accent-text: #1a6b3c;
   --warn-bg: #fef3e2;
@@ -154,7 +157,7 @@ tbody tr:hover td { background: var(--bg); cursor: pointer; }
 .panel-body { flex: 1; overflow-y: auto; padding: 18px; }
 
 /* Fields in panel */
-.field-section { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text3); margin: 16px 0 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.field-section { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--brand); margin: 16px 0 8px; padding-top: 14px; border-top: 1px solid #ecd4d1; }
 .field-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field-full { grid-column: 1 / -1; }
@@ -172,9 +175,12 @@ tbody tr:hover td { background: var(--bg); cursor: pointer; }
   font-size: 13px; font-family: var(--font); background: var(--bg2); color: var(--text);
   outline: none; transition: border-color .12s;
 }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--brand-2); box-shadow: 0 0 0 3px var(--brand-bg); }
 .form-group textarea { resize: vertical; min-height: 80px; }
-.form-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text3); margin: 6px 0 2px; grid-column: 1/-1; padding-top: 8px; border-top: 1px solid var(--border); }
+.form-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--brand); margin: 6px 0 2px; grid-column: 1/-1; padding-top: 8px; border-top: 1px solid #ecd4d1; }
+.btn-tab-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-tab-active:hover { background: #7a0e03; border-color: #7a0e03; }
+.sidebar-logo .logo-img { height: 38px; display: block; margin-bottom: 2px; }
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
 
 /* Modal */

@@ -48,7 +48,7 @@ export default function App({ perfil }) {
     <div className="layout">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <div className="logo-name">Tegos CRM</div>
+          <img src="/logo-tegos.svg" alt="Tegos" className="logo-img" />
           <div className="logo-sub">Gestión de alquileres</div>
         </div>
         <nav>
