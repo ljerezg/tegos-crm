@@ -71,7 +71,7 @@ function exportarExcel(rows, tab) {
         r.observaciones || '',
       ]
     } else if (tab === 'inmuebles') {
-      headers = ['Código', 'Calle', 'Número', 'Piso', 'Población', 'Provincia', 'Código postal', 'Propietario', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
+      headers = ['Código', 'Calle', 'Número', 'Piso', 'Población', 'Provincia', 'Código postal', 'Propietario', 'Otros propietarios', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
       getRow = r => [
         r.codigo || '',
         r.calle || '',
@@ -81,6 +81,7 @@ function exportarExcel(rows, tab) {
         r.provincia || '',
         r.codigo_postal || '',
         r.propietarios ? `${r.propietarios.nombre || ''} ${r.propietarios.apellidos || ''}`.trim() : '',
+        (r.inmueble_propietarios || []).map(x => `${x.propietarios?.nombre || ''} ${x.propietarios?.apellidos || ''}`.trim()).join(' | '),
         r.administrador_finca?.nombre || '',
         r.seguro?.compania || '',
         r.num_poliza_seg_hogar || '',
@@ -191,12 +192,14 @@ export default function Listados({ perfil }) {
     setSortCol('')
     let data = []
 
-    // Si es propietario, obtener sus inmueble_ids
+    // Si es propietario, obtener sus inmueble_ids (principal + adicionales)
     let inmuebleIds = null
     if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
-      const { data: inmsDelProp } = await supabase
-        .from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id)
-      inmuebleIds = (inmsDelProp || []).map(i => i.id)
+      const [{ data: inmsDelProp }, { data: inmsCo }] = await Promise.all([
+        supabase.from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id),
+        supabase.from('inmueble_propietarios').select('inmueble_id').eq('propietario_id', perfil.propietario_id),
+      ])
+      inmuebleIds = [...new Set([...(inmsDelProp || []).map(i => i.id), ...(inmsCo || []).map(i => i.inmueble_id)])]
     }
 
     if (t === 'contratos') {
@@ -223,7 +226,7 @@ export default function Listados({ perfil }) {
       data = d || []
     } else if (t === 'inmuebles') {
       let q = supabase.from('inmuebles')
-        .select('id, codigo, calle, numero_calle, piso, poblacion, provincia, codigo_postal, registro, num_finca_registral_vivienda, cru, num_catastro_vivienda, num_garaje_1, num_garaje_2, num_trastero, num_poliza_seg_hogar, cia_electrica, cups_electricidad, titular_contrato_electricidad, cia_gas, cups_gas, titular_contrato_gas, cia_agua, num_contrato_agua, titular_contrato_agua, carpeta_dropbox, observaciones, fecha_baja, seguro(compania), administrador_finca(nombre), propietarios(nombre, apellidos)')
+        .select('id, codigo, calle, numero_calle, piso, poblacion, provincia, codigo_postal, registro, num_finca_registral_vivienda, cru, num_catastro_vivienda, num_garaje_1, num_garaje_2, num_trastero, num_poliza_seg_hogar, cia_electrica, cups_electricidad, titular_contrato_electricidad, cia_gas, cups_gas, titular_contrato_gas, cia_agua, num_contrato_agua, titular_contrato_agua, carpeta_dropbox, observaciones, fecha_baja, seguro(compania), administrador_finca(nombre), propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietarios(nombre, apellidos))')
         .order('codigo')
       if (inmuebleIds !== null) {
         if (inmuebleIds.length === 0) q = q.eq('id', -1)
@@ -239,12 +242,20 @@ export default function Listados({ perfil }) {
         q = q.eq('id', perfil.propietario_id)
       }
       const { data: d } = await q
-      // Fetch inmuebles por propietario
-      const { data: inms } = await supabase.from('inmuebles').select('propietario_id, codigo')
+      // Fetch inmuebles por propietario (principal + adicionales)
+      const [{ data: inms }, { data: coInms }] = await Promise.all([
+        supabase.from('inmuebles').select('propietario_id, codigo'),
+        supabase.from('inmueble_propietarios').select('propietario_id, inmuebles(codigo)'),
+      ])
       const inmMap = {}
       ;(inms || []).forEach(i => {
         if (!inmMap[i.propietario_id]) inmMap[i.propietario_id] = []
         inmMap[i.propietario_id].push(i)
+      })
+      ;(coInms || []).forEach(i => {
+        if (!i.inmuebles) return
+        if (!inmMap[i.propietario_id]) inmMap[i.propietario_id] = []
+        if (!inmMap[i.propietario_id].some(x => x.codigo === i.inmuebles.codigo)) inmMap[i.propietario_id].push({ codigo: i.inmuebles.codigo })
       })
       data = (d || []).map(r => ({ ...r, inmuebles_list: inmMap[r.id] || [] }))
     } else if (t === 'contactos') {

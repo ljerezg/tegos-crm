@@ -52,8 +52,12 @@ export default function Propietarios({ perfil }) {
 
   async function selectRow(row) {
     setSelected(row)
-    const { data } = await supabase.from('inmuebles').select('id, codigo, calle, piso').eq('propietario_id', row.id)
-    setInmuebles(data || [])
+    const [{ data: dir }, { data: co }] = await Promise.all([
+      supabase.from('inmuebles').select('id, codigo, calle, piso').eq('propietario_id', row.id),
+      supabase.from('inmueble_propietarios').select('inmuebles(id, codigo, calle, piso)').eq('propietario_id', row.id),
+    ])
+    const extra = (co || []).map(x => x.inmuebles).filter(Boolean).filter(e => !(dir || []).some(d => d.id === e.id))
+    setInmuebles([...(dir || []), ...extra])
   }
 
   async function save() {
@@ -77,15 +81,20 @@ export default function Propietarios({ perfil }) {
 
   async function exportExcel() {
     const ids = rows.map(r => r.id)
-    const { data: todosInmuebles } = await supabase
-      .from('inmuebles')
-      .select('propietario_id, codigo, calle, piso, municipio, provincia')
-      .in('propietario_id', ids)
+    const [{ data: todosInmuebles }, { data: coInmuebles }] = await Promise.all([
+      supabase.from('inmuebles').select('propietario_id, codigo, calle, piso, municipio, provincia').in('propietario_id', ids),
+      supabase.from('inmueble_propietarios').select('propietario_id, inmuebles(codigo, calle, piso, municipio, provincia)').in('propietario_id', ids),
+    ])
 
     const inmueblesPorPropietario = {}
     ;(todosInmuebles || []).forEach(i => {
       if (!inmueblesPorPropietario[i.propietario_id]) inmueblesPorPropietario[i.propietario_id] = []
       inmueblesPorPropietario[i.propietario_id].push(i)
+    })
+    ;(coInmuebles || []).forEach(x => {
+      if (!x.inmuebles) return
+      if (!inmueblesPorPropietario[x.propietario_id]) inmueblesPorPropietario[x.propietario_id] = []
+      if (!inmueblesPorPropietario[x.propietario_id].some(i => i.codigo === x.inmuebles.codigo)) inmueblesPorPropietario[x.propietario_id].push(x.inmuebles)
     })
 
     const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : ''

@@ -292,11 +292,11 @@ export function Acciones({ perfil }) {
     // Si es propietario, obtener sus inmueble_ids para filtrar
     let inmuebleIds = null
     if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
-      const { data: inmsDelProp } = await supabase
-        .from('inmuebles')
-        .select('id')
-        .eq('propietario_id', perfil.propietario_id)
-      inmuebleIds = (inmsDelProp || []).map(i => i.id)
+      const [{ data: inmsDelProp }, { data: inmsCo }] = await Promise.all([
+        supabase.from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id),
+        supabase.from('inmueble_propietarios').select('inmueble_id').eq('propietario_id', perfil.propietario_id),
+      ])
+      inmuebleIds = [...new Set([...(inmsDelProp || []).map(i => i.id), ...(inmsCo || []).map(i => i.inmueble_id)])]
     }
 
     const buildInmuebleQuery = () => {
@@ -553,7 +553,7 @@ export function Comercializando() {
 
   useEffect(() => {
     supabase.from('inmuebles_comercializando')
-      .select('*, seguro(compania), inmuebles(codigo, propietarios(nombre, apellidos))')
+      .select('*, seguro(compania), inmuebles(codigo, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))')
       .order('descripcion')
       .then(({ data }) => { setRows(data || []); setLoading(false) })
   }, [])

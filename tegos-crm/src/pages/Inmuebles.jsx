@@ -31,6 +31,7 @@ export default function Inmuebles({ perfil }) {
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
+  const [otrosProps, setOtrosProps] = useState([])
   const navigate = useNavigate()
   const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('codigo')
@@ -40,10 +41,21 @@ export default function Inmuebles({ perfil }) {
 
   async function load() {
     setLoading(true)
+    let inmuebleIds = null
+    if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
+      const [{ data: dir }, { data: co }] = await Promise.all([
+        supabase.from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id),
+        supabase.from('inmueble_propietarios').select('inmueble_id').eq('propietario_id', perfil.propietario_id),
+      ])
+      inmuebleIds = [...new Set([...(dir || []).map(i => i.id), ...(co || []).map(i => i.inmueble_id)])]
+    }
     const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }] = await Promise.all([
       (() => {
-        let q = supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
-        if (perfil?.rol === 'propietario' && perfil?.propietario_id) q = q.eq('propietario_id', perfil.propietario_id)
+        let q = supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
+        if (inmuebleIds !== null) {
+          if (inmuebleIds.length === 0) q = q.eq('id', -1)
+          else q = q.in('id', inmuebleIds)
+        }
         return q
       })(),
       supabase.from('propietarios').select('id, nombre, apellidos').order('nombre'),
@@ -68,16 +80,27 @@ export default function Inmuebles({ perfil }) {
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
+    let inmuebleId = form.id
     if (modal === 'new') {
-      await supabase.from('inmuebles').insert(data)
+      const { data: creado, error } = await supabase.from('inmuebles').insert(data).select('id').single()
+      if (error) { alert('Error al guardar: ' + error.message); return }
+      inmuebleId = creado?.id
     } else {
-      const { id: _id, propietarios: _, seguro: __, administrador_finca: ___, tipo_inmueble: ____, ...updateData } = data
+      const { id: _id, propietarios: _, inmueble_propietarios: _____, seguro: __, administrador_finca: ___, tipo_inmueble: ____, ...updateData } = data
       const { error } = await supabase.from('inmuebles').update(updateData).eq('id', form.id)
       if (error) { alert('Error al guardar: ' + error.message); return }
     }
+    if (inmuebleId) {
+      await supabase.from('inmueble_propietarios').delete().eq('inmueble_id', inmuebleId)
+      const extras = [...new Set(otrosProps.filter(pid => pid && String(pid) !== String(data.propietario_id ?? '')))]
+      if (extras.length > 0) {
+        const { error: errRel } = await supabase.from('inmueble_propietarios').insert(extras.map(pid => ({ inmueble_id: inmuebleId, propietario_id: pid })))
+        if (errRel) alert('Inmueble guardado, pero error al guardar propietarios adicionales: ' + errRel.message)
+      }
+    }
     setModal(null); load()
-    if (selected) {
-      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').eq('id', form.id).single()
+    if (selected && inmuebleId) {
+      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').eq('id', inmuebleId).single()
       if (updated) setSelected(updated)
     }
   }
@@ -101,6 +124,7 @@ export default function Inmuebles({ perfil }) {
       'Código postal': r.codigo_postal || '',
       'Tipo inmueble': r.tipo_inmueble?.tipo || '',
       'Propietario': propNombre(r.propietarios),
+      'Otros propietarios': (r.inmueble_propietarios || []).map(x => propNombre(x.propietarios)).join(' | '),
       'Administrador finca': r.administrador_finca?.nombre || '',
       'Seguro hogar': r.seguro?.compania || '',
       'Nº póliza': r.num_poliza_seg_hogar || '',
@@ -167,7 +191,7 @@ export default function Inmuebles({ perfil }) {
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           <button className="btn btn-sm" onClick={exportExcel} title="Exportar Excel"><i className="ti ti-file-spreadsheet" /> Excel</button>
-          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
+          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setOtrosProps([]); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -184,13 +208,13 @@ export default function Inmuebles({ perfil }) {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setModal('edit') } }}
+                    onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setOtrosProps((r.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') } }}
                     style={{ background: selected?.id === r.id ? 'var(--accent-bg)' : '' }}>
                     <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
                     <td>{r.calle}{r.numero_calle ? ` ${r.numero_calle}` : ''}{r.piso ? `, ${r.piso}` : ''}</td>
                     <td>{r.poblacion || '—'}</td>
                     <td>{r.tipo_inmueble?.tipo || '—'}</td>
-                    <td>{propNombre(r.propietarios)}</td>
+                    <td>{propNombre(r.propietarios)}{(r.inmueble_propietarios || []).length > 0 && <span className="badge badge-gray" style={{ marginLeft: 6, fontSize: 10 }}>+{r.inmueble_propietarios.length}</span>}</td>
                     <td>{r.seguro?.compania ? <span className="badge badge-gray">{r.seguro.compania}</span> : '—'}</td>
                   </tr>
                 ))}
@@ -210,7 +234,7 @@ export default function Inmuebles({ perfil }) {
                 <h3>{selected.codigo}</h3>
                 <div className="panel-sub">{selected.calle}{selected.piso ? `, ${selected.piso}` : ''}</div>
               </div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setOtrosProps((selected.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}><i className="ti ti-edit" /></button>}
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
@@ -228,6 +252,7 @@ export default function Inmuebles({ perfil }) {
               <div className="field-section">Propietario y gestión</div>
               <div className="field-grid">
                 <div className="field"><label>Propietario</label><div className="val">{propNombre(selected.propietarios)}</div></div>
+                <div className="field"><label>Otros propietarios</label><div className="val">{(selected.inmueble_propietarios || []).length > 0 ? selected.inmueble_propietarios.map(x => propNombre(x.propietarios)).join(', ') : '—'}</div></div>
                 <div className="field"><label>Adm. finca</label><div className="val">{selected.administrador_finca?.nombre || '—'}</div></div>
                 <div className="field"><label>Seguro hogar</label><div className="val">{selected.seguro?.compania || '—'}</div></div>
                 <div className="field"><label>Nº póliza</label><div className="val">{selected.num_poliza_seg_hogar || '—'}</div></div>
@@ -299,6 +324,28 @@ export default function Inmuebles({ perfil }) {
                     onChange={v => setForm(prev => ({ ...prev, propietario_id: v }))}
                     placeholder="Buscar propietario..."
                   />
+                </div>
+                <div className="form-group"><label>Otros propietarios</label>
+                  <SearchSelect
+                    options={propietarios.filter(p => String(p.id) !== String(form.propietario_id ?? '') && !otrosProps.some(x => String(x) === String(p.id))).map(p => ({ id: p.id, label: propNombre(p) }))}
+                    value={''}
+                    onChange={v => { if (v) setOtrosProps(prev => prev.some(x => String(x) === String(v)) ? prev : [...prev, v]) }}
+                    placeholder="Buscar propietario..."
+                    emptyLabel="— Añadir propietario —"
+                  />
+                  {otrosProps.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                      {otrosProps.map(pid => {
+                        const p = propietarios.find(x => String(x.id) === String(pid))
+                        return (
+                          <span key={pid} className="badge badge-gray" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {p ? propNombre(p) : pid}
+                            <i className="ti ti-x" style={{ cursor: 'pointer' }} onClick={() => setOtrosProps(prev => prev.filter(x => String(x) !== String(pid)))} />
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="form-group"><label>Tipo inmueble</label>
                   <select value={form.tipo_inmueble_id ?? ''} onChange={f('tipo_inmueble_id')}>

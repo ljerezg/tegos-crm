@@ -42,14 +42,14 @@ export default function Inquilinos({ perfil }) {
   async function load() {
     setLoading(true)
 
-    // Si es propietario, primero obtenemos sus inmueble_ids
+    // Si es propietario, primero obtenemos sus inmueble_ids (principal + adicionales)
     let inmuebleIds = null
     if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
-      const { data: inmsDelProp } = await supabase
-        .from('inmuebles')
-        .select('id')
-        .eq('propietario_id', perfil.propietario_id)
-      inmuebleIds = (inmsDelProp || []).map(i => i.id)
+      const [{ data: inmsDelProp }, { data: inmsCo }] = await Promise.all([
+        supabase.from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id),
+        supabase.from('inmueble_propietarios').select('inmueble_id').eq('propietario_id', perfil.propietario_id),
+      ])
+      inmuebleIds = [...new Set([...(inmsDelProp || []).map(i => i.id), ...(inmsCo || []).map(i => i.inmueble_id)])]
     }
 
     const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }] = await Promise.all([
