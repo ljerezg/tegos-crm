@@ -331,7 +331,7 @@ export default function Inmuebles({ perfil }) {
               <div className="panel-avatar av-green">{initials(selected.codigo)}</div>
               <div style={{ flex: 1 }}>
                 <h3>{selected.codigo}</h3>
-                <div className="panel-sub">{selected.calle}{selected.piso ? `, ${selected.piso}` : ''}</div>
+                <div className="panel-sub">{selected.calle}{selected.numero_calle ? ` ${selected.numero_calle}` : ''}{selected.piso ? `, ${selected.piso}` : ''}</div>
               </div>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setOtrosProps((selected.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}><i className="ti ti-edit" /></button>}
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}

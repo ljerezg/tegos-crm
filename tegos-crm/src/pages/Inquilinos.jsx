@@ -57,7 +57,7 @@ export default function Inquilinos({ perfil }) {
 
     const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }, { data: tc }] = await Promise.all([
       (() => {
-        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)').order('nombre')
+        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, numero_calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)').order('nombre')
         if (inmuebleIds !== null) {
           if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1) // sin resultados
           else q = q.in('inmueble_id', inmuebleIds)
@@ -173,7 +173,7 @@ export default function Inquilinos({ perfil }) {
       'Email': r.email || '',
       'Email 2': r.email_2 || '',
       'Inmueble': r.inmuebles?.codigo || '',
-      'Dirección inmueble': r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
+      'Dirección inmueble': r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
       'Inicio contrato': fmtDate(r.fecha_contrato),
       'Fin contrato': fmtDate(r.fecha_fin_contrato),
       'Fianza IVIMA': fmtMoney(r.importe_fianza_ivima),
@@ -366,7 +366,7 @@ export default function Inquilinos({ perfil }) {
                   return (
                     <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') } }}>
                       <td><strong>{nombre(r)}</strong></td>
-                      <td>{r.inmuebles ? <span className="badge badge-gray">{r.inmuebles.codigo}</span> : '—'}</td>
+                      <td>{r.inmuebles ? <><span className="badge badge-gray">{r.inmuebles.codigo}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.inmuebles.calle}{r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}{r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}</span></> : '—'}</td>
                       <td>{r.movil || '—'}</td>
                       <td>{fmtDate(r.fecha_contrato)}</td>
                       <td>{r.fecha_fin_contrato ? <span className={`badge ${badge}`}>{fmtDate(r.fecha_fin_contrato)}</span> : <span className="badge badge-green">En vigor</span>}</td>
@@ -388,7 +388,7 @@ export default function Inquilinos({ perfil }) {
               <div className="panel-avatar av-yellow">{initials(selected)}</div>
               <div style={{ flex: 1 }}>
                 <h3>{nombre(selected)}</h3>
-                <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} · ${selected.inmuebles.calle}` : 'Sin inmueble'}</div>
+                <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} · ${selected.inmuebles.calle}${selected.inmuebles.numero_calle ? ` ${selected.inmuebles.numero_calle}` : ''}${selected.inmuebles.piso ? `, ${selected.inmuebles.piso}` : ''}` : 'Sin inmueble'}</div>
               </div>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className="ti ti-edit" /></button>}
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
