@@ -320,7 +320,7 @@ export default function Propietarios({ perfil }) {
                 <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
                 <div className="field"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
                 <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
-                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.numero, selected.piso, selected.municipio, selected.provincia].filter(Boolean).join(', ') || '—'}</div></div>
+                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.numero, selected.piso, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
                 {selected.fecha_baja && <div className="field"><label>Fecha baja</label><div className="val" style={{ color: 'var(--danger-text)' }}>{fmtDate(selected.fecha_baja)}</div></div>}
               </div>
               {(selected.nombre_conyuge || selected.movil_conyuge) && <>
@@ -416,6 +416,7 @@ export default function Propietarios({ perfil }) {
                 <div className="form-group"><label>Piso</label><input value={form.piso ?? ''} onChange={f('piso')} /></div>
                 <div className="form-group"><label>Municipio</label><input value={form.municipio ?? ''} onChange={f('municipio')} /></div>
                 <div className="form-group"><label>Provincia</label><input value={form.provincia ?? ''} onChange={f('provincia')} /></div>
+                <div className="form-group"><label>Código postal</label><input value={form.cod_postal ?? ''} onChange={f('cod_postal')} /></div>
                 <div className="form-group"><label>Fecha baja</label><input type="date" value={form.fecha_baja ?? ''} onChange={f('fecha_baja')} /></div>
                 <div className="form-section-title">Cónyuge</div>
                 <div className="form-group"><label>Nombre</label><input value={form.nombre_conyuge ?? ''} onChange={f('nombre_conyuge')} /></div>
