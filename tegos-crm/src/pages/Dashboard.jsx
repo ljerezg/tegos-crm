@@ -17,7 +17,7 @@ export default function Dashboard() {
       supabase.from('propietarios').select('*', { count: 'exact', head: true }),
       supabase.from('accion_inmueble').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo)').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
       supabase.from('accion_inquilino').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inquilinos(nombre, apellidos, inmuebles(codigo))').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
-      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, inmuebles(codigo, calle)').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null),
+      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, inmuebles(codigo, calle, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null),
     ])
 
     setStats({ inmuebles: totalInm || 0, inquilinos: totalInq || 0, propietarios: totalProps || 0 })
@@ -143,7 +143,7 @@ export default function Dashboard() {
                   return (
                     <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => navigate('/inquilinos')}>
                       <td>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}</td>
-                      <td><span className="badge badge-gray">{c.inmuebles?.codigo || '—'}</span></td>
+                      <td><span className="badge badge-gray">{c.inmuebles?.codigo || '—'}</span>{c.inmuebles?.propietarios && <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text2)' }}>{`${c.inmuebles.propietarios.nombre || ''} ${c.inmuebles.propietarios.apellidos || ''}`.trim()}</span>}</td>
                       <td>{act ? <span className={`badge ${badge}`}>{fmtDate(act.fecha)} ({act.dias}d)</span> : '—'}</td>
                     </tr>
                   )
