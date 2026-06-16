@@ -170,6 +170,27 @@ export default function Inquilinos({ perfil }) {
     return errs
   }
 
+  async function sincronizarAvisoFin(inquilinoId, d) {
+    if (!inquilinoId) return
+    await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'Vencimiento de contrato%')
+    if (!d.fecha_fin_contrato && d.fecha_contrato && d.duracion_contrato) {
+      const [y, m, dd] = String(d.fecha_contrato).split('-').map(Number)
+      const venc = new Date(y + Number(d.duracion_contrato), m - 1, dd)
+      venc.setDate(venc.getDate() - 1)
+      const aviso = new Date(venc)
+      aviso.setMonth(aviso.getMonth() - 5)
+      const iso = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
+      await supabase.from('accion_inquilino').insert({
+        inquilino_id: inquilinoId,
+        fecha: iso(aviso),
+        proxima_fecha: iso(aviso),
+        proxima_accion: 'Vencimiento de contrato el ' + venc.toLocaleDateString('es-ES'),
+        indicaciones: 'Aviso automático: el contrato vence en 5 meses',
+        completada: false,
+      })
+    }
+  }
+
   async function save() {
     const errs = validate(form)
     if (Object.keys(errs).length) {
@@ -180,14 +201,17 @@ export default function Inquilinos({ perfil }) {
     }
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
+    let inquilinoId = form.id
     if (modal === 'new') {
-      const { error } = await supabase.from('inquilinos').insert(data)
+      const { data: creado, error } = await supabase.from('inquilinos').insert(data).select('id').single()
       if (error) { alert('Error al guardar: ' + error.message); return }
+      inquilinoId = creado?.id
     } else {
       const { id: _id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, ...updateData } = data
       const { error } = await supabase.from('inquilinos').update(updateData).eq('id', form.id)
       if (error) { alert('Error al guardar: ' + error.message); return }
     }
+    await sincronizarAvisoFin(inquilinoId, data)
     setModal(null); setErrors({}); load()
   }
 
