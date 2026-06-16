@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Documentos from '../components/Documentos.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
@@ -41,6 +41,7 @@ export default function Inmuebles({ perfil }) {
   const [guardandoAccion, setGuardandoAccion] = useState(false)
   const [inquilinosInm, setInquilinosInm] = useState([])
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('codigo')
 
@@ -76,7 +77,14 @@ export default function Inmuebles({ perfil }) {
       supabase.from('cia_energia').select('*').order('nombre'),
       supabase.from('cia_agua').select('*').order('nombre'),
     ])
-    setRows(inmuebles || [])
+    const listaInm = inmuebles || []
+    setRows(listaInm)
+    const sel = searchParams.get('sel')
+    if (sel) {
+      const encontrado = listaInm.find(r => String(r.id) === String(sel))
+      if (encontrado) selectRow(encontrado)
+      setSearchParams({}, { replace: true })
+    }
     setPropietarios(props || [])
     setSeguros(segs || [])
     setAdmFincas(adms || [])

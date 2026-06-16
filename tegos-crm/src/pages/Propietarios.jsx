@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
@@ -29,6 +30,7 @@ export default function Propietarios({ perfil }) {
   const [inmuebles, setInmuebles] = useState([])
   const { sortData, sortIcon, thProps } = useSortable('nombre')
   const readOnly = perfil?.rol === 'visor'
+  const navigate = useNavigate()
   const [acciones, setAcciones] = useState([])
   const [tiposContacto, setTiposContacto] = useState([])
   const [tabProp, setTabProp] = useState('datos')
@@ -345,9 +347,9 @@ export default function Propietarios({ perfil }) {
               <div className="field-section">Inmuebles asignados</div>
               {inmuebles.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin inmuebles</div> : (
                 inmuebles.map(i => (
-                  <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
-                    <i className="ti ti-building" style={{ color: 'var(--text3)' }} />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 500 }}>{i.codigo}</span>
+                  <div key={i.id} onClick={() => navigate(`/inmuebles?sel=${i.id}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}>
+                    <i className="ti ti-building" style={{ color: 'var(--brand)' }} />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 500, color: 'var(--info-text)' }}>{i.codigo}</span>
                     <span style={{ color: 'var(--text2)', fontSize: 13 }}>{i.calle}{i.piso ? `, ${i.piso}` : ''}</span>
                   </div>
                 ))
