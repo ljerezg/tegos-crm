@@ -98,12 +98,10 @@ function exportarExcel(rows, tab) {
         r.observaciones || '',
       ]
     } else if (tab === 'inmuebles') {
-      headers = ['Código', 'Calle', 'Número', 'Piso', 'Población', 'Provincia', 'Código postal', 'Tipo inmueble', 'Propietario', 'Otros propietarios', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
+      headers = ['Código', 'Dirección', 'Población', 'Provincia', 'Código postal', 'Tipo inmueble', 'Propietario', 'Otros propietarios', 'Administrador finca', 'Seguro hogar', 'Nº póliza', 'Registro', 'Nº finca registral', 'CRU', 'Referencia catastral', 'Nº garaje 1', 'Nº garaje 2', 'Nº trastero', 'Cía. eléctrica', 'CUPS electricidad', 'Titular electricidad', 'Cía. gas', 'CUPS gas', 'Titular gas', 'Cía. agua', 'Nº contrato agua', 'Titular agua', 'Carpeta Dropbox', 'Observaciones', 'Fecha baja']
       getRow = r => [
         r.codigo || '',
         r.calle || '',
-        r.numero_calle || '',
-        r.piso || '',
         r.poblacion || '',
         r.provincia || '',
         r.codigo_postal || '',
@@ -134,7 +132,7 @@ function exportarExcel(rows, tab) {
         fmtDate(r.fecha_baja),
       ]
     } else if (tab === 'propietarios') {
-      headers = ['Nombre', 'Apellidos', 'DNI/CIF', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Calle', 'Número', 'Piso', 'Municipio', 'Provincia', 'Código postal', 'Fecha baja', 'Nombre cónyuge', 'Apellidos cónyuge', 'DNI cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Teléfono 2 cónyuge', 'Email 2 cónyuge', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Observaciones', 'Inmuebles']
+      headers = ['Nombre', 'Apellidos', 'DNI/CIF', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Dirección', 'Municipio', 'Provincia', 'Código postal', 'Fecha baja', 'Nombre cónyuge', 'Apellidos cónyuge', 'DNI cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Teléfono 2 cónyuge', 'Email 2 cónyuge', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Observaciones', 'Inmuebles']
       getRow = r => [
         r.nombre || '',
         r.apellidos || '',
@@ -147,8 +145,6 @@ function exportarExcel(rows, tab) {
         r.email || '',
         r.email_2 || '',
         r.calle || '',
-        r.numero || '',
-        r.piso || '',
         r.municipio || '',
         r.provincia || '',
         r.cod_postal || '',
@@ -441,7 +437,7 @@ export default function Listados({ perfil }) {
                   {sorted(rows, sortCol, (r, c) => r[c] || '').map(r => (
                     <tr key={r.id}>
                       <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
-                      <td>{[r.calle, r.numero_calle, r.piso].filter(Boolean).join(', ') || '—'}</td>
+                      <td>{r.calle || '—'}</td>
                       <td>{r.poblacion || '—'}</td>
                       <td>{r.seguro?.compania || '—'}</td>
                       <td>{r.administrador_finca?.nombre || '—'}</td>

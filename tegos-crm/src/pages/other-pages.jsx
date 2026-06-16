@@ -322,7 +322,7 @@ export function Contactos({ perfil }) {
                 <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
                 <div className="field field-full"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
                 <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
-                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.numero, selected.piso, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
+                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
               </div>
               <div className="field-section">CRM</div>
               <div className="field-grid">

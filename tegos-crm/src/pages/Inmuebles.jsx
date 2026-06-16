@@ -182,9 +182,7 @@ export default function Inmuebles({ perfil }) {
 
     const data = filtered().map(r => ({
       'Código': r.codigo || '',
-      'Calle': r.calle || '',
-      'Número': r.numero_calle || '',
-      'Piso': r.piso || '',
+      'Dirección': r.calle || '',
       'Población': r.poblacion || '',
       'Provincia': r.provincia || '',
       'Código postal': r.codigo_postal || '',
@@ -360,8 +358,7 @@ export default function Inmuebles({ perfil }) {
               <div className="field-section">Localización</div>
               <div className="field-grid">
                 <div className="field"><label>Tipo inmueble</label><div className="val">{selected.tipo_inmueble?.tipo || '—'}</div></div>
-                <div className="field"><label>Calle</label><div className="val">{selected.calle || '—'}</div></div>
-                <div className="field"><label>Nº / Piso</label><div className="val">{[selected.numero_calle, selected.piso].filter(Boolean).join(', ') || '—'}</div></div>
+                <div className="field field-full"><label>Dirección</label><div className="val">{selected.calle || '—'}</div></div>
                 <div className="field"><label>Población</label><div className="val">{selected.poblacion || '—'}</div></div>
                 <div className="field"><label>Provincia</label><div className="val">{selected.provincia || '—'}</div></div>
                 <div className="field"><label>C.P.</label><div className="val">{selected.codigo_postal || '—'}</div></div>
@@ -499,9 +496,7 @@ export default function Inmuebles({ perfil }) {
                   </select>
                 </div>
                 <div className="form-section-title">Localización</div>
-                <div className="form-group form-full"><label>Calle</label><input value={form.calle ?? ''} onChange={f('calle')} /></div>
-                <div className="form-group"><label>Número</label><input value={form.numero_calle ?? ''} onChange={f('numero_calle')} /></div>
-                <div className="form-group"><label>Piso / Puerta</label><input value={form.piso ?? ''} onChange={f('piso')} /></div>
+                <div className="form-group form-full"><label>Dirección</label><input value={form.calle ?? ''} onChange={f('calle')} placeholder="Calle, número, piso/puerta" /></div>
                 <div className="form-group"><label>Población</label><input value={form.poblacion ?? ''} onChange={f('poblacion')} /></div>
                 <div className="form-group"><label>Provincia</label><input value={form.provincia ?? ''} onChange={f('provincia')} /></div>
                 <div className="form-group"><label>Código postal</label><input value={form.codigo_postal ?? ''} onChange={f('codigo_postal')} /></div>

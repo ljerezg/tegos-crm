@@ -164,9 +164,7 @@ export default function Propietarios({ perfil }) {
         'Móvil': r.movil || '',
         'Email': r.email || '',
         'Email 2': r.email_2 || '',
-        'Calle': r.calle || '',
-        'Número': r.numero || '',
-        'Piso': r.piso || '',
+        'Dirección': r.calle || '',
         'Municipio': r.municipio || '',
         'Provincia': r.provincia || '',
         'Código postal': r.cod_postal || '',
@@ -330,7 +328,7 @@ export default function Propietarios({ perfil }) {
                 <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
                 <div className="field"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
                 <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
-                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.numero, selected.piso, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
+                <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
                 {selected.fecha_baja && <div className="field"><label>Fecha baja</label><div className="val" style={{ color: 'var(--danger-text)' }}>{fmtDate(selected.fecha_baja)}</div></div>}
               </div>
               {(selected.nombre_conyuge || selected.movil_conyuge) && <>
@@ -421,9 +419,7 @@ export default function Propietarios({ perfil }) {
                 <div className="form-group"><label>Móvil</label><input value={form.movil ?? ''} onChange={f('movil')} /></div>
                 <div className="form-group"><label>Email</label><input value={form.email ?? ''} onChange={f('email')} /></div>
                 <div className="form-group"><label>Email 2</label><input value={form.email_2 ?? ''} onChange={f('email_2')} /></div>
-                <div className="form-group form-full"><label>Calle</label><input value={form.calle ?? ''} onChange={f('calle')} /></div>
-                <div className="form-group"><label>Número</label><input value={form.numero ?? ''} onChange={f('numero')} /></div>
-                <div className="form-group"><label>Piso</label><input value={form.piso ?? ''} onChange={f('piso')} /></div>
+                <div className="form-group form-full"><label>Dirección</label><input value={form.calle ?? ''} onChange={f('calle')} placeholder="Calle, número, piso/puerta" /></div>
                 <div className="form-group"><label>Municipio</label><input value={form.municipio ?? ''} onChange={f('municipio')} /></div>
                 <div className="form-group"><label>Provincia</label><input value={form.provincia ?? ''} onChange={f('provincia')} /></div>
                 <div className="form-group"><label>Código postal</label><input value={form.cod_postal ?? ''} onChange={f('cod_postal')} /></div>
