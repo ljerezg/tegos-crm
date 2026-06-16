@@ -15,7 +15,7 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
-const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
+const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
 
 export default function Inquilinos({ perfil }) {
   const [rows, setRows] = useState([])
@@ -214,7 +214,9 @@ export default function Inquilinos({ perfil }) {
       'Email 2': r.email_2 || '',
       'Inmueble': r.inmuebles?.codigo || '',
       'Dirección inmueble': r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
-      'Inicio contrato': fmtDate(r.fecha_contrato),
+      'Firma contrato': fmtDate(r.fecha_contrato),
+      'Inicio devengo': fmtDate(r.fecha_inicio_devengo),
+      'Duración (años)': r.duracion_contrato ?? '',
       'Fin contrato': fmtDate(r.fecha_fin_contrato),
       'Fianza IVIMA': fmtMoney(r.importe_fianza_ivima),
       'Depósito': fmtMoney(r.importe_deposito),
@@ -298,6 +300,15 @@ export default function Inquilinos({ perfil }) {
   )
 
   const fR = key => e => setNuevaRenta(prev => ({ ...prev, [key]: e.target.value }))
+
+  const calcDevengo = (firma) => {
+    if (!firma) return ''
+    const [y, m, d] = firma.split('-').map(Number)
+    if (d === 1) return firma
+    const ny = m === 12 ? y + 1 : y
+    const nm = m === 12 ? 1 : m + 1
+    return `${ny}-${String(nm).padStart(2, '0')}-01`
+  }
 
   const rentaTab = (
     <div>
@@ -486,7 +497,9 @@ export default function Inquilinos({ perfil }) {
               </div>
               <div className="field-section">Contrato</div>
               <div className="field-grid">
-                <div className="field"><label>Inicio</label><div className="val">{fmtDate(selected.fecha_contrato)}</div></div>
+                <div className="field"><label>Firma</label><div className="val">{fmtDate(selected.fecha_contrato)}</div></div>
+                <div className="field"><label>Inicio devengo</label><div className="val">{fmtDate(selected.fecha_inicio_devengo)}</div></div>
+                <div className="field"><label>Duración</label><div className="val">{selected.duracion_contrato != null ? `${selected.duracion_contrato} año${selected.duracion_contrato === 1 ? '' : 's'}` : '—'}</div></div>
                 <div className="field"><label>Fin</label><div className="val">{selected.fecha_fin_contrato ? fmtDate(selected.fecha_fin_contrato) : <span className="badge badge-green">En vigor</span>}</div></div>
                 <div className="field"><label>Fianza IVIMA</label><div className="val">{fmtMoney(selected.importe_fianza_ivima)}</div></div>
                 <div className="field"><label>Depósito</label><div className="val">{fmtMoney(selected.importe_deposito)}</div></div>
@@ -594,7 +607,9 @@ export default function Inquilinos({ perfil }) {
                         {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} — {i.calle}</option>)}
                       </select>
                     </div>
-                    <div className="form-group"><label>Inicio</label><input type="date" value={form.fecha_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value }))} /></div>
+                    <div className="form-group"><label>Firma contrato</label><input type="date" value={form.fecha_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value, fecha_inicio_devengo: calcDevengo(e.target.value) }))} /></div>
+                    <div className="form-group"><label>Inicio devengo</label><input type="date" value={form.fecha_inicio_devengo ?? ''} onChange={e => setForm(p => ({ ...p, fecha_inicio_devengo: e.target.value }))} /></div>
+                    <div className="form-group"><label>Duración (años)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={e => setForm(p => ({ ...p, duracion_contrato: e.target.value }))} /></div>
                     <div className="form-group"><label>Fin</label><input type="date" value={form.fecha_fin_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_fin_contrato: e.target.value }))} /></div>
                     <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
                     <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
@@ -664,7 +679,9 @@ export default function Inquilinos({ perfil }) {
                     {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
                   </select>
                 </div>
-                <div className="form-group"><label>Inicio contrato</label><input type="date" value={form.fecha_contrato || ''} onChange={f('fecha_contrato')} /></div>
+                <div className="form-group"><label>Firma contrato</label><input type="date" value={form.fecha_contrato || ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value, fecha_inicio_devengo: calcDevengo(e.target.value) }))} /></div>
+                <div className="form-group"><label>Inicio devengo</label><input type="date" value={form.fecha_inicio_devengo || ''} onChange={f('fecha_inicio_devengo')} /></div>
+                <div className="form-group"><label>Duración (años)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={f('duracion_contrato')} /></div>
                 <div className="form-group"><label>Fin contrato</label><input type="date" value={form.fecha_fin_contrato || ''} onChange={f('fecha_fin_contrato')} /></div>
                 <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima || ''} onChange={f('importe_fianza_ivima')} /></div>
                 <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito || ''} onChange={f('importe_deposito')} /></div>
