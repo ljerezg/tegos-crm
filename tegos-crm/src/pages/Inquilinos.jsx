@@ -15,7 +15,7 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
-const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
+const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, aviso_fin: true, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
 
 export default function Inquilinos({ perfil }) {
   const [rows, setRows] = useState([])
@@ -173,7 +173,7 @@ export default function Inquilinos({ perfil }) {
   async function sincronizarAvisoFin(inquilinoId, d) {
     if (!inquilinoId) return
     await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'Vencimiento de contrato%')
-    if (!d.fecha_fin_contrato && d.fecha_contrato && d.duracion_contrato) {
+    if (d.aviso_fin && !d.fecha_fin_contrato && d.fecha_contrato && d.duracion_contrato) {
       const [y, m, dd] = String(d.fecha_contrato).split('-').map(Number)
       const venc = new Date(y + Number(d.duracion_contrato), m - 1, dd)
       venc.setDate(venc.getDate() - 1)
@@ -635,6 +635,7 @@ export default function Inquilinos({ perfil }) {
                     <div className="form-group"><label>Inicio devengo</label><input type="date" value={form.fecha_inicio_devengo ?? ''} onChange={e => setForm(p => ({ ...p, fecha_inicio_devengo: e.target.value }))} /></div>
                     <div className="form-group"><label>Duración (años)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={e => setForm(p => ({ ...p, duracion_contrato: e.target.value }))} /></div>
                     <div className="form-group"><label>Fin</label><input type="date" value={form.fecha_fin_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_fin_contrato: e.target.value }))} /></div>
+                    <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.aviso_fin ?? false} onChange={e => setForm(p => ({ ...p, aviso_fin: e.target.checked }))} style={{ width: 16, height: 16 }} /> Generar aviso de fin de contrato (5 meses antes)</label></div>
                     <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
                     <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
                     <div className="form-group"><label>Seg. rentas</label>
@@ -707,6 +708,7 @@ export default function Inquilinos({ perfil }) {
                 <div className="form-group"><label>Inicio devengo</label><input type="date" value={form.fecha_inicio_devengo || ''} onChange={f('fecha_inicio_devengo')} /></div>
                 <div className="form-group"><label>Duración (años)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={f('duracion_contrato')} /></div>
                 <div className="form-group"><label>Fin contrato</label><input type="date" value={form.fecha_fin_contrato || ''} onChange={f('fecha_fin_contrato')} /></div>
+                <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.aviso_fin ?? false} onChange={e => setForm(p => ({ ...p, aviso_fin: e.target.checked }))} style={{ width: 16, height: 16 }} /> Generar aviso de fin de contrato (5 meses antes)</label></div>
                 <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima || ''} onChange={f('importe_fianza_ivima')} /></div>
                 <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito || ''} onChange={f('importe_deposito')} /></div>
                 <div className="form-group form-full"><label>Nº póliza seg. rentas</label><input value={form.num_poliza_seg_rentas || ''} onChange={f('num_poliza_seg_rentas')} /></div>
