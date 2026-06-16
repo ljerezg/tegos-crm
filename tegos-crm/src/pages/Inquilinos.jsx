@@ -39,9 +39,12 @@ export default function Inquilinos({ perfil }) {
   const [tiposContacto, setTiposContacto] = useState([])
   const [nuevaAccion, setNuevaAccion] = useState(null)
   const [guardandoAccion, setGuardandoAccion] = useState(false)
+  const [rentas, setRentas] = useState([])
+  const [nuevaRenta, setNuevaRenta] = useState(null)
+  const [guardandoRenta, setGuardandoRenta] = useState(false)
 
   useEffect(() => { load() }, [])
-  useEffect(() => { if (modal) { setTabInq('1'); setNuevaAccion(null) } }, [modal])
+  useEffect(() => { if (modal) { setTabInq('1'); setNuevaAccion(null); setNuevaRenta(null) } }, [modal])
   useCtrlG(save, !!modal)
 
   async function load() {
@@ -100,9 +103,37 @@ export default function Inquilinos({ perfil }) {
     setAcciones(data || [])
   }
 
+  async function loadRentas(inquilinoId) {
+    const { data } = await supabase.from('renta_inquilino').select('*').eq('inquilino_id', inquilinoId).order('fecha', { ascending: false })
+    setRentas(data || [])
+  }
+
+  async function guardarRenta() {
+    if (!form.id) return
+    if (!nuevaRenta?.fecha && !nuevaRenta?.importe) { alert('Indica al menos la fecha o el importe'); return }
+    setGuardandoRenta(true)
+    const { error } = await supabase.from('renta_inquilino').insert({
+      inquilino_id: form.id,
+      fecha: nuevaRenta.fecha || null,
+      importe: nuevaRenta.importe === '' || nuevaRenta.importe == null ? null : Number(nuevaRenta.importe),
+      observaciones: nuevaRenta.observaciones || null,
+    })
+    setGuardandoRenta(false)
+    if (error) { alert('Error al guardar la renta: ' + error.message); return }
+    setNuevaRenta(null)
+    loadRentas(form.id)
+  }
+
+  async function borrarRenta(id) {
+    if (!confirm('¿Eliminar este cambio de renta?')) return
+    await supabase.from('renta_inquilino').delete().eq('id', id)
+    if (form.id) loadRentas(form.id)
+  }
+
   async function selectRow(row) {
     setSelected(row)
     loadAcciones(row.id)
+    loadRentas(row.id)
   }
 
   async function guardarAccion() {
@@ -260,9 +291,48 @@ export default function Inquilinos({ perfil }) {
 
   const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos']] : [])].map(([v,l]) => (
+      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos']] : [])].map(([v,l]) => (
         <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
+    </div>
+  )
+
+  const fR = key => e => setNuevaRenta(prev => ({ ...prev, [key]: e.target.value }))
+
+  const rentaTab = (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{rentas.length} {rentas.length === 1 ? 'registro' : 'registros'} de renta</span>
+        {!readOnly && !nuevaRenta && <button className="btn btn-primary btn-sm" onClick={() => setNuevaRenta({ fecha: '', importe: '', observaciones: '' })}><i className="ti ti-plus" /> Nueva renta</button>}
+      </div>
+      {nuevaRenta && (
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
+          <div className="form-grid">
+            <div className="form-group"><label>Fecha</label><input type="date" value={nuevaRenta.fecha ?? ''} onChange={fR('fecha')} /></div>
+            <div className="form-group"><label>Importe (€)</label><input type="number" value={nuevaRenta.importe ?? ''} onChange={fR('importe')} /></div>
+            <div className="form-group form-full"><label>Observaciones</label><textarea value={nuevaRenta.observaciones ?? ''} onChange={fR('observaciones')} rows={2} /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
+            <button className="btn btn-sm" onClick={() => setNuevaRenta(null)}>Cancelar</button>
+            <button className="btn btn-primary btn-sm" onClick={guardarRenta} disabled={guardandoRenta}>{guardandoRenta ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar renta'}</button>
+          </div>
+        </div>
+      )}
+      {rentas.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin registros de renta</div> : (
+        <table>
+          <thead><tr><th>Fecha</th><th>Importe</th><th>Observaciones</th>{!readOnly && <th></th>}</tr></thead>
+          <tbody>
+            {rentas.map(r => (
+              <tr key={r.id}>
+                <td>{fmtDate(r.fecha)}</td>
+                <td>{r.importe != null ? fmtMoney(r.importe) : '—'}</td>
+                <td style={{ fontSize: 13, color: 'var(--text2)' }}>{r.observaciones || '—'}</td>
+                {!readOnly && <td><button className="btn btn-ghost btn-sm" title="Eliminar" onClick={() => borrarRenta(r.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button></td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 
@@ -492,6 +562,7 @@ export default function Inquilinos({ perfil }) {
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                   {inqTabs(true)}
                   {tabInq === 'acc' && accionesTab}
+                  {tabInq === 'renta' && rentaTab}
                   {tabInq === 'docs' && <Documentos entidadTipo="inquilino" entidadId={form.id} readOnly={readOnly} />}
                   {tabInq === '2' && extraInqGrid('inq2')}
                   {tabInq === '3' && extraInqGrid('inq3')}
@@ -535,7 +606,7 @@ export default function Inquilinos({ perfil }) {
                     </div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
-                  {tabInq !== 'acc' && tabInq !== 'docs' && <div className="form-actions">
+                  {tabInq !== 'acc' && tabInq !== 'docs' && tabInq !== 'renta' && <div className="form-actions">
                     <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                     <button className="btn btn-primary" onClick={save}>Guardar</button>
                   </div>}
