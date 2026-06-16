@@ -39,6 +39,7 @@ export default function Inmuebles({ perfil }) {
   const [tabInm, setTabInm] = useState('datos')
   const [nuevaAccion, setNuevaAccion] = useState(null)
   const [guardandoAccion, setGuardandoAccion] = useState(false)
+  const [inquilinosInm, setInquilinosInm] = useState([])
   const navigate = useNavigate()
   const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('codigo')
@@ -95,6 +96,12 @@ export default function Inmuebles({ perfil }) {
   async function selectRow(row) {
     setSelected(row)
     loadAcciones(row.id)
+    loadInquilinosInm(row.id)
+  }
+
+  async function loadInquilinosInm(inmuebleId) {
+    const { data } = await supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato').eq('inmueble_id', inmuebleId).order('fecha_contrato', { ascending: false })
+    setInquilinosInm(data || [])
   }
 
   async function guardarAccion() {
@@ -420,9 +427,27 @@ export default function Inmuebles({ perfil }) {
             <div className="modal-body">
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
+                  {[['datos','Datos'],['inq',`Inquilinos (${inquilinosInm.length})`],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
                   ))}
+                </div>
+              )}
+              {modal === 'edit' && tabInm === 'inq' && (
+                <div>
+                  {inquilinosInm.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Este inmueble no tiene inquilinos</div> : (
+                    <table>
+                      <thead><tr><th>Inquilino</th><th>Inicio contrato</th><th>Fin contrato</th></tr></thead>
+                      <tbody>
+                        {inquilinosInm.map(i => (
+                          <tr key={i.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/inquilinos?sel=${i.id}`)}>
+                            <td><strong style={{ color: 'var(--info-text)' }}>{`${i.nombre || ''} ${i.apellidos || ''}`.trim() || '—'}</strong></td>
+                            <td>{fmtDate(i.fecha_contrato)}</td>
+                            <td>{i.fecha_fin_contrato ? fmtDate(i.fecha_fin_contrato) : <span className="badge badge-green">En vigor</span>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               )}
               {modal === 'edit' && tabInm === 'acc' && accionesTab}
@@ -556,7 +581,7 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-group form-full"><label>Carpeta Dropbox (URL)</label><input value={form.carpeta_dropbox ?? ''} onChange={f('carpeta_dropbox')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
               </div>}
-              {(modal !== 'edit' || tabInm === 'datos') && <div className="form-actions">
+              {(modal !== 'edit' || tabInm === 'datos') && tabInm !== 'inq' && <div className="form-actions">
                 <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                 <button className="btn btn-primary" onClick={save}>Guardar</button>
               </div>}

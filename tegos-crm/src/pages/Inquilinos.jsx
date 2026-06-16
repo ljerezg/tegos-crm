@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
@@ -32,6 +33,7 @@ export default function Inquilinos({ perfil }) {
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
   const [errors, setErrors] = useState({})
+  const [searchParams, setSearchParams] = useSearchParams()
   const readOnly = perfil?.rol === 'visor'
   const [tabInq, setTabInq] = useState('1')
   const [tiposContacto, setTiposContacto] = useState([])
@@ -77,7 +79,14 @@ export default function Inquilinos({ perfil }) {
       supabase.from('tipo_persona').select('*'),
       supabase.from('tipo_contacto').select('*'),
     ])
-    setRows(inqs || [])
+    const lista = inqs || []
+    setRows(lista)
+    const sel = searchParams.get('sel')
+    if (sel) {
+      const encontrado = lista.find(r => String(r.id) === String(sel))
+      if (encontrado) selectRow(encontrado)
+      setSearchParams({}, { replace: true })
+    }
     setInmuebles(inms || [])
     setSeguros(segs || [])
     setResponsables(resps || [])
