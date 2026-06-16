@@ -127,15 +127,19 @@ export default function Inmuebles({ perfil }) {
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
+    if (!data.codigo) { alert('El código es obligatorio'); return }
+    const codigoDup = rows.find(r => (r.codigo || '').trim().toLowerCase() === data.codigo.trim().toLowerCase() && r.id !== form.id)
+    if (codigoDup) { alert('Código ya utilizado'); return }
+    const errDuplicado = e => e && (e.code === '23505' || (e.message || '').toLowerCase().includes('inmuebles_codigo_unico'))
     let inmuebleId = form.id
     if (modal === 'new') {
       const { data: creado, error } = await supabase.from('inmuebles').insert(data).select('id').single()
-      if (error) { alert('Error al guardar: ' + error.message); return }
+      if (error) { alert(errDuplicado(error) ? 'Código ya utilizado' : 'Error al guardar: ' + error.message); return }
       inmuebleId = creado?.id
     } else {
       const { id: _id, propietarios: _, inmueble_propietarios: _____, seguro: __, administrador_finca: ___, tipo_inmueble: ____, ...updateData } = data
       const { error } = await supabase.from('inmuebles').update(updateData).eq('id', form.id)
-      if (error) { alert('Error al guardar: ' + error.message); return }
+      if (error) { alert(errDuplicado(error) ? 'Código ya utilizado' : 'Error al guardar: ' + error.message); return }
     }
     if (inmuebleId) {
       await supabase.from('inmueble_propietarios').delete().eq('inmueble_id', inmuebleId)
