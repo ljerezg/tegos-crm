@@ -369,8 +369,8 @@ export default function Inmuebles({ perfil }) {
               </div>
               <div className="field-section">Propietario y gestión</div>
               <div className="field-grid">
-                <div className="field"><label>Propietario</label><div className="val">{propNombre(selected.propietarios)}</div></div>
-                <div className="field"><label>Otros propietarios</label><div className="val">{(selected.inmueble_propietarios || []).length > 0 ? selected.inmueble_propietarios.map(x => propNombre(x.propietarios)).join(', ') : '—'}</div></div>
+                <div className="field"><label>Propietario</label><div className="val">{selected.propietario_id ? <span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={() => navigate(`/propietarios?sel=${selected.propietario_id}`)}>{propNombre(selected.propietarios)}</span> : '—'}</div></div>
+                <div className="field"><label>Otros propietarios</label><div className="val">{(selected.inmueble_propietarios || []).length > 0 ? selected.inmueble_propietarios.map((x, idx) => <span key={x.propietario_id}>{idx > 0 ? ', ' : ''}<span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={() => navigate(`/propietarios?sel=${x.propietario_id}`)}>{propNombre(x.propietarios)}</span></span>) : '—'}</div></div>
                 <div className="field"><label>Adm. finca</label><div className="val">{selected.administrador_finca?.nombre || '—'}</div></div>
                 <div className="field"><label>Seguro hogar</label><div className="val">{selected.seguro?.compania || '—'}</div></div>
                 <div className="field"><label>Nº póliza</label><div className="val">{selected.num_poliza_seg_hogar || '—'}</div></div>

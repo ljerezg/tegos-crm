@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
@@ -31,6 +31,7 @@ export default function Propietarios({ perfil }) {
   const { sortData, sortIcon, thProps } = useSortable('nombre')
   const readOnly = perfil?.rol === 'visor'
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [acciones, setAcciones] = useState([])
   const [tiposContacto, setTiposContacto] = useState([])
   const [tabProp, setTabProp] = useState('datos')
@@ -53,7 +54,14 @@ export default function Propietarios({ perfil }) {
       supabase.from('responsable').select('*'),
       supabase.from('tipo_contacto').select('*'),
     ])
-    setRows(props || [])
+    const listaProp = props || []
+    setRows(listaProp)
+    const sel = searchParams.get('sel')
+    if (sel) {
+      const encontrado = listaProp.find(r => String(r.id) === String(sel))
+      if (encontrado) selectRow(encontrado)
+      setSearchParams({}, { replace: true })
+    }
     setTipos(tipos || [])
     setResponsables(resps || [])
     setTiposContacto(tc || [])
