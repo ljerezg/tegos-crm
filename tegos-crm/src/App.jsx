@@ -12,6 +12,7 @@ import Listados from './pages/Listados.jsx'
 import Configuracion from './pages/Configuracion.jsx'
 import AdministradoresFinca from './pages/AdministradoresFinca.jsx'
 import Usuarios from './pages/Usuarios.jsx'
+import CorreosSinAsignar from './pages/CorreosSinAsignar.jsx'
 
 export default function App({ perfil }) {
   const location = useLocation()
@@ -31,6 +32,7 @@ export default function App({ perfil }) {
     { section: 'CRM' },
     ...(veTodo ? [{ to: '/contactos', icon: 'ti-address-book', label: 'Contactos' }] : []),
     { to: '/acciones', icon: 'ti-activity', label: 'Acciones' },
+    ...(veTodo ? [{ to: '/correos', icon: 'ti-mail-exclamation', label: 'Correos sin asignar' }] : []),
     { section: 'Más' },
     ...(veTodo ? [{ to: '/comercializando', icon: 'ti-home-search', label: 'Comercializando' }] : []),
     { to: '/listados', icon: 'ti-clipboard-list', label: 'Listados' },
@@ -90,6 +92,7 @@ export default function App({ perfil }) {
             <Route path="/listados" element={<Listados perfil={perfil} />} />
             {veTodo && <Route path="/administradores" element={<AdministradoresFinca perfil={perfil} />} />}
             {veTodo && <Route path="/contactos" element={<Contactos perfil={perfil} />} />}
+            {veTodo && <Route path="/correos" element={<CorreosSinAsignar perfil={perfil} />} />}
             {veTodo && <Route path="/comercializando" element={<Comercializando />} />}
             {esAdmin && <Route path="/configuracion" element={<Configuracion />} />}
             {esAdmin && <Route path="/usuarios" element={<Usuarios />} />}
