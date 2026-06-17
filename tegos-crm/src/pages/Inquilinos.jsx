@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
+import Correos from '../components/Correos.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
 import * as XLSX from 'xlsx'
 
@@ -373,7 +374,7 @@ export default function Inquilinos({ perfil }) {
 
   const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos']] : [])].map(([v,l]) => (
+      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos'], ['correos', 'Correos']] : [])].map(([v,l]) => (
         <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
     </div>
@@ -661,6 +662,7 @@ export default function Inquilinos({ perfil }) {
                   {tabInq === 'acc' && accionesTab}
                   {tabInq === 'renta' && rentaTab}
                   {tabInq === 'docs' && <Documentos entidadTipo="inquilino" entidadId={form.id} readOnly={readOnly} />}
+                  {tabInq === 'correos' && <Correos entidadTipo="inquilino" entidadId={form.id} email={form.email} readOnly={readOnly} />}
                   {tabInq === '2' && extraInqGrid('inq2')}
                   {tabInq === '3' && extraInqGrid('inq3')}
                   {tabInq === '1' && <div className="form-grid">
@@ -706,7 +708,7 @@ export default function Inquilinos({ perfil }) {
                     </div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
-                  {tabInq !== 'acc' && tabInq !== 'docs' && tabInq !== 'renta' && <div className="form-actions">
+                  {tabInq !== 'acc' && tabInq !== 'docs' && tabInq !== 'renta' && tabInq !== 'correos' && <div className="form-actions">
                     <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
                     <button className="btn btn-primary" onClick={save}>Guardar</button>
                   </div>}

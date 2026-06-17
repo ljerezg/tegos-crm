@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
 import JSZip from 'jszip'
 
-const TABLAS_BACKUP = ['inmuebles', 'propietarios', 'inquilinos', 'inmueble_propietarios', 'persona_contacto', 'administrador_finca', 'accion_inmueble', 'accion_inquilino', 'accion_persona_contacto', 'accion_propietario', 'renta_inquilino', 'inmuebles_comercializando', 'documento', 'seguro', 'tipo_persona', 'tipo_inmueble', 'cia_energia', 'cia_agua', 'tipo_contacto', 'responsable', 'conocimiento', 'clasificacion_contacto', 'perfil_usuario', 'usuario_inmuebles']
+const TABLAS_BACKUP = ['inmuebles', 'propietarios', 'inquilinos', 'inmueble_propietarios', 'persona_contacto', 'administrador_finca', 'accion_inmueble', 'accion_inquilino', 'accion_persona_contacto', 'accion_propietario', 'renta_inquilino', 'correo', 'inmuebles_comercializando', 'documento', 'seguro', 'tipo_persona', 'tipo_inmueble', 'cia_energia', 'cia_agua', 'tipo_contacto', 'responsable', 'conocimiento', 'clasificacion_contacto', 'perfil_usuario', 'usuario_inmuebles']
 
 function CopiaSeguridad() {
   const [generando, setGenerando] = useState(false)

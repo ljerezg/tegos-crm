@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import { useSortable } from '../components/SortableTable.jsx'
+import Correos from '../components/Correos.jsx'
 
 function norm(s) {
   return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -216,12 +217,13 @@ export function Contactos({ perfil }) {
         <div className="modal-body">
           {editModal && form.id && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-              {[['datos','Datos'],['acc',`Acciones (${acciones.length})`]].map(([v,l]) => (
+              {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['correos','Correos']].map(([v,l]) => (
                 <button key={v} className={`btn btn-sm ${tabCont === v ? 'btn-tab-active' : ''}`} onClick={() => setTabCont(v)}>{l}</button>
               ))}
             </div>
           )}
           {editModal && tabCont === 'acc' && accionesTab}
+          {editModal && tabCont === 'correos' && <Correos entidadTipo="contacto" entidadId={form.id} email={form.email} readOnly={readOnly} />}
           {(!editModal || tabCont === 'datos') && <div className="form-grid">
             <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={f('nombre')} /></div>
             <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={f('apellidos')} /></div>
@@ -265,7 +267,7 @@ export function Contactos({ perfil }) {
             <div className="form-group"><label>Email 2</label><input value={form.email_2_conyuge ?? ''} onChange={f('email_2_conyuge')} /></div>
             <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
           </div>}
-          {(!editModal || tabCont !== 'acc') && <div className="form-actions">
+          {(!editModal || (tabCont !== 'acc' && tabCont !== 'correos')) && <div className="form-actions">
             <button className="btn" onClick={() => { setModal(null); setEditModal(false) }}>Cancelar</button>
             <button className="btn btn-primary" onClick={save}>Guardar</button>
           </div>}

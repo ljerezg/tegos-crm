@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import Documentos from '../components/Documentos.jsx'
+import Correos from '../components/Correos.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
 import * as XLSX from 'xlsx'
 
@@ -403,13 +404,14 @@ export default function Propietarios({ perfil }) {
             <div className="modal-body">
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
+                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos'],['correos','Correos']].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tabProp === v ? 'btn-tab-active' : ''}`} onClick={() => setTabProp(v)}>{l}</button>
                   ))}
                 </div>
               )}
               {modal === 'edit' && tabProp === 'acc' && accionesTab}
               {modal === 'edit' && tabProp === 'docs' && <Documentos entidadTipo="propietario" entidadId={form.id} readOnly={readOnly} />}
+              {modal === 'edit' && tabProp === 'correos' && <Correos entidadTipo="propietario" entidadId={form.id} email={form.email} readOnly={readOnly} />}
               {(modal !== 'edit' || tabProp === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={f('nombre')} /></div>
                 <div className="form-group"><label>Apellidos</label><input value={form.apellidos ?? ''} onChange={f('apellidos')} /></div>
