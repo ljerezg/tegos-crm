@@ -207,6 +207,14 @@ export default function Inquilinos({ perfil }) {
         completada: false,
         responsable_id: resp,
       }]
+      // Última revisión e importe actual de la renta (del historial renta_inquilino)
+      let ultRev = '—', ultImp = '—'
+      const { data: rentas } = await supabase.from('renta_inquilino').select('importe, fecha').eq('inquilino_id', inquilinoId).order('fecha', { ascending: false }).limit(1)
+      if (rentas && rentas.length) {
+        if (rentas[0].fecha) ultRev = new Date(rentas[0].fecha).toLocaleDateString('es-ES')
+        if (rentas[0].importe != null) ultImp = Number(rentas[0].importe).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
+      }
+      const indicRev = `Revisión anual de renta. Última revisión: ${ultRev} · Renta actual: ${ultImp}`
       // Revisión de renta: aniversario del inicio de devengo, cada año hasta el vencimiento
       const base = d.fecha_inicio_devengo || d.fecha_contrato
       const [by, bm, bdd] = String(base).split('-').map(Number)
@@ -218,7 +226,7 @@ export default function Inquilinos({ perfil }) {
           fecha: iso(rev),
           proxima_fecha: iso(rev),
           proxima_accion: 'Revisión de renta',
-          indicaciones: 'Aviso automático: revisión anual de renta',
+          indicaciones: indicRev,
           completada: false,
           responsable_id: resp,
         })
