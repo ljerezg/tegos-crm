@@ -173,22 +173,42 @@ export default function Inquilinos({ perfil }) {
   async function sincronizarAvisoFin(inquilinoId, d) {
     if (!inquilinoId) return
     await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'Vencimiento de contrato%')
+    await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'Revisión de renta%')
     if (d.aviso_fin && !d.fecha_fin_contrato && d.fecha_contrato && d.duracion_contrato) {
+      const iso = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
+      const resp = d.responsable_id || null
       const [y, m, dd] = String(d.fecha_contrato).split('-').map(Number)
       const venc = new Date(y + Number(d.duracion_contrato), m - 1, dd)
       venc.setDate(venc.getDate() - 1)
       const meses = Number(d.aviso_meses_antes) || 5
       const aviso = new Date(venc)
       aviso.setMonth(aviso.getMonth() - meses)
-      const iso = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
-      await supabase.from('accion_inquilino').insert({
+      const rows = [{
         inquilino_id: inquilinoId,
         fecha: iso(aviso),
         proxima_fecha: iso(aviso),
         proxima_accion: 'Vencimiento de contrato el ' + venc.toLocaleDateString('es-ES'),
         indicaciones: 'Aviso automático: el contrato vence en ' + meses + ' meses',
         completada: false,
-      })
+        responsable_id: resp,
+      }]
+      // Revisión de renta: aniversario del inicio de devengo, cada año hasta el vencimiento
+      const base = d.fecha_inicio_devengo || d.fecha_contrato
+      const [by, bm, bdd] = String(base).split('-').map(Number)
+      const dur = Number(d.duracion_contrato)
+      for (let yy = 1; yy < dur; yy++) {
+        const rev = new Date(by + yy, bm - 1, bdd)
+        rows.push({
+          inquilino_id: inquilinoId,
+          fecha: iso(rev),
+          proxima_fecha: iso(rev),
+          proxima_accion: 'Revisión de renta',
+          indicaciones: 'Aviso automático: revisión anual de renta',
+          completada: false,
+          responsable_id: resp,
+        })
+      }
+      await supabase.from('accion_inquilino').insert(rows)
     }
   }
 

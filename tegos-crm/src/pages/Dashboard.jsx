@@ -17,7 +17,7 @@ export default function Dashboard() {
       supabase.from('propietarios').select('*', { count: 'exact', head: true }),
       supabase.from('accion_inmueble').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo)').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
       supabase.from('accion_inquilino').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inquilinos(nombre, apellidos, inmuebles(codigo))').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
-      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, inmuebles(codigo, calle, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null),
+      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, duracion_contrato, inmuebles(codigo, calle, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null),
     ])
 
     setStats({ inmuebles: totalInm || 0, inquilinos: totalInq || 0, propietarios: totalProps || 0 })
@@ -134,16 +134,24 @@ export default function Dashboard() {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Inquilino</th><th>Inmueble</th><th>Próx. actualiz. renta</th></tr></thead>
+              <thead><tr><th>Inquilino</th><th>Inmueble</th><th>Vencimiento</th><th>Próx. actualiz. renta</th></tr></thead>
               <tbody>
-                {vencimientos.length === 0 && <tr><td colSpan={3} style={{ textAlign: 'center', color: 'var(--text3)', padding: 20 }}>Sin contratos</td></tr>}
+                {vencimientos.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 20 }}>Sin contratos</td></tr>}
                 {vencimientos.map(c => {
                   const act = proximaActualizacion(c.fecha_contrato)
                   const badge = act ? (act.dias < 30 ? 'badge-red' : act.dias < 90 ? 'badge-yellow' : 'badge-green') : 'badge-gray'
+                  let venc = null
+                  if (c.fecha_contrato && c.duracion_contrato) {
+                    const [vy, vm, vd] = String(c.fecha_contrato).split('-').map(Number)
+                    const v = new Date(vy + Number(c.duracion_contrato), vm - 1, vd)
+                    v.setDate(v.getDate() - 1)
+                    venc = v
+                  }
                   return (
                     <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => navigate('/inquilinos')}>
                       <td>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}</td>
                       <td><span className="badge badge-gray">{c.inmuebles?.codigo || '—'}</span>{c.inmuebles?.propietarios && <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text2)' }}>{`${c.inmuebles.propietarios.nombre || ''} ${c.inmuebles.propietarios.apellidos || ''}`.trim()}</span>}</td>
+                      <td>{venc ? `${venc.toLocaleDateString('es-ES')} (${c.duracion_contrato} años)` : '—'}</td>
                       <td>{act ? <span className={`badge ${badge}`}>{fmtDate(act.fecha)} ({act.dias}d)</span> : '—'}</td>
                     </tr>
                   )

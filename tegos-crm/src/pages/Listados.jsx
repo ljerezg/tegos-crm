@@ -6,6 +6,24 @@ function norm(s) {
   return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
+// Fecha de finalizaci\u00f3n del contrato: la expl\u00edcita, o firma + duraci\u00f3n - 1 d\u00eda
+function calcVenc(r) {
+  if (r.fecha_fin_contrato) return r.fecha_fin_contrato
+  if (!r.fecha_contrato || !r.duracion_contrato) return null
+  const [y, m, d] = String(r.fecha_contrato).split('-').map(Number)
+  const v = new Date(y + Number(r.duracion_contrato), m - 1, d)
+  v.setDate(v.getDate() - 1)
+  return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`
+}
+
+// \u00daltima renta registrada (importe del registro m\u00e1s reciente de renta_inquilino)
+function ultimaRentaVal(r) {
+  const arr = r.renta_inquilino || []
+  if (!arr.length) return null
+  const last = arr.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0]
+  return last && last.importe != null ? last.importe : null
+}
+
 function exportarExcel(rows, tab) {
   try {
     const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : ''
@@ -26,7 +44,7 @@ function exportarExcel(rows, tab) {
     let getRow = () => []
 
     if (tab === 'contratos') {
-      headers = ['Inquilino', 'DNI/NIE', 'Móvil', 'Email', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Próx. actualización renta', 'Seg. rentas', 'Nº póliza seg. rentas', 'Fianza IVIMA', 'Depósito']
+      headers = ['Inquilino', 'DNI/NIE', 'Móvil', 'Email', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Fin contrato', 'Última renta', 'Próx. actualización renta', 'Seg. rentas', 'Nº póliza seg. rentas', 'Fianza IVIMA', 'Depósito']
       getRow = r => [
         nombre(r),
         r.dni_cif || '',
@@ -35,6 +53,8 @@ function exportarExcel(rows, tab) {
         r.inmuebles?.codigo || '',
         r.inmuebles?.calle || '',
         fmtDate(r.fecha_contrato),
+        fmtDate(calcVenc(r)),
+        fmtMoney(ultimaRentaVal(r)),
         proximaActualizacion(r.fecha_contrato),
         r.seguro?.compania || '',
         r.num_poliza_seg_rentas || '',
@@ -42,7 +62,7 @@ function exportarExcel(rows, tab) {
         fmtMoney(r.importe_deposito),
       ]
     } else if (tab === 'inquilinos') {
-      headers = ['Nombre', 'Apellidos', 'DNI/NIE', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Fin contrato', 'Fianza IVIMA', 'Depósito', 'Seg. rentas', 'Nº póliza', 'Nombre cónyuge', 'Apellidos cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Teléfono 2 cónyuge', 'Email 2 cónyuge', '2º inq. Nombre', '2º inq. Apellidos', '2º inq. DNI', '2º inq. Tipo', '2º inq. Relación', '2º inq. Teléfono', '2º inq. Teléfono 2', '2º inq. Móvil', '2º inq. Email', '2º inq. Email 2', '3º inq. Nombre', '3º inq. Apellidos', '3º inq. DNI', '3º inq. Tipo', '3º inq. Relación', '3º inq. Teléfono', '3º inq. Teléfono 2', '3º inq. Móvil', '3º inq. Email', '3º inq. Email 2', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Carpeta Dropbox', 'Fianza IVIMA (URL)', 'Contrato (URL)', 'Observaciones']
+      headers = ['Nombre', 'Apellidos', 'DNI/NIE', 'Tipo', 'Responsable', 'Teléfono', 'Teléfono 2', 'Móvil', 'Email', 'Email 2', 'Inmueble', 'Dirección inmueble', 'Inicio contrato', 'Fin contrato', 'Última renta', 'Fianza IVIMA', 'Depósito', 'Seg. rentas', 'Nº póliza', 'Nombre cónyuge', 'Apellidos cónyuge', 'Móvil cónyuge', 'Email cónyuge', 'Teléfono 2 cónyuge', 'Email 2 cónyuge', '2º inq. Nombre', '2º inq. Apellidos', '2º inq. DNI', '2º inq. Tipo', '2º inq. Relación', '2º inq. Teléfono', '2º inq. Teléfono 2', '2º inq. Móvil', '2º inq. Email', '2º inq. Email 2', '3º inq. Nombre', '3º inq. Apellidos', '3º inq. DNI', '3º inq. Tipo', '3º inq. Relación', '3º inq. Teléfono', '3º inq. Teléfono 2', '3º inq. Móvil', '3º inq. Email', '3º inq. Email 2', 'Otra persona contacto', 'Relación otra persona', 'Móvil otra persona', 'Email otra persona', 'Carpeta Dropbox', 'Fianza IVIMA (URL)', 'Contrato (URL)', 'Observaciones']
       getRow = r => [
         r.nombre || '',
         r.apellidos || '',
@@ -57,7 +77,8 @@ function exportarExcel(rows, tab) {
         r.inmuebles?.codigo || '',
         r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
         fmtDate(r.fecha_contrato),
-        fmtDate(r.fecha_fin_contrato),
+        fmtDate(calcVenc(r)),
+        fmtMoney(ultimaRentaVal(r)),
         fmtMoney(r.importe_fianza_ivima),
         fmtMoney(r.importe_deposito),
         r.seguro?.compania || '',
@@ -230,7 +251,7 @@ export default function Listados({ perfil }) {
 
     if (t === 'contratos') {
       let q = supabase.from('inquilinos')
-        .select('id, nombre, apellidos, dni_cif, movil, email, telefono, fecha_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, inmuebles(codigo, calle, piso), seguro(compania)')
+        .select('id, nombre, apellidos, dni_cif, movil, email, telefono, fecha_contrato, fecha_fin_contrato, duracion_contrato, num_poliza_seg_rentas, importe_fianza_ivima, importe_deposito, inmuebles(codigo, calle, piso), seguro(compania), renta_inquilino(importe, fecha)')
         .is('fecha_fin_contrato', null)
         .not('fecha_contrato', 'is', null)
         .order('fecha_contrato')
@@ -242,7 +263,7 @@ export default function Listados({ perfil }) {
       data = d || []
     } else if (t === 'inquilinos') {
       let q = supabase.from('inquilinos')
-        .select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo), tipo_inq2:tipo_persona!inquilinos_tipo_inq2_id_fkey(tipo), tipo_inq3:tipo_persona!inquilinos_tipo_inq3_id_fkey(tipo)')
+        .select('*, inmuebles(codigo, calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo), tipo_inq2:tipo_persona!inquilinos_tipo_inq2_id_fkey(tipo), tipo_inq3:tipo_persona!inquilinos_tipo_inq3_id_fkey(tipo), renta_inquilino(importe, fecha)')
         .order('nombre')
       if (inmuebleIds !== null) {
         if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1)
@@ -362,6 +383,8 @@ export default function Listados({ perfil }) {
                   <th {...thProps('inmueble')}>Inmueble <span style={{fontSize:10}}>{sortIcon('inmueble')}</span></th>
                   <th>Móvil</th>
                   <th {...thProps('fecha_contrato')}>Inicio contrato <span style={{fontSize:10}}>{sortIcon('fecha_contrato')}</span></th>
+                  <th>Fin contrato</th>
+                  <th>Última renta</th>
                   <th>Próx. actualización renta</th>
                   <th>Seg. rentas</th>
                 </tr></thead>
@@ -380,6 +403,8 @@ export default function Listados({ perfil }) {
                         <td>{r.inmuebles ? <><span className="badge badge-gray">{r.inmuebles.codigo}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.inmuebles.calle}</span></> : '—'}</td>
                         <td>{r.movil || '—'}</td>
                         <td>{fmtDate(r.fecha_contrato)}</td>
+                        <td>{fmtDate(calcVenc(r))}</td>
+                        <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'}</td>
                         <td>{act ? <span className={`badge ${badge}`}>{fmtDate(act.fecha)} ({act.dias}d)</span> : '—'}</td>
                         <td>{r.seguro?.compania || '—'}</td>
                       </tr>
@@ -399,6 +424,7 @@ export default function Listados({ perfil }) {
                   <th>Email</th>
                   <th {...thProps('fecha_contrato')}>Inicio <span style={{fontSize:10}}>{sortIcon('fecha_contrato')}</span></th>
                   <th {...thProps('fecha_fin_contrato')}>Fin <span style={{fontSize:10}}>{sortIcon('fecha_fin_contrato')}</span></th>
+                  <th>Última renta</th>
                   <th>Responsable</th>
                 </tr></thead>
                 <tbody>
@@ -416,7 +442,8 @@ export default function Listados({ perfil }) {
                       <td>{r.movil || '—'}</td>
                       <td style={{ color: 'var(--info-text)' }}>{r.email || '—'}</td>
                       <td>{fmtDate(r.fecha_contrato)}</td>
-                      <td>{r.fecha_fin_contrato ? fmtDate(r.fecha_fin_contrato) : <span className="badge badge-green">En vigor</span>}</td>
+                      <td>{calcVenc(r) ? fmtDate(calcVenc(r)) : <span className="badge badge-green">En vigor</span>}</td>
+                      <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'}</td>
                       <td>{r.responsable?.nombre_responsable || '—'}</td>
                     </tr>
                   ))}
@@ -430,6 +457,7 @@ export default function Listados({ perfil }) {
                   <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
                   <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
                   <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
+                  <th>Propietario</th>
                   <th>Seguro</th>
                   <th>Adm. finca</th>
                 </tr></thead>
@@ -439,6 +467,7 @@ export default function Listados({ perfil }) {
                       <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
                       <td>{r.calle || '—'}</td>
                       <td>{r.poblacion || '—'}</td>
+                      <td>{r.propietarios ? `${r.propietarios.nombre || ''} ${r.propietarios.apellidos || ''}`.trim() : '—'}</td>
                       <td>{r.seguro?.compania || '—'}</td>
                       <td>{r.administrador_finca?.nombre || '—'}</td>
                     </tr>
