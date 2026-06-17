@@ -15,6 +15,21 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
+function calcVenc(r) {
+  if (r.fecha_fin_contrato) return r.fecha_fin_contrato
+  if (!r.fecha_contrato || !r.duracion_contrato) return null
+  const [y, m, d] = String(r.fecha_contrato).split('-').map(Number)
+  const v = new Date(y + Number(r.duracion_contrato), m - 1, d)
+  v.setDate(v.getDate() - 1)
+  return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`
+}
+function ultimaRentaVal(r) {
+  const arr = r.renta_inquilino || []
+  if (!arr.length) return null
+  const last = arr.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0]
+  return last && last.importe != null ? last.importe : null
+}
+
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, aviso_fin: true, aviso_meses_antes: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
 
 export default function Inquilinos({ perfil }) {
@@ -62,7 +77,7 @@ export default function Inquilinos({ perfil }) {
 
     const [{ data: inqs }, { data: inms }, { data: segs }, { data: resps }, { data: tip }, { data: tc }] = await Promise.all([
       (() => {
-        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, numero_calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo)').order('nombre')
+        let q = supabase.from('inquilinos').select('*, inmuebles(codigo, calle, numero_calle, piso), seguro(compania), responsable(nombre_responsable), tipo_persona!inquilinos_tipo_id_fkey(tipo), renta_inquilino(importe, fecha)').order('nombre')
         if (inmuebleIds !== null) {
           if (inmuebleIds.length === 0) q = q.eq('inmueble_id', -1) // sin resultados
           else q = q.in('inmueble_id', inmuebleIds)
@@ -490,7 +505,8 @@ export default function Inquilinos({ perfil }) {
                   <th onClick={() => toggleSort('inmueble')} style={{ cursor: 'pointer' }}>Inmueble <SortIcon col="inmueble" /></th>
                   <th>Móvil</th>
                   <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio <SortIcon col="fecha_contrato" /></th>
-                  <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin <SortIcon col="fecha_fin_contrato" /></th>
+                  <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin previsto <SortIcon col="fecha_fin_contrato" /></th>
+                  <th>Última renta</th>
                   <th>Seg. rentas</th>
                 </tr>
               </thead>
@@ -504,7 +520,10 @@ export default function Inquilinos({ perfil }) {
                       <td>{r.inmuebles ? <><span className="badge badge-gray">{r.inmuebles.codigo}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.inmuebles.calle}{r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}{r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}</span></> : '—'}</td>
                       <td>{r.movil || '—'}</td>
                       <td>{fmtDate(r.fecha_contrato)}</td>
-                      <td>{r.fecha_fin_contrato ? <span className={`badge ${badge}`}>{fmtDate(r.fecha_fin_contrato)}</span> : <span className="badge badge-green">En vigor</span>}</td>
+                      <td>{r.fecha_fin_contrato
+                        ? <span className={`badge ${badge}`}>{fmtDate(r.fecha_fin_contrato)} · Finalizado</span>
+                        : <span>{calcVenc(r) ? fmtDate(calcVenc(r)) + ' ' : ''}<span className="badge badge-green">En vigor</span></span>}</td>
+                      <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'}</td>
                       <td>{r.seguro?.compania || '—'}</td>
                     </tr>
                   )
