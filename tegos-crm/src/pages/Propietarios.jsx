@@ -15,6 +15,18 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
+function mailLink(v) {
+  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : '—'
+}
+function waLink(v) {
+  if (!v) return '—'
+  let d = String(v).replace(/[^\d+]/g, '')
+  if (d.startsWith('+')) d = d.slice(1)
+  else if (d.startsWith('00')) d = d.slice(2)
+  if (d.length === 9) d = '34' + d
+  return <a href={`https://wa.me/${d}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--info-text)' }}>{v}</a>
+}
+
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', dni_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', prop_final: '', fecha_baja: '' }
 
 export default function Propietarios({ perfil }) {
@@ -323,11 +335,11 @@ export default function Propietarios({ perfil }) {
               <div className="field-grid">
                 <div className="field"><label>DNI / CIF</label><div className="val">{selected.dni_cif || '—'}</div></div>
                 <div className="field"><label>Responsable</label><div className="val">{selected.responsable?.nombre_responsable || '—'}</div></div>
-                <div className="field"><label>Teléfono</label><div className="val">{selected.telefono || '—'}</div></div>
-                <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2 || '—'}</div></div>
-                <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
-                <div className="field"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
-                <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
+                <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono)}</div></div>
+                <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
+                <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil)}</div></div>
+                <div className="field"><label>Email</label><div className="val">{mailLink(selected.email)}</div></div>
+                <div className="field field-full"><label>Email 2</label><div className="val">{mailLink(selected.email_2)}</div></div>
                 <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
                 {selected.fecha_baja && <div className="field"><label>Fecha baja</label><div className="val" style={{ color: 'var(--danger-text)' }}>{fmtDate(selected.fecha_baja)}</div></div>}
               </div>
@@ -335,10 +347,10 @@ export default function Propietarios({ perfil }) {
                 <div className="field-section">Cónyuge</div>
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || '—'}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_conyuge || '—'}</div></div>
-                  <div className="field"><label>Email</label><div className="val">{selected.email_conyuge || '—'}</div></div>
-                  <div className="field"><label>Email 2</label><div className="val">{selected.email_2_conyuge || '—'}</div></div>
-                  <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2_conyuge || '—'}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
+                  <div className="field"><label>Email</label><div className="val">{mailLink(selected.email_conyuge)}</div></div>
+                  <div className="field"><label>Email 2</label><div className="val">{mailLink(selected.email_2_conyuge)}</div></div>
+                  <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2_conyuge)}</div></div>
                 </div>
               </>}
               {selected.otra_persona_contacto && <>
@@ -346,8 +358,8 @@ export default function Propietarios({ perfil }) {
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{selected.otra_persona_contacto}</div></div>
                   <div className="field"><label>Relación</label><div className="val">{selected.relacion_otra_persona || '—'}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_otra_persona || '—'}</div></div>
-                  <div className="field"><label>Email</label><div className="val">{selected.email_otra_persona || '—'}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_otra_persona)}</div></div>
+                  <div className="field"><label>Email</label><div className="val">{mailLink(selected.email_otra_persona)}</div></div>
                 </div>
               </>}
               <div className="field-section">Inmuebles asignados</div>

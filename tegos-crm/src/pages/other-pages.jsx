@@ -21,6 +21,18 @@ const ACCION_EMPTY = { fecha: '', hora: '', tipo_contacto_id: '', responsable_id
 // ============================================================
 const CONTACTO_EMPTY = { nombre: '', apellidos: '', dni_cif: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', fecha_baja: '', observaciones: '', tipo_id: '', responsable_id: '', conocimiento_id: '', clasificacion_id: '', referenciado_por: '', empresa_tasacion: '', edad_estimada: '', estado_civil: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '' }
 
+function mailLink(v) {
+  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : '—'
+}
+function waLink(v) {
+  if (!v) return '—'
+  let d = String(v).replace(/[^\d+]/g, '')
+  if (d.startsWith('+')) d = d.slice(1)
+  else if (d.startsWith('00')) d = d.slice(2)
+  if (d.length === 9) d = '34' + d
+  return <a href={`https://wa.me/${d}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--info-text)' }}>{v}</a>
+}
+
 export function Contactos({ perfil }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -317,11 +329,11 @@ export function Contactos({ perfil }) {
             <div className="panel-body">
               <div className="field-section">Datos de contacto</div>
               <div className="field-grid">
-                <div className="field"><label>Teléfono</label><div className="val">{selected.telefono || '—'}</div></div>
-                <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2 || '—'}</div></div>
-                <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
-                <div className="field field-full"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
-                <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
+                <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono)}</div></div>
+                <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
+                <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil)}</div></div>
+                <div className="field field-full"><label>Email</label><div className="val">{mailLink(selected.email)}</div></div>
+                <div className="field field-full"><label>Email 2</label><div className="val">{mailLink(selected.email_2)}</div></div>
                 <div className="field field-full"><label>Dirección</label><div className="val">{[selected.calle, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || '—'}</div></div>
               </div>
               <div className="field-section">CRM</div>
@@ -334,7 +346,7 @@ export function Contactos({ perfil }) {
                 <div className="field-section">Cónyuge</div>
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim()}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_conyuge || '—'}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
                 </div>
               </>}
               <div className="field-section">Acciones ({acciones.length})</div>

@@ -15,6 +15,18 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
+function mailLink(v) {
+  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : '—'
+}
+function waLink(v) {
+  if (!v) return '—'
+  let d = String(v).replace(/[^\d+]/g, '')
+  if (d.startsWith('+')) d = d.slice(1)
+  else if (d.startsWith('00')) d = d.slice(2)
+  if (d.length === 9) d = '34' + d
+  return <a href={`https://wa.me/${d}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--info-text)' }}>{v}</a>
+}
+
 function calcVenc(r) {
   if (r.fecha_fin_contrato) return r.fecha_fin_contrato
   if (!r.fecha_contrato || !r.duracion_contrato) return null
@@ -561,11 +573,11 @@ export default function Inquilinos({ perfil }) {
               <div className="field-grid">
                 <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_cif || '—'}</div></div>
                 <div className="field"><label>Tipo</label><div className="val">{selected.tipo_persona?.tipo || '—'}</div></div>
-                <div className="field"><label>Teléfono</label><div className="val">{selected.telefono || '—'}</div></div>
-                <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2 || '—'}</div></div>
-                <div className="field"><label>Móvil</label><div className="val">{selected.movil || '—'}</div></div>
-                <div className="field"><label>Email</label><div className="val">{selected.email || '—'}</div></div>
-                <div className="field field-full"><label>Email 2</label><div className="val">{selected.email_2 || '—'}</div></div>
+                <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono)}</div></div>
+                <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
+                <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil)}</div></div>
+                <div className="field"><label>Email</label><div className="val">{mailLink(selected.email)}</div></div>
+                <div className="field field-full"><label>Email 2</label><div className="val">{mailLink(selected.email_2)}</div></div>
               </div>
               <div className="field-section">Contrato</div>
               <div className="field-grid">
@@ -589,10 +601,10 @@ export default function Inquilinos({ perfil }) {
                 <div className="field-section">Cónyuge</div>
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || '—'}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_conyuge || '—'}</div></div>
-                  <div className="field"><label>Email</label><div className="val">{selected.email_conyuge || '—'}</div></div>
-                  <div className="field"><label>Email 2</label><div className="val">{selected.email_2_conyuge || '—'}</div></div>
-                  <div className="field"><label>Teléfono 2</label><div className="val">{selected.telefono_2_conyuge || '—'}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
+                  <div className="field"><label>Email</label><div className="val">{mailLink(selected.email_conyuge)}</div></div>
+                  <div className="field"><label>Email 2</label><div className="val">{mailLink(selected.email_2_conyuge)}</div></div>
+                  <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2_conyuge)}</div></div>
                 </div>
               </>}
               {(selected.nombre_inq2 || selected.movil_inq2) && <>
@@ -602,9 +614,9 @@ export default function Inquilinos({ perfil }) {
                   <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq2 || '—'}</div></div>
                   <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq2_id)?.tipo || '—'}</div></div>
                   <div className="field"><label>Relación</label><div className="val">{selected.relacion_inq2 || '—'}</div></div>
-                  <div className="field"><label>Teléfono</label><div className="val">{selected.telefono_inq2 || '—'}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_inq2 || '—'}</div></div>
-                  <div className="field field-full"><label>Email</label><div className="val">{selected.email_inq2 || '—'}</div></div>
+                  <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono_inq2)}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_inq2)}</div></div>
+                  <div className="field field-full"><label>Email</label><div className="val">{mailLink(selected.email_inq2)}</div></div>
                 </div>
               </>}
               {(selected.nombre_inq3 || selected.movil_inq3) && <>
@@ -614,9 +626,9 @@ export default function Inquilinos({ perfil }) {
                   <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq3 || '—'}</div></div>
                   <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq3_id)?.tipo || '—'}</div></div>
                   <div className="field"><label>Relación</label><div className="val">{selected.relacion_inq3 || '—'}</div></div>
-                  <div className="field"><label>Teléfono</label><div className="val">{selected.telefono_inq3 || '—'}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{selected.movil_inq3 || '—'}</div></div>
-                  <div className="field field-full"><label>Email</label><div className="val">{selected.email_inq3 || '—'}</div></div>
+                  <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono_inq3)}</div></div>
+                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_inq3)}</div></div>
+                  <div className="field field-full"><label>Email</label><div className="val">{mailLink(selected.email_inq3)}</div></div>
                 </div>
               </>}
               <div className="field-section">Documentos</div>
