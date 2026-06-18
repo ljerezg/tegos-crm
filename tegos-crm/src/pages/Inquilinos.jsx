@@ -36,11 +36,18 @@ function calcVenc(r) {
   v.setDate(v.getDate() - 1)
   return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`
 }
-function ultimaRentaVal(r) {
+function ultimaRentaRow(r) {
   const arr = r.renta_inquilino || []
   if (!arr.length) return null
-  const last = arr.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0]
+  return arr.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0]
+}
+function ultimaRentaVal(r) {
+  const last = ultimaRentaRow(r)
   return last && last.importe != null ? last.importe : null
+}
+function ultimaRentaFecha(r) {
+  const last = ultimaRentaRow(r)
+  return last && last.fecha ? last.fecha : null
 }
 
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, aviso_fin: true, aviso_meses_antes: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
@@ -528,6 +535,7 @@ export default function Inquilinos({ perfil }) {
                   <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio <SortIcon col="fecha_contrato" /></th>
                   <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin previsto <SortIcon col="fecha_fin_contrato" /></th>
                   <th>Última renta</th>
+                  <th>Fecha última revisión</th>
                   <th>Seg. rentas</th>
                 </tr>
               </thead>
@@ -545,6 +553,7 @@ export default function Inquilinos({ perfil }) {
                         ? <span className={`badge ${badge}`}>{fmtDate(r.fecha_fin_contrato)} · Finalizado</span>
                         : <span>{calcVenc(r) ? fmtDate(calcVenc(r)) + ' ' : ''}<span className="badge badge-green">En vigor</span></span>}</td>
                       <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'}</td>
+                      <td>{ultimaRentaFecha(r) ? fmtDate(ultimaRentaFecha(r)) : '—'}</td>
                       <td>{r.seguro?.compania || '—'}</td>
                     </tr>
                   )
