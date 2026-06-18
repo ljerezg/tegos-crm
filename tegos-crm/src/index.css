@@ -217,6 +217,9 @@ tbody tr:hover td { background: var(--bg); cursor: pointer; }
   .topbar-logo { display: block; height: 26px; }
   .detail-panel { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
+  /* La cabecera de las listas envuelve y el buscador (lupa) ocupa toda la línea */
+  .card-header { flex-wrap: wrap; }
+  .card-header .search-input { min-width: 0; width: 100%; order: 10; }
 }
 
 /* Dashboard grid - desktop 2 cols, mobile 1 col */
