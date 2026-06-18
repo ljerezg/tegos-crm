@@ -303,12 +303,12 @@ export default function Inquilinos({ perfil }) {
       'Depósito': fmtMoney(r.importe_deposito),
       'Seg. rentas': r.seguro?.compania || '',
       'Nº póliza seg. rentas': r.num_poliza_seg_rentas || '',
-      'Nombre cónyuge': r.nombre_conyuge || '',
-      'Apellidos cónyuge': r.apellidos_conyuge || '',
-      'Móvil cónyuge': r.movil_conyuge || '',
-      'Email cónyuge': r.email_conyuge || '',
-      'Teléfono 2 cónyuge': r.telefono_2_conyuge || '',
-      'Email 2 cónyuge': r.email_2_conyuge || '',
+      'Nombre contacto 2': r.nombre_conyuge || '',
+      'Apellidos contacto 2': r.apellidos_conyuge || '',
+      'Móvil contacto 2': r.movil_conyuge || '',
+      'Email contacto 2': r.email_conyuge || '',
+      'Teléfono 2 contacto 2': r.telefono_2_conyuge || '',
+      'Email 2 contacto 2': r.email_2_conyuge || '',
       '2º inq. Nombre': r.nombre_inq2 || '',
       '2º inq. Apellidos': r.apellidos_inq2 || '',
       '2º inq. DNI': r.dni_inq2 || '',
@@ -599,7 +599,7 @@ export default function Inquilinos({ perfil }) {
                 {!selected.carpeta_dropbox && !selected.fianza_ivima_url && !selected.contrato_url && <span style={{ fontSize: 13, color: 'var(--text3)' }}>Sin enlaces</span>}
               </div>
               {(selected.nombre_conyuge || selected.movil_conyuge) && <>
-                <div className="field-section">Cónyuge</div>
+                <div className="field-section">Contacto 2</div>
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || '—'}</div></div>
                   <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
@@ -778,13 +778,13 @@ export default function Inquilinos({ perfil }) {
                 <div className="form-group form-full"><label>Carpeta Dropbox (URL)</label><input value={form.carpeta_dropbox || ''} onChange={f('carpeta_dropbox')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Fianza IVIMA (URL PDF)</label><input value={form.fianza_ivima_url || ''} onChange={f('fianza_ivima_url')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Contrato (URL PDF)</label><input value={form.contrato_url || ''} onChange={f('contrato_url')} placeholder="https://..." /></div>
-                <div className="form-section-title">Cónyuge</div>
-                <div className="form-group"><label>Nombre cónyuge</label><input value={form.nombre_conyuge || ''} onChange={f('nombre_conyuge')} /></div>
-                <div className="form-group"><label>Apellidos cónyuge</label><input value={form.apellidos_conyuge || ''} onChange={f('apellidos_conyuge')} /></div>
-                <div className="form-group"><label>Móvil cónyuge</label><input value={form.movil_conyuge || ''} onChange={f('movil_conyuge')} /></div>
-                <div className="form-group"><label>Email cónyuge</label><input value={form.email_conyuge || ''} onChange={f('email_conyuge')} /></div>
-                <div className="form-group"><label>Teléfono 2 cónyuge</label><input value={form.telefono_2_conyuge || ''} onChange={f('telefono_2_conyuge')} /></div>
-                <div className="form-group"><label>Email 2 cónyuge</label><input value={form.email_2_conyuge || ''} onChange={f('email_2_conyuge')} /></div>
+                <div className="form-section-title">Contacto 2</div>
+                <div className="form-group"><label>Nombre contacto 2</label><input value={form.nombre_conyuge || ''} onChange={f('nombre_conyuge')} /></div>
+                <div className="form-group"><label>Apellidos contacto 2</label><input value={form.apellidos_conyuge || ''} onChange={f('apellidos_conyuge')} /></div>
+                <div className="form-group"><label>Móvil contacto 2</label><input value={form.movil_conyuge || ''} onChange={f('movil_conyuge')} /></div>
+                <div className="form-group"><label>Email contacto 2</label><input value={form.email_conyuge || ''} onChange={f('email_conyuge')} /></div>
+                <div className="form-group"><label>Teléfono 2 contacto 2</label><input value={form.telefono_2_conyuge || ''} onChange={f('telefono_2_conyuge')} /></div>
+                <div className="form-group"><label>Email 2 contacto 2</label><input value={form.email_2_conyuge || ''} onChange={f('email_2_conyuge')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones || ''} onChange={f('observaciones')} /></div>
               </div>}
               <div className="form-actions">
