@@ -264,7 +264,7 @@ export default function Inquilinos({ perfil }) {
       if (error) { alert('Error al guardar: ' + error.message); return }
       inquilinoId = creado?.id
     } else {
-      const { id: _id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, ...updateData } = data
+      const { id: _id, inmuebles: _, seguro: __, responsable: ___, tipo_persona: ____, renta_inquilino: _____, ...updateData } = data
       const { error } = await supabase.from('inquilinos').update(updateData).eq('id', form.id)
       if (error) { alert('Error al guardar: ' + error.message); return }
     }
