@@ -50,6 +50,7 @@ export default function Propietarios({ perfil }) {
   const [tabProp, setTabProp] = useState('datos')
   const [nuevaAccion, setNuevaAccion] = useState(null)
   const [guardandoAccion, setGuardandoAccion] = useState(false)
+  const [inmueblesPorProp, setInmueblesPorProp] = useState({})
 
   useEffect(() => { load() }, [])
   useEffect(() => { if (modal) { setTabProp('datos'); setNuevaAccion(null) } }, [modal])
@@ -69,6 +70,18 @@ export default function Propietarios({ perfil }) {
     ])
     const listaProp = props || []
     setRows(listaProp)
+    // Inmuebles (código + id) por propietario, para mostrarlos en la lista
+    const idsProp = listaProp.map(p => p.id)
+    if (idsProp.length) {
+      const [{ data: dirInm }, { data: coInm }] = await Promise.all([
+        supabase.from('inmuebles').select('id, codigo, propietario_id').in('propietario_id', idsProp),
+        supabase.from('inmueble_propietarios').select('propietario_id, inmuebles(id, codigo)').in('propietario_id', idsProp),
+      ])
+      const mapa = {}
+      ;(dirInm || []).forEach(i => { (mapa[i.propietario_id] ||= []).push({ id: i.id, codigo: i.codigo }) })
+      ;(coInm || []).forEach(x => { if (x.inmuebles && !(mapa[x.propietario_id] ||= []).some(i => i.id === x.inmuebles.id)) mapa[x.propietario_id].push({ id: x.inmuebles.id, codigo: x.inmuebles.codigo }) })
+      setInmueblesPorProp(mapa)
+    }
     const sel = searchParams.get('sel')
     if (sel) {
       const encontrado = listaProp.find(r => String(r.id) === String(sel))
@@ -298,6 +311,7 @@ export default function Propietarios({ perfil }) {
                 <th {...thProps('movil')}>Móvil <span style={{fontSize:10}}>{sortIcon('movil')}</span></th>
                 <th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th>
                 <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
+                <th>Inmuebles</th>
               </tr></thead>
               <tbody>
                 {filtered().map(r => (
@@ -309,6 +323,7 @@ export default function Propietarios({ perfil }) {
                     <td>{r.movil || '—'}</td>
                     <td style={{ color: 'var(--info-text)' }}>{r.email || '—'}</td>
                     <td>{r.responsable?.nombre_responsable || '—'}</td>
+                    <td>{(inmueblesPorProp[r.id] || []).length ? inmueblesPorProp[r.id].map(i => <span key={i.id} className="badge badge-gray" style={{ marginRight: 4, cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11 }} onClick={e => { e.stopPropagation(); navigate(`/inmuebles?sel=${i.id}`) }}>{i.codigo}</span>) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
