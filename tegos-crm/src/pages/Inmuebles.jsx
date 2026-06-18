@@ -61,7 +61,7 @@ export default function Inmuebles({ perfil }) {
     }
     const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }, { data: tc }, { data: resps }, { data: cen }, { data: cag }] = await Promise.all([
       (() => {
-        let q = supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
+        let q = supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo), inquilinos(id, nombre, apellidos, fecha_fin_contrato)').order('codigo')
         if (inmuebleIds !== null) {
           if (inmuebleIds.length === 0) q = q.eq('id', -1)
           else q = q.in('id', inmuebleIds)
@@ -166,7 +166,7 @@ export default function Inmuebles({ perfil }) {
     }
     setModal(null); load()
     if (selected && inmuebleId) {
-      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').eq('id', inmuebleId).single()
+      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo), inquilinos(id, nombre, apellidos, fecha_fin_contrato)').eq('id', inmuebleId).single()
       if (updated) setSelected(updated)
     }
   }
@@ -223,6 +223,7 @@ export default function Inmuebles({ perfil }) {
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
   const propNombre = p => p ? `${p.nombre || ''} ${p.apellidos || ''}`.trim() : '—'
+  const inqVigor = r => (r.inquilinos || []).find(i => !i.fecha_fin_contrato) || null
   const initials = s => s ? s.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
@@ -318,6 +319,7 @@ export default function Inmuebles({ perfil }) {
                 <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
+                <th>Inquilino en vigor</th>
                 <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
               </tr></thead>
               <tbody>
@@ -331,6 +333,7 @@ export default function Inmuebles({ perfil }) {
                     <td>{r.poblacion || '—'}</td>
                     <td>{r.tipo_inmueble?.tipo || '—'}</td>
                     <td>{propNombre(r.propietarios)}{(r.inmueble_propietarios || []).length > 0 && <span className="badge badge-gray" style={{ marginLeft: 6, fontSize: 10 }}>+{r.inmueble_propietarios.length}</span>}</td>
+                    <td>{inqVigor(r) ? <span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); navigate(`/inquilinos?sel=${inqVigor(r).id}`) }}>{`${inqVigor(r).nombre || ''} ${inqVigor(r).apellidos || ''}`.trim()}</span> : '—'}</td>
                     <td>{r.seguro?.compania ? <span className="badge badge-gray">{r.seguro.compania}</span> : '—'}</td>
                   </tr>
                 ))}
