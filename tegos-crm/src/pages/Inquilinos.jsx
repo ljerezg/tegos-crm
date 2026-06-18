@@ -534,8 +534,8 @@ export default function Inquilinos({ perfil }) {
                   <th>Móvil</th>
                   <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio <SortIcon col="fecha_contrato" /></th>
                   <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin previsto <SortIcon col="fecha_fin_contrato" /></th>
-                  <th>Última renta</th>
-                  <th>Fecha última revisión</th>
+                  <th>Ult. Renta</th>
+                  <th>F. Ult. Rev.</th>
                   <th>Seg. rentas</th>
                 </tr>
               </thead>
