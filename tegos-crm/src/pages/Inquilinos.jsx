@@ -598,7 +598,7 @@ export default function Inquilinos({ perfil }) {
                 {selected.contrato_url && <a href={selected.contrato_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }}><i className="ti ti-file-type-pdf" /> Contrato</a>}
                 {!selected.carpeta_dropbox && !selected.fianza_ivima_url && !selected.contrato_url && <span style={{ fontSize: 13, color: 'var(--text3)' }}>Sin enlaces</span>}
               </div>
-              {(selected.nombre_conyuge || selected.movil_conyuge) && <>
+              {(selected.nombre_conyuge || selected.apellidos_conyuge || selected.movil_conyuge || selected.email_conyuge || selected.email_2_conyuge || selected.telefono_2_conyuge) && <>
                 <div className="field-section">Contacto 2</div>
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || '—'}</div></div>
