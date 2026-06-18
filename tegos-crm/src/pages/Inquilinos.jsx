@@ -706,6 +706,13 @@ export default function Inquilinos({ perfil }) {
                         {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
                       </select>
                     </div>
+                    <div className="form-section-title">Contacto 2</div>
+                    <div className="form-group"><label>Nombre contacto 2</label><input value={form.nombre_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, nombre_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>Apellidos contacto 2</label><input value={form.apellidos_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, apellidos_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>Móvil contacto 2</label><input value={form.movil_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, movil_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>Email contacto 2</label><input value={form.email_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, email_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>Teléfono 2 contacto 2</label><input value={form.telefono_2_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>Email 2 contacto 2</label><input value={form.email_2_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, email_2_conyuge: e.target.value }))} /></div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
                   {tabInq !== 'acc' && tabInq !== 'docs' && tabInq !== 'renta' && tabInq !== 'correos' && <div className="form-actions">
