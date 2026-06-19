@@ -152,7 +152,7 @@ export default function Inmuebles({ perfil }) {
       if (error) { alert(errDuplicado(error) ? 'Código ya utilizado' : 'Error al guardar: ' + error.message); return }
       inmuebleId = creado?.id
     } else {
-      const { id: _id, propietarios: _, inmueble_propietarios: _____, seguro: __, administrador_finca: ___, tipo_inmueble: ____, ...updateData } = data
+      const { id: _id, propietarios: _, inmueble_propietarios: _____, seguro: __, administrador_finca: ___, tipo_inmueble: ____, inquilinos: ______, ...updateData } = data
       const { error } = await supabase.from('inmuebles').update(updateData).eq('id', form.id)
       if (error) { alert(errDuplicado(error) ? 'Código ya utilizado' : 'Error al guardar: ' + error.message); return }
     }
