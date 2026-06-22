@@ -49,6 +49,18 @@ function ultimaRentaFecha(r) {
   const last = ultimaRentaRow(r)
   return last && last.fecha ? last.fecha : null
 }
+// Comparador genérico: vacíos al final, números numéricos, texto natural (es)
+function cmpVals(va, vb, dir) {
+  const ea = va === null || va === undefined || va === ''
+  const eb = vb === null || vb === undefined || vb === ''
+  if (ea && eb) return 0
+  if (ea) return 1
+  if (eb) return -1
+  let c
+  if (typeof va === 'number' && typeof vb === 'number') c = va - vb
+  else c = String(va).localeCompare(String(vb), 'es', { numeric: true, sensitivity: 'base' })
+  return dir === 'asc' ? c : -c
+}
 
 const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, aviso_fin: true, aviso_meses_antes: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
 
@@ -503,14 +515,20 @@ export default function Inquilinos({ perfil }) {
       const matchEstado = filtroEstado === 'todos' ? true : filtroEstado === 'vigor' ? !r.fecha_fin_contrato : !!r.fecha_fin_contrato
       return matchSearch && matchEstado
     })
-    return [...data].sort((a, b) => {
-      let va = '', vb = ''
-      if (sortCol === 'nombre') { va = nombre(a); vb = nombre(b) }
-      else if (sortCol === 'inmueble') { va = a.inmuebles?.codigo || ''; vb = b.inmuebles?.codigo || '' }
-      else if (sortCol === 'fecha_contrato') { va = a.fecha_contrato || ''; vb = b.fecha_contrato || '' }
-      else if (sortCol === 'fecha_fin_contrato') { va = a.fecha_fin_contrato || ''; vb = b.fecha_fin_contrato || '' }
-      return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
-    })
+    const sortVal = (r, col) => {
+      switch (col) {
+        case 'nombre': return nombre(r)
+        case 'inmueble': return r.inmuebles?.codigo || ''
+        case 'movil': return r.movil || ''
+        case 'fecha_contrato': return r.fecha_contrato || ''
+        case 'fecha_fin_contrato': return calcVenc(r) || ''
+        case 'ult_renta': return ultimaRentaVal(r)
+        case 'f_ult_rev': return ultimaRentaFecha(r) || ''
+        case 'prox_act': { const x = proximaActualizacion(r.fecha_contrato); return x ? x.dias : null }
+        default: return ''
+      }
+    }
+    return [...data].sort((a, b) => cmpVals(sortVal(a, sortCol), sortVal(b, sortCol), sortDir))
   }
 
   function toggleSort(col) {
@@ -541,12 +559,12 @@ export default function Inquilinos({ perfil }) {
                 <tr>
                   <th onClick={() => toggleSort('nombre')} style={{ cursor: 'pointer' }}>Nombre <SortIcon col="nombre" /></th>
                   <th onClick={() => toggleSort('inmueble')} style={{ cursor: 'pointer' }}>Inmueble <SortIcon col="inmueble" /></th>
-                  <th>Móvil</th>
+                  <th onClick={() => toggleSort('movil')} style={{ cursor: 'pointer' }}>Móvil <SortIcon col="movil" /></th>
                   <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio <SortIcon col="fecha_contrato" /></th>
                   <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin previsto <SortIcon col="fecha_fin_contrato" /></th>
-                  <th>Ult. Renta</th>
-                  <th>F. Ult. Rev.</th>
-                  <th>Próx. act. renta</th>
+                  <th onClick={() => toggleSort('ult_renta')} style={{ cursor: 'pointer' }}>Ult. Renta <SortIcon col="ult_renta" /></th>
+                  <th onClick={() => toggleSort('f_ult_rev')} style={{ cursor: 'pointer' }}>F. Ult. Rev. <SortIcon col="f_ult_rev" /></th>
+                  <th onClick={() => toggleSort('prox_act')} style={{ cursor: 'pointer' }}>Próx. act. renta <SortIcon col="prox_act" /></th>
                 </tr>
               </thead>
               <tbody>

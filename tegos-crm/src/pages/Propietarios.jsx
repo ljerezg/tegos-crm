@@ -284,6 +284,7 @@ export default function Propietarios({ perfil }) {
       if (col === 'nombre') return nombre(r)
       if (col === 'tipo') return r.tipo_persona?.tipo
       if (col === 'responsable') return r.responsable?.nombre_responsable
+      if (col === 'inmuebles') { const arr = inmueblesPorProp[r.id] || []; return arr.length ? arr.map(i => i.codigo).sort()[0] : '' }
       return r[col]
     })
   }
@@ -311,7 +312,7 @@ export default function Propietarios({ perfil }) {
                 <th {...thProps('movil')}>Móvil <span style={{fontSize:10}}>{sortIcon('movil')}</span></th>
                 <th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th>
                 <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
-                <th>Inmuebles</th>
+                <th {...thProps('inmuebles')}>Inmuebles <span style={{fontSize:10}}>{sortIcon('inmuebles')}</span></th>
               </tr></thead>
               <tbody>
                 {filtered().map(r => (

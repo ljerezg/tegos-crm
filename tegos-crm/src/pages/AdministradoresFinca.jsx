@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCtrlG } from '../lib/useCtrlG'
+import { useSortable } from '../components/SortableTable.jsx'
 
 const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
 
@@ -14,6 +15,7 @@ export default function AdministradoresFinca({ perfil }) {
   const [form, setForm] = useState(EMPTY)
   const [contactos, setContactos] = useState([])
   const readOnly = perfil?.rol === 'visor'
+  const { sortData, sortIcon, thProps } = useSortable('nombre')
 
   useEffect(() => { load() }, [])
   useCtrlG(save, !!modal)
@@ -52,11 +54,15 @@ export default function AdministradoresFinca({ perfil }) {
   }
 
   function filtered() {
-    return rows.filter(r => {
+    const data = rows.filter(r => {
       const q = (search || '').toLowerCase()
       const matchSearch = [r.nombre, r.email, r.telefono, r.municipio].join(' ').toLowerCase().includes(q)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
+    })
+    return sortData(data, (r, col) => {
+      if (col === 'telefono') return r.telefono || r.movil || ''
+      return r[col]
     })
   }
   const f = key => e => setForm({ ...form, [key]: e.target.value })
@@ -78,7 +84,7 @@ export default function AdministradoresFinca({ perfil }) {
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
-              <thead><tr><th>Nombre / Razón social</th><th>Municipio</th><th>Teléfono</th><th>Email</th></tr></thead>
+              <thead><tr><th {...thProps('nombre')}>Nombre / Razón social <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th><th {...thProps('municipio')}>Municipio <span style={{fontSize:10}}>{sortIcon('municipio')}</span></th><th {...thProps('telefono')}>Teléfono <span style={{fontSize:10}}>{sortIcon('telefono')}</span></th><th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th></tr></thead>
               <tbody>
                 {filtered().length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin administradores</td></tr>}
                 {filtered().map(r => (

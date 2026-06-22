@@ -291,6 +291,7 @@ export default function Inmuebles({ perfil }) {
       if (col === 'poblacion') return r.poblacion
       if (col === 'tipo') return r.tipo_inmueble?.tipo
       if (col === 'propietario') return propNombre(r.propietarios)
+      if (col === 'inquilino') { const i = inqVigor(r); return i ? `${i.nombre || ''} ${i.apellidos || ''}`.trim() : '' }
       if (col === 'seguro') return r.seguro?.compania
       return r[col]
     })
@@ -319,7 +320,7 @@ export default function Inmuebles({ perfil }) {
                 <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
-                <th>Inquilino en vigor</th>
+                <th {...thProps('inquilino')}>Inquilino en vigor <span style={{fontSize:10}}>{sortIcon('inquilino')}</span></th>
                 <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
               </tr></thead>
               <tbody>

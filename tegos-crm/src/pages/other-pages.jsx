@@ -547,6 +547,8 @@ export function Acciones({ perfil }) {
       if (col === 'responsable') return r.responsable?.nombre_responsable
       if (col === 'tipo') return r.tipo_contacto?.tipo_contacto
       if (col === 'entidad') return nombreEntidad(r)
+      if (col === 'seccion') return tipoDe(r)
+      if (col === 'inmueble') return r.inquilinos?.inmuebles?.codigo || ''
       return r[col]
     })
   }
@@ -585,14 +587,14 @@ export function Acciones({ perfil }) {
             <table>
               <thead><tr>
                 <th {...thProps('fecha')}>Fecha <span style={{fontSize:10}}>{sortIcon('fecha')}</span></th>
-                <th>Hora</th>
-                {tab === 'todos' && <th>Sección</th>}
+                <th {...thProps('hora')}>Hora <span style={{fontSize:10}}>{sortIcon('hora')}</span></th>
+                {tab === 'todos' && <th {...thProps('seccion')}>Sección <span style={{fontSize:10}}>{sortIcon('seccion')}</span></th>}
                 <th {...thProps('entidad')}>{tabLabel[tab]} <span style={{fontSize:10}}>{sortIcon('entidad')}</span></th>
-                {(tab === 'inquilino' || tab === 'todos') && <th>Inmueble</th>}
+                {(tab === 'inquilino' || tab === 'todos') && <th {...thProps('inmueble')}>Inmueble <span style={{fontSize:10}}>{sortIcon('inmueble')}</span></th>}
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
-                <th>Indicaciones</th>
+                <th {...thProps('indicaciones')}>Indicaciones <span style={{fontSize:10}}>{sortIcon('indicaciones')}</span></th>
                 <th {...thProps('proxima_fecha')}>Próx. fecha <span style={{fontSize:10}}>{sortIcon('proxima_fecha')}</span></th>
-                <th>Próx. acción</th>
+                <th {...thProps('proxima_accion')}>Próx. acción <span style={{fontSize:10}}>{sortIcon('proxima_accion')}</span></th>
                 <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
                 <th></th>
               </tr></thead>
