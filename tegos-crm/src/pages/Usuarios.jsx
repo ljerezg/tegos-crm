@@ -41,21 +41,20 @@ export default function Usuarios() {
 
     if (modal === 'new') {
       if (!data.password) return alert('La contraseña es obligatoria para nuevos usuarios')
-      // Crear usuario via función edge o service role
-      // Por ahora creamos solo el perfil con invitación
-      const { data: authData, error } = await supabase.auth.admin.inviteUserByEmail(data.email)
-      if (error) {
-        alert('Error: ' + error.message)
+      // Crear la cuenta de acceso + perfil mediante la Edge Function (segura, solo admins)
+      const { data: res, error } = await supabase.functions.invoke('crear-usuario', {
+        body: {
+          email: data.email,
+          password: data.password,
+          nombre: data.nombre,
+          rol: data.rol,
+          propietario_id: data.propietario_id || null,
+        },
+      })
+      if (error || !res?.ok) {
+        alert('Error al crear usuario: ' + (res?.error || error?.message || 'desconocido'))
         return
       }
-      await supabase.from('perfil_usuario').insert({
-        id: authData.user.id,
-        email: data.email,
-        nombre: data.nombre,
-        rol: data.rol,
-        propietario_id: data.propietario_id || null,
-        activo: true,
-      })
     } else {
       await supabase.from('perfil_usuario').update({
         nombre: data.nombre,
@@ -201,3 +200,4 @@ export default function Usuarios() {
     </div>
   )
 }
+
