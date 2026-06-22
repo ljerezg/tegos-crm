@@ -54,7 +54,7 @@ export default function Dashboard({ perfil }) {
   const nom = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
   const totalRes = gres ? gres.inmuebles.length + gres.inquilinos.length + gres.propietarios.length + gres.contactos.length + gres.administradores.length : 0
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [perfil])
 
   async function load() {
     // Si es propietario, limitar todo a SUS inmuebles (propios + en copropiedad)
