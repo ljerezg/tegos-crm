@@ -84,7 +84,7 @@ export default function App({ perfil }) {
         </div>
         <div className="content">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard perfil={perfil} />} />
             <Route path="/inmuebles" element={<Inmuebles perfil={perfil} />} />
             <Route path="/propietarios" element={<Propietarios perfil={perfil} />} />
             <Route path="/inquilinos" element={<Inquilinos perfil={perfil} />} />
