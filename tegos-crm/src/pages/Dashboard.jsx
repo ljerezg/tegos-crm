@@ -21,15 +21,21 @@ export default function Dashboard({ perfil }) {
     const t = setTimeout(async () => {
       const safe = q.replace(/[,()%*]/g, ' ').trim()
       if (safe.length < 2) { setGres(null); setGloading(false); return }
-      const like = `%${safe}%`
+      const words = safe.split(/\s+/).filter(Boolean)
+      // Cada palabra debe aparecer en alguno de los campos (AND entre palabras, OR entre campos).
+      // Así "Luis Jerez" casa con nombre="Luis" y apellidos="Jerez".
+      const aplicar = (query, cols) => {
+        words.forEach(w => { const l = `%${w}%`; query = query.or(cols.map(c => `${c}.ilike.${l}`).join(',')) })
+        return query.limit(8)
+      }
       const tasks = [
-        supabase.from('inmuebles').select('id, codigo, calle, poblacion').or(`codigo.ilike.${like},calle.ilike.${like},poblacion.ilike.${like}`).limit(8),
-        supabase.from('inquilinos').select('id, nombre, apellidos, movil, email, inmuebles(codigo)').or(`nombre.ilike.${like},apellidos.ilike.${like},dni_cif.ilike.${like},movil.ilike.${like},email.ilike.${like}`).limit(8),
-        supabase.from('propietarios').select('id, nombre, apellidos, movil, email').or(`nombre.ilike.${like},apellidos.ilike.${like},dni_cif.ilike.${like},movil.ilike.${like},email.ilike.${like}`).limit(8),
+        aplicar(supabase.from('inmuebles').select('id, codigo, calle, poblacion'), ['codigo', 'calle', 'poblacion']),
+        aplicar(supabase.from('inquilinos').select('id, nombre, apellidos, movil, email, inmuebles(codigo)'), ['nombre', 'apellidos', 'dni_cif', 'movil', 'email']),
+        aplicar(supabase.from('propietarios').select('id, nombre, apellidos, movil, email'), ['nombre', 'apellidos', 'dni_cif', 'movil', 'email']),
       ]
       if (veTodo) {
-        tasks.push(supabase.from('persona_contacto').select('id, nombre, apellidos, movil, email').or(`nombre.ilike.${like},apellidos.ilike.${like},movil.ilike.${like},email.ilike.${like}`).limit(8))
-        tasks.push(supabase.from('administrador_finca').select('id, nombre, email').or(`nombre.ilike.${like},email.ilike.${like}`).limit(8))
+        tasks.push(aplicar(supabase.from('persona_contacto').select('id, nombre, apellidos, movil, email'), ['nombre', 'apellidos', 'movil', 'email']))
+        tasks.push(aplicar(supabase.from('administrador_finca').select('id, nombre, email'), ['nombre', 'email']))
       }
       const res = await Promise.all(tasks)
       setGres({
