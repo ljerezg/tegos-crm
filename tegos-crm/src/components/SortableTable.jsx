@@ -12,9 +12,16 @@ export function useSortable(defaultCol, defaultDir) {
   function sortData(data, getValue) {
     if (!sortCol) return data
     return [...data].sort((a, b) => {
-      const va = getValue(a, sortCol) || ''
-      const vb = getValue(b, sortCol) || ''
-      const cmp = String(va).localeCompare(String(vb))
+      const va = getValue(a, sortCol)
+      const vb = getValue(b, sortCol)
+      const ea = va === null || va === undefined || va === ''
+      const eb = vb === null || vb === undefined || vb === ''
+      if (ea && eb) return 0
+      if (ea) return 1
+      if (eb) return -1
+      let cmp
+      if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb
+      else cmp = String(va).localeCompare(String(vb), 'es', { numeric: true, sensitivity: 'base' })
       return sortDir === 'asc' ? cmp : -cmp
     })
   }
