@@ -358,6 +358,16 @@ export default function Inquilinos({ perfil }) {
   const initials = r => nombre(r).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
   const diasRestantes = d => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null
+  const proximaActualizacion = d => {
+    if (!d) return null
+    const inicio = new Date(d)
+    const hoyD = new Date()
+    const anios = Math.floor((hoyD - inicio) / (365.25 * 86400000))
+    const proxima = new Date(inicio)
+    proxima.setFullYear(inicio.getFullYear() + anios + 1)
+    const dias = Math.ceil((proxima - hoyD) / 86400000)
+    return { fecha: proxima, dias }
+  }
 
   const extraInqGrid = suf => (
     <div className="form-grid">
@@ -536,13 +546,14 @@ export default function Inquilinos({ perfil }) {
                   <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin previsto <SortIcon col="fecha_fin_contrato" /></th>
                   <th>Ult. Renta</th>
                   <th>F. Ult. Rev.</th>
-                  <th>Seguro</th>
+                  <th>Próx. act. renta</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedFiltered().map(r => {
                   const dias = diasRestantes(r.fecha_fin_contrato)
                   const badge = dias === null ? null : dias < 30 ? 'badge-red' : dias < 90 ? 'badge-yellow' : 'badge-green'
+                  const act = proximaActualizacion(r.fecha_contrato)
                   return (
                     <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') }}>
                       <td><strong>{nombre(r)}</strong></td>
@@ -554,7 +565,7 @@ export default function Inquilinos({ perfil }) {
                         : <span>{calcVenc(r) ? fmtDate(calcVenc(r)) + ' ' : ''}<span className="badge badge-green">En vigor</span></span>}</td>
                       <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'}</td>
                       <td>{ultimaRentaFecha(r) ? fmtDate(ultimaRentaFecha(r)) : '—'}</td>
-                      <td>{r.seguro?.compania || '—'}</td>
+                      <td>{act ? <span style={act.dias < 30 ? { color: 'var(--danger-text)', fontWeight: 600 } : undefined}>{fmtDate(act.fecha)} ({act.dias} días)</span> : '—'}</td>
                     </tr>
                   )
                 })}
