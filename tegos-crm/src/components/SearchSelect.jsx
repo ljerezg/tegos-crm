@@ -18,6 +18,7 @@ export default function SearchSelect({ options, value, onChange, placeholder = '
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <div
+        className="ss-trigger"
         onClick={() => { setOpen(!open); setSearch('') }}
         style={{ padding: '8px 11px', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', fontSize: 13, background: 'var(--bg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
       >
