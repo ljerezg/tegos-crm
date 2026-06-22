@@ -72,7 +72,8 @@ export default function Dashboard({ perfil }) {
     if (inmuebleIds) qCntInm = qCntInm.in("id", inmuebleIds)
     let qCntInq = supabase.from("inquilinos").select("*", { count: "exact", head: true })
     if (inmuebleIds) qCntInq = qCntInq.in("inmueble_id", inmuebleIds)
-    const qCntProp = supabase.from("propietarios").select("*", { count: "exact", head: true })
+    let qCntProp = supabase.from("propietarios").select("*", { count: "exact", head: true })
+    if (inmuebleIds) qCntProp = qCntProp.eq("id", perfil.propietario_id)
 
     let qAccInm = supabase.from("accion_inmueble").select("id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo)").eq("completada", false).not("proxima_fecha", "is", null)
     if (inmuebleIds) qAccInm = qAccInm.in("inmueble_id", inmuebleIds)
