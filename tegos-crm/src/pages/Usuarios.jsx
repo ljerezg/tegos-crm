@@ -143,9 +143,9 @@ export default function Usuarios() {
             <div className="modal-body">
               <div className="form-grid">
                 <div className="form-group"><label>Nombre</label><input value={form.nombre || ''} onChange={f('nombre')} /></div>
-                <div className="form-group"><label>Email *</label><input type="email" value={form.email || ''} onChange={f('email')} disabled={modal === 'edit'} /></div>
+                <div className="form-group"><label>Email *</label><input type="email" name="nuevo-usuario-email" autoComplete="off" value={form.email || ''} onChange={f('email')} disabled={modal === 'edit'} /></div>
                 {modal === 'new' && (
-                  <div className="form-group form-full"><label>Contraseña inicial *</label><input type="password" value={form.password || ''} onChange={f('password')} /></div>
+                  <div className="form-group form-full"><label>Contraseña inicial *</label><input type="password" name="nuevo-usuario-password" autoComplete="new-password" value={form.password || ''} onChange={f('password')} /></div>
                 )}
                 <div className="form-group"><label>Rol *</label>
                   <select value={form.rol || ''} onChange={f('rol')}>
