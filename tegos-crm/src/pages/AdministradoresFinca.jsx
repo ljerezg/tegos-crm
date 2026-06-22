@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCtrlG } from '../lib/useCtrlG'
 import { useSortable } from '../components/SortableTable.jsx'
+import { useSearchParams } from 'react-router-dom'
 
 const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
 
@@ -16,6 +17,7 @@ export default function AdministradoresFinca({ perfil }) {
   const [contactos, setContactos] = useState([])
   const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('nombre')
+  const [searchParams, setSearchParams] = useSearchParams()
 
   useEffect(() => { load() }, [])
   useCtrlG(save, !!modal)
@@ -24,6 +26,8 @@ export default function AdministradoresFinca({ perfil }) {
     setLoading(true)
     const { data } = await supabase.from('administrador_finca').select('*').order('nombre')
     setRows(data || [])
+    const sel = searchParams.get('sel')
+    if (sel) { const found = (data || []).find(r => String(r.id) === String(sel)); if (found) selectRow(found); setSearchParams({}, { replace: true }) }
     setLoading(false)
   }
 

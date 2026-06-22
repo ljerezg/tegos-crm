@@ -2,11 +2,51 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
-export default function Dashboard() {
+export default function Dashboard({ perfil }) {
   const [stats, setStats] = useState({ inmuebles: 0, inquilinos: 0, propietarios: 0 })
   const [proxAcciones, setProxAcciones] = useState([])
   const [vencimientos, setVencimientos] = useState([])
   const navigate = useNavigate()
+  const veTodo = perfil?.rol === 'administrador' || perfil?.rol === 'visor'
+
+  // ---- Buscador global ----
+  const [gq, setGq] = useState('')
+  const [gres, setGres] = useState(null)
+  const [gloading, setGloading] = useState(false)
+
+  useEffect(() => {
+    const q = gq.trim()
+    if (q.length < 2) { setGres(null); setGloading(false); return }
+    setGloading(true)
+    const t = setTimeout(async () => {
+      const safe = q.replace(/[,()%*]/g, ' ').trim()
+      if (safe.length < 2) { setGres(null); setGloading(false); return }
+      const like = `%${safe}%`
+      const tasks = [
+        supabase.from('inmuebles').select('id, codigo, calle, poblacion').or(`codigo.ilike.${like},calle.ilike.${like},poblacion.ilike.${like}`).limit(8),
+        supabase.from('inquilinos').select('id, nombre, apellidos, movil, email, inmuebles(codigo)').or(`nombre.ilike.${like},apellidos.ilike.${like},dni_cif.ilike.${like},movil.ilike.${like},email.ilike.${like}`).limit(8),
+        supabase.from('propietarios').select('id, nombre, apellidos, movil, email').or(`nombre.ilike.${like},apellidos.ilike.${like},dni_cif.ilike.${like},movil.ilike.${like},email.ilike.${like}`).limit(8),
+      ]
+      if (veTodo) {
+        tasks.push(supabase.from('persona_contacto').select('id, nombre, apellidos, movil, email').or(`nombre.ilike.${like},apellidos.ilike.${like},movil.ilike.${like},email.ilike.${like}`).limit(8))
+        tasks.push(supabase.from('administrador_finca').select('id, nombre, email').or(`nombre.ilike.${like},email.ilike.${like}`).limit(8))
+      }
+      const res = await Promise.all(tasks)
+      setGres({
+        inmuebles: res[0]?.data || [],
+        inquilinos: res[1]?.data || [],
+        propietarios: res[2]?.data || [],
+        contactos: veTodo ? (res[3]?.data || []) : [],
+        administradores: veTodo ? (res[4]?.data || []) : [],
+      })
+      setGloading(false)
+    }, 250)
+    return () => clearTimeout(t)
+  }, [gq, veTodo])
+
+  const irA = path => { setGq(''); setGres(null); navigate(path) }
+  const nom = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
+  const totalRes = gres ? gres.inmuebles.length + gres.inquilinos.length + gres.propietarios.length + gres.contactos.length + gres.administradores.length : 0
 
   useEffect(() => { load() }, [])
 
@@ -74,8 +114,61 @@ export default function Dashboard() {
     return { fecha: proxima, dias }
   }
 
+  const ResGrupo = ({ icon, label, items, render }) => items.length === 0 ? null : (
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+        <i className={`ti ${icon}`} /> {label} <span className="badge badge-gray" style={{ fontSize: 10 }}>{items.length}</span>
+      </div>
+      {items.map(render)}
+    </div>
+  )
+
+  const resItem = (key, primary, secondary, onClick) => (
+    <div key={key} onClick={onClick} className="search-result-item" style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '8px 12px', cursor: 'pointer', borderRadius: 'var(--radius-sm)' }}
+      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg3)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+      <span style={{ fontWeight: 500 }}>{primary}</span>
+      {secondary && <span style={{ fontSize: 12, color: 'var(--text3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{secondary}</span>}
+    </div>
+  )
+
   return (
     <div>
+      {/* Buscador global */}
+      <div style={{ position: 'relative', marginBottom: 18 }}>
+        <div className="search-input" style={{ width: '100%', maxWidth: 'none' }}>
+          <i className="ti ti-search" />
+          <input
+            placeholder="Buscar en inmuebles, inquilinos, propietarios..."
+            value={gq}
+            onChange={e => setGq(e.target.value)}
+            style={{ width: '100%' }}
+          />
+          {gq && <i className="ti ti-x" style={{ cursor: 'pointer', color: 'var(--text3)' }} onClick={() => { setGq(''); setGres(null) }} />}
+        </div>
+        {gq.trim().length >= 2 && (
+          <div className="card" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, padding: '6px 0', maxHeight: 420, overflowY: 'auto', boxShadow: 'var(--shadow-md)' }}>
+            {gloading ? (
+              <div style={{ padding: '14px 12px', color: 'var(--text3)', fontSize: 13 }}><i className="ti ti-loader ti-spin" /> Buscando...</div>
+            ) : totalRes === 0 ? (
+              <div style={{ padding: '14px 12px', color: 'var(--text3)', fontSize: 13 }}>Sin resultados para "{gq.trim()}"</div>
+            ) : (
+              <>
+                <ResGrupo icon="ti-building" label="Inmuebles" items={gres.inmuebles}
+                  render={r => resItem('inm-' + r.id, r.codigo, [r.calle, r.poblacion].filter(Boolean).join(', '), () => irA(`/inmuebles?sel=${r.id}`))} />
+                <ResGrupo icon="ti-users" label="Inquilinos" items={gres.inquilinos}
+                  render={r => resItem('inq-' + r.id, nom(r), [r.inmuebles?.codigo, r.movil].filter(Boolean).join(' · '), () => irA(`/inquilinos?sel=${r.id}`))} />
+                <ResGrupo icon="ti-id-badge" label="Propietarios" items={gres.propietarios}
+                  render={r => resItem('prop-' + r.id, nom(r), [r.movil, r.email].filter(Boolean).join(' · '), () => irA(`/propietarios?sel=${r.id}`))} />
+                <ResGrupo icon="ti-address-book" label="Contactos" items={gres.contactos}
+                  render={r => resItem('con-' + r.id, nom(r), [r.movil, r.email].filter(Boolean).join(' · '), () => irA(`/contactos?sel=${r.id}`))} />
+                <ResGrupo icon="ti-building-community" label="Adm. Fincas" items={gres.administradores}
+                  render={r => resItem('adm-' + r.id, r.nombre || '—', r.email, () => irA(`/administradores?sel=${r.id}`))} />
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Stats - 2x2 en móvil, 4 en escritorio */}
       <div className="stats-grid">
         <div className="stat-card" onClick={() => navigate('/inmuebles')} style={{ cursor: 'pointer' }}>
@@ -148,7 +241,7 @@ export default function Dashboard() {
                     venc = v
                   }
                   return (
-                    <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => navigate('/inquilinos')}>
+                    <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/inquilinos?sel=${c.id}`)}>
                       <td>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}</td>
                       <td><span className="badge badge-gray">{c.inmuebles?.codigo || '—'}</span>{c.inmuebles?.propietarios && <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text2)' }}>{`${c.inmuebles.propietarios.nombre || ''} ${c.inmuebles.propietarios.apellidos || ''}`.trim()}</span>}</td>
                       <td>{venc ? `${venc.toLocaleDateString('es-ES')} (${c.duracion_contrato} años)` : '—'}</td>

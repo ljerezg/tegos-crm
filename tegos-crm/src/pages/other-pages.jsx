@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
 import { useSortable } from '../components/SortableTable.jsx'
@@ -48,6 +48,7 @@ export function Contactos({ perfil }) {
   const [responsables, setResponsables] = useState([])
   const [tipos, setTipos] = useState([])
   const { sortData, sortIcon, thProps } = useSortable('nombre')
+  const [searchParams, setSearchParams] = useSearchParams()
   const readOnly = perfil?.rol === 'visor'
   const [tiposContacto, setTiposContacto] = useState([])
   const [tabCont, setTabCont] = useState('datos')
@@ -69,6 +70,8 @@ export function Contactos({ perfil }) {
       supabase.from('tipo_contacto').select('*'),
     ])
     setRows(data || [])
+    const sel = searchParams.get('sel')
+    if (sel) { const found = (data || []).find(r => String(r.id) === String(sel)); if (found) selectRow(found); setSearchParams({}, { replace: true }) }
     setClasificaciones(clas || [])
     setConocimientos(conoc || [])
     setResponsables(resps || [])
