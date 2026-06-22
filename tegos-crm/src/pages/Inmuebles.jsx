@@ -16,7 +16,7 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
-const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', tipo_inmueble_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
+const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', tipo_inmueble_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '', en_comercializacion: false }
 
 export default function Inmuebles({ perfil }) {
   const [rows, setRows] = useState([])
@@ -282,7 +282,7 @@ export default function Inmuebles({ perfil }) {
   function filtered() {
     let data = rows.filter(r => {
       const matchSearch = ms([r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos], search)
-      const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
+      const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : filtro === 'comercializando' ? r.en_comercializacion : !!r.fecha_baja
       return matchSearch && matchFiltro
     })
     return sortData(data, (r, col) => {
@@ -303,7 +303,7 @@ export default function Inmuebles({ perfil }) {
         <div className="card-header">
           <h2>Inmuebles <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered().length}</span></h2>
           <div style={{ display: 'flex', gap: 6 }}>
-            {[['vigor','En vigor'],['finalizados','Con baja'],['todos','Todos']].map(([v,l]) => (
+            {[['vigor','En vigor'],['finalizados','Con baja'],['comercializando','Comercializando'],['todos','Todos']].map(([v,l]) => (
               <button key={v} className={`btn btn-sm ${filtro === v ? 'btn-primary' : ''}`} onClick={() => setFiltro(v)}>{l}</button>
             ))}
           </div>
@@ -329,7 +329,7 @@ export default function Inmuebles({ perfil }) {
                     onClick={() => selectRow(r)}
                     onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setOtrosProps((r.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}
                     style={{ background: selected?.id === r.id ? 'var(--accent-bg)' : '' }}>
-                    <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
+                    <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong>{r.en_comercializacion && <span className="badge badge-yellow" style={{ marginLeft: 6, fontSize: 10 }}>Comerc.</span>}</td>
                     <td>{r.calle}{r.numero_calle ? ` ${r.numero_calle}` : ''}{r.piso ? `, ${r.piso}` : ''}</td>
                     <td>{r.poblacion || '—'}</td>
                     <td>{r.tipo_inmueble?.tipo || '—'}</td>
@@ -464,6 +464,7 @@ export default function Inmuebles({ perfil }) {
               {modal === 'edit' && tabInm === 'docs' && <Documentos entidadTipo="inmueble" entidadId={form.id} readOnly={readOnly} />}
               {(modal !== 'edit' || tabInm === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Código *</label><input value={form.codigo ?? ''} onChange={f('codigo')} /></div>
+                <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.en_comercializacion ?? false} onChange={e => setForm(prev => ({ ...prev, en_comercializacion: e.target.checked }))} style={{ width: 16, height: 16 }} /> En comercialización</label></div>
                 <div className="form-group"><label>Propietario</label>
                   <SearchSelect
                     options={propietarios.map(p => ({ id: p.id, label: propNombre(p) }))}

@@ -696,18 +696,22 @@ export function Comercializando() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const { sortData, sortIcon, thProps } = useSortable('descripcion')
+  const { sortData, sortIcon, thProps } = useSortable('codigo')
 
   useEffect(() => {
-    supabase.from('inmuebles_comercializando')
-      .select('*, seguro(compania), inmuebles(codigo, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))')
-      .order('descripcion')
+    supabase.from('inmuebles')
+      .select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), seguro(compania)')
+      .eq('en_comercializacion', true)
+      .order('codigo')
       .then(({ data }) => { setRows(data || []); setLoading(false) })
   }, [])
 
+  const propName = r => `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}`.trim()
+
   function filtered() {
-    let data = rows.filter(r => ms([r.descripcion, r.calle, r.poblacion, r.propietario], search))
+    let data = rows.filter(r => ms([r.codigo, r.calle, r.poblacion, propName(r)], search))
     return sortData(data, (r, col) => {
+      if (col === 'propietario') return propName(r)
       if (col === 'seguro') return r.seguro?.compania
       return r[col]
     })
@@ -721,10 +725,11 @@ export function Comercializando() {
       </div>
       <div className="table-wrap">
         {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
+          filtered().length === 0 ? <div className="empty"><i className="ti ti-home-search" />No hay inmuebles marcados como En comercialización. Márcalos desde la ficha del inmueble.</div> : (
           <table>
             <thead><tr>
-              <th {...thProps('descripcion')}>Código <span style={{fontSize:10}}>{sortIcon('descripcion')}</span></th>
-              <th {...thProps('calle')}>Calle <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
+              <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
+              <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
               <th {...thProps('piso')}>Piso <span style={{fontSize:10}}>{sortIcon('piso')}</span></th>
               <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
               <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
@@ -733,16 +738,17 @@ export function Comercializando() {
             <tbody>
               {filtered().map(r => (
                 <tr key={r.id}>
-                  <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.descripcion || '—'}</strong></td>
+                  <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo || '—'}</strong></td>
                   <td>{r.calle || '—'}</td>
                   <td>{r.piso || '—'}</td>
                   <td>{r.poblacion || '—'}</td>
-                  <td>{r.propietario || '—'}</td>
+                  <td>{propName(r) || '—'}</td>
                   <td>{r.seguro?.compania || '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          )
         )}
       </div>
     </div>
