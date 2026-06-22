@@ -57,31 +57,53 @@ export default function Dashboard({ perfil }) {
   useEffect(() => { load() }, [])
 
   async function load() {
+    // Si es propietario, limitar todo a SUS inmuebles (propios + en copropiedad)
+    let inmuebleIds = null
+    if (perfil?.rol === "propietario" && perfil?.propietario_id) {
+      const [{ data: dir }, { data: co }] = await Promise.all([
+        supabase.from("inmuebles").select("id").eq("propietario_id", perfil.propietario_id),
+        supabase.from("inmueble_propietarios").select("inmueble_id").eq("propietario_id", perfil.propietario_id),
+      ])
+      inmuebleIds = [...new Set([...(dir || []).map(i => i.id), ...(co || []).map(i => i.inmueble_id)])]
+      if (inmuebleIds.length === 0) inmuebleIds = [-1]
+    }
+
+    let qCntInm = supabase.from("inmuebles").select("*", { count: "exact", head: true })
+    if (inmuebleIds) qCntInm = qCntInm.in("id", inmuebleIds)
+    let qCntInq = supabase.from("inquilinos").select("*", { count: "exact", head: true })
+    if (inmuebleIds) qCntInq = qCntInq.in("inmueble_id", inmuebleIds)
+    const qCntProp = supabase.from("propietarios").select("*", { count: "exact", head: true })
+
+    let qAccInm = supabase.from("accion_inmueble").select("id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo)").eq("completada", false).not("proxima_fecha", "is", null)
+    if (inmuebleIds) qAccInm = qAccInm.in("inmueble_id", inmuebleIds)
+    qAccInm = qAccInm.order("proxima_fecha").limit(10)
+
+    const qAccInq = supabase.from("accion_inquilino").select("id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inquilinos(nombre, apellidos, inmueble_id, inmuebles(codigo))").eq("completada", false).not("proxima_fecha", "is", null).order("proxima_fecha").limit(50)
+
+    let qContr = supabase.from("inquilinos").select("id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, duracion_contrato, inmueble_id, inmuebles(codigo, calle, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))").is("fecha_fin_contrato", null).not("fecha_contrato", "is", null)
+    if (inmuebleIds) qContr = qContr.in("inmueble_id", inmuebleIds)
+
     const [{ count: totalInm }, { count: totalInq }, { count: totalProps }, { data: accInm }, { data: accInq }, { data: contratos }] = await Promise.all([
-      supabase.from('inmuebles').select('*', { count: 'exact', head: true }),
-      supabase.from('inquilinos').select('*', { count: 'exact', head: true }),
-      supabase.from('propietarios').select('*', { count: 'exact', head: true }),
-      supabase.from('accion_inmueble').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inmuebles(codigo)').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
-      supabase.from('accion_inquilino').select('id, proxima_fecha, proxima_accion, indicaciones, completada, responsable(nombre_responsable), inquilinos(nombre, apellidos, inmuebles(codigo))').eq('completada', false).not('proxima_fecha', 'is', null).order('proxima_fecha').limit(10),
-      supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato, duracion_contrato, inmuebles(codigo, calle, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos))').is('fecha_fin_contrato', null).not('fecha_contrato', 'is', null),
+      qCntInm, qCntInq, qCntProp, qAccInm, qAccInq, qContr,
     ])
 
     setStats({ inmuebles: totalInm || 0, inquilinos: totalInq || 0, propietarios: totalProps || 0 })
 
-    const hoy = new Date(); hoy.setHours(0,0,0,0)
+    let accInqList = accInq || []
+    if (inmuebleIds) accInqList = accInqList.filter(a => inmuebleIds.includes(a.inquilinos?.inmueble_id))
+
     const allAcciones = [
-      ...(accInm || []).map(a => ({ ...a, entidad: a.inmuebles?.codigo || '—', tabla: 'accion_inmueble' })),
-      ...(accInq || []).map(a => ({
+      ...(accInm || []).map(a => ({ ...a, entidad: a.inmuebles?.codigo || "—", tabla: "accion_inmueble" })),
+      ...accInqList.map(a => ({
         ...a,
-        entidad: `${a.inquilinos?.nombre || ''} ${a.inquilinos?.apellidos || ''}`.trim() || '—',
-        codigo: a.inquilinos?.inmuebles?.codigo || '',
-        tabla: 'accion_inquilino'
+        entidad: `${a.inquilinos?.nombre || ""} ${a.inquilinos?.apellidos || ""}`.trim() || "—",
+        codigo: a.inquilinos?.inmuebles?.codigo || "",
+        tabla: "accion_inquilino"
       })),
     ].sort((a, b) => new Date(a.proxima_fecha) - new Date(b.proxima_fecha)).slice(0, 8)
 
     setProxAcciones(allAcciones)
 
-    // Ordenar contratos por próxima actualización
     const proximaAct = d => {
       const inicio = new Date(d)
       const hoyD = new Date()
