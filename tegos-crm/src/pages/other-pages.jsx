@@ -161,7 +161,7 @@ export function Contactos({ perfil }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
-        {!nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
       </div>
       {nuevaAccion && (
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
@@ -209,12 +209,13 @@ export function Contactos({ perfil }) {
 
   const FormModal = () => (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && (setModal(null), setEditModal(false))}>
-      <div className="modal">
+      <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
         <div className="modal-header">
-          <h2>{modal === 'new' ? 'Nuevo contacto' : `Editar — ${nombre(form)}`}</h2>
+          <h2>{modal === 'new' ? 'Nuevo contacto' : `${readOnly ? 'Ver' : 'Editar'} — ${nombre(form)}`}</h2>
           <button className="btn btn-ghost btn-sm" onClick={() => { setModal(null); setEditModal(false) }}><i className="ti ti-x" /></button>
         </div>
         <div className="modal-body">
+          {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
           {editModal && form.id && (
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
               {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['correos','Correos']].map(([v,l]) => (
@@ -268,8 +269,8 @@ export function Contactos({ perfil }) {
             <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
           </div>}
           {(!editModal || (tabCont !== 'acc' && tabCont !== 'correos')) && <div className="form-actions">
-            <button className="btn" onClick={() => { setModal(null); setEditModal(false) }}>Cancelar</button>
-            <button className="btn btn-primary" onClick={save}>Guardar</button>
+            <button className="btn" onClick={() => { setModal(null); setEditModal(false) }}>{readOnly ? 'Cerrar' : 'Cancelar'}</button>
+            {!readOnly && <button className="btn btn-primary" onClick={save}>Guardar</button>}
           </div>}
         </div>
       </div>
@@ -299,7 +300,7 @@ export function Contactos({ perfil }) {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); if (!readOnly) openEdit(r) }}>
+                    onDoubleClick={() => { selectRow(r); openEdit(r) }}>
                     <td><strong>{nombre(r)}</strong></td>
                     <td>{r.clasificacion_contacto ? <span className={`badge ${clsBadge(r.clasificacion_contacto.clasificacion)}`}>{r.clasificacion_contacto.clasificacion}</span> : '—'}</td>
                     <td>{r.conocimiento?.origen || '—'}</td>
@@ -324,7 +325,7 @@ export function Contactos({ perfil }) {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.clasificacion_contacto?.clasificacion || ''}</div>
               </div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => openEdit(selected)}><i className="ti ti-edit" /></button>}
+              <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => openEdit(selected)}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>

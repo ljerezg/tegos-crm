@@ -82,7 +82,7 @@ export default function AdministradoresFinca({ perfil }) {
               <tbody>
                 {filtered().length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin administradores</td></tr>}
                 {filtered().map(r => (
-                  <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, fecha_baja: r.fecha_baja || '' }); setModal('edit') } }}>
+                  <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, fecha_baja: r.fecha_baja || '' }); setModal('edit') }}>
                     <td><strong>{r.nombre}</strong></td>
                     <td>{r.municipio || '—'}</td>
                     <td>{r.telefono || r.movil || '—'}</td>
@@ -102,7 +102,7 @@ export default function AdministradoresFinca({ perfil }) {
             <div className="panel-header">
               <div className="panel-avatar av-blue">{initials(selected)}</div>
               <div style={{ flex: 1 }}><h3>{selected.nombre}</h3><div className="panel-sub">{selected.municipio || ''}</div></div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected }); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected }); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
@@ -137,12 +137,13 @@ export default function AdministradoresFinca({ perfil }) {
 
       {modal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
-          <div className="modal">
+          <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo administrador' : 'Editar administrador'}</h2>
+              <h2>{modal === 'new' ? 'Nuevo administrador' : (readOnly ? 'Ver administrador' : 'Editar administrador')}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
+              {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
               <div className="form-grid">
                 <div className="form-group form-full"><label>Nombre / Razón social *</label><input value={form.nombre || ''} onChange={f('nombre')} /></div>
                 <div className="form-group"><label>Teléfono</label><input value={form.telefono || ''} onChange={f('telefono')} /></div>
@@ -160,8 +161,8 @@ export default function AdministradoresFinca({ perfil }) {
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones || ''} onChange={f('observaciones')} /></div>
               </div>
               <div className="form-actions">
-                <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
-                <button className="btn btn-primary" onClick={save}>Guardar</button>
+                <button className="btn" onClick={() => setModal(null)}>{readOnly ? 'Cerrar' : 'Cancelar'}</button>
+                {!readOnly && <button className="btn btn-primary" onClick={save}>Guardar</button>}
               </div>
             </div>
           </div>

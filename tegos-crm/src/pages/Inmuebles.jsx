@@ -233,7 +233,7 @@ export default function Inmuebles({ perfil }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
-        {!nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
       </div>
       {nuevaAccion && (
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
@@ -326,7 +326,7 @@ export default function Inmuebles({ perfil }) {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setOtrosProps((r.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') } }}
+                    onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setOtrosProps((r.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}
                     style={{ background: selected?.id === r.id ? 'var(--accent-bg)' : '' }}>
                     <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
                     <td>{r.calle}{r.numero_calle ? ` ${r.numero_calle}` : ''}{r.piso ? `, ${r.piso}` : ''}</td>
@@ -353,7 +353,7 @@ export default function Inmuebles({ perfil }) {
                 <h3>{selected.codigo}</h3>
                 <div className="panel-sub">{selected.calle}{selected.numero_calle ? ` ${selected.numero_calle}` : ''}{selected.piso ? `, ${selected.piso}` : ''}</div>
               </div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setOtrosProps((selected.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setOtrosProps((selected.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
@@ -427,12 +427,13 @@ export default function Inmuebles({ perfil }) {
 
       {modal && (
         <div className={modal === 'edit' && selected ? "edit-modal-overlay" : "modal-overlay"} onClick={e => e.target === e.currentTarget && setModal(null)}>
-          <div className="modal">
+          <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo inmueble' : `Editar — ${form.codigo}`}</h2>
+              <h2>{modal === 'new' ? 'Nuevo inmueble' : `${readOnly ? 'Ver' : 'Editar'} — ${form.codigo}`}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
+              {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                   {[['datos','Datos'],['inq',`Inquilinos (${inquilinosInm.length})`],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
@@ -588,8 +589,8 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
               </div>}
               {(modal !== 'edit' || tabInm === 'datos') && tabInm !== 'inq' && <div className="form-actions">
-                <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
-                <button className="btn btn-primary" onClick={save}>Guardar</button>
+                <button className="btn" onClick={() => setModal(null)}>{readOnly ? 'Cerrar' : 'Cancelar'}</button>
+                {!readOnly && <button className="btn btn-primary" onClick={save}>Guardar</button>}
               </div>}
             </div>
           </div>

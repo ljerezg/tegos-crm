@@ -228,7 +228,7 @@ export default function Propietarios({ perfil }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
-        {!nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
       </div>
       {nuevaAccion && (
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
@@ -317,7 +317,7 @@ export default function Propietarios({ perfil }) {
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', fecha_baja: r.fecha_baja || '' }); setModal('edit') } }}>
+                    onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', fecha_baja: r.fecha_baja || '' }); setModal('edit') }}>
                     <td><strong>{nombre(r)}</strong>{r.fecha_baja && <span className="badge badge-red" style={{ marginLeft: 6, fontSize: 10 }}>Baja</span>}</td>
                     <td><span className="badge badge-gray">{r.tipo_persona?.tipo || '—'}</span></td>
                     <td>{r.movil || '—'}</td>
@@ -342,7 +342,7 @@ export default function Propietarios({ perfil }) {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.tipo_persona?.tipo || ''}</div>
               </div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
@@ -411,12 +411,13 @@ export default function Propietarios({ perfil }) {
 
       {modal && (
         <div className={modal === 'edit' && selected ? "edit-modal-overlay" : "modal-overlay"} onClick={e => e.target === e.currentTarget && setModal(null)}>
-          <div className="modal">
+          <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo propietario' : `Editar — ${nombre(form)}`}</h2>
+              <h2>{modal === 'new' ? 'Nuevo propietario' : `${readOnly ? 'Ver' : 'Editar'} — ${nombre(form)}`}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
+              {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                   {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos'],['correos','Correos']].map(([v,l]) => (
@@ -469,8 +470,8 @@ export default function Propietarios({ perfil }) {
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
               </div>}
               {(modal !== 'edit' || tabProp === 'datos') && <div className="form-actions">
-                <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
-                <button className="btn btn-primary" onClick={save}>Guardar</button>
+                <button className="btn" onClick={() => setModal(null)}>{readOnly ? 'Cerrar' : 'Cancelar'}</button>
+                {!readOnly && <button className="btn btn-primary" onClick={save}>Guardar</button>}
               </div>}
             </div>
           </div>

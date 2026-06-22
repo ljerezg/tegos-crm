@@ -441,7 +441,7 @@ export default function Inquilinos({ perfil }) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
-        {!nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
       </div>
       {nuevaAccion && (
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
@@ -544,7 +544,7 @@ export default function Inquilinos({ perfil }) {
                   const dias = diasRestantes(r.fecha_fin_contrato)
                   const badge = dias === null ? null : dias < 30 ? 'badge-red' : dias < 90 ? 'badge-yellow' : 'badge-green'
                   return (
-                    <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); if (!readOnly) { setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') } }}>
+                    <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') }}>
                       <td><strong>{nombre(r)}</strong></td>
                       <td>{r.inmuebles ? <><span className="badge badge-gray">{r.inmuebles.codigo}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.inmuebles.calle}{r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}{r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}</span></> : '—'}</td>
                       <td>{r.movil || '—'}</td>
@@ -574,7 +574,7 @@ export default function Inquilinos({ perfil }) {
                 <h3>{nombre(selected)}</h3>
                 <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} · ${selected.inmuebles.calle}${selected.inmuebles.numero_calle ? ` ${selected.inmuebles.numero_calle}` : ''}${selected.inmuebles.piso ? `, ${selected.inmuebles.piso}` : ''}` : 'Sin inmueble'}</div>
               </div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className="ti ti-edit" /></button>}
+              <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
@@ -661,12 +661,13 @@ export default function Inquilinos({ perfil }) {
           </div>
           {modal === 'edit' && (
             <div className="edit-modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
-              <div className="modal">
+              <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
                 <div className="modal-header">
-                  <h2>Editar inquilino</h2>
+                  <h2>{readOnly ? 'Ver inquilino' : 'Editar inquilino'}</h2>
                   <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
                 </div>
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                  {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
                   {inqTabs(true)}
                   {tabInq === 'acc' && accionesTab}
                   {tabInq === 'renta' && rentaTab}
@@ -725,8 +726,8 @@ export default function Inquilinos({ perfil }) {
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
                   {tabInq !== 'acc' && tabInq !== 'docs' && tabInq !== 'renta' && tabInq !== 'correos' && <div className="form-actions">
-                    <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
-                    <button className="btn btn-primary" onClick={save}>Guardar</button>
+                    <button className="btn" onClick={() => setModal(null)}>{readOnly ? 'Cerrar' : 'Cancelar'}</button>
+                    {!readOnly && <button className="btn btn-primary" onClick={save}>Guardar</button>}
                   </div>}
                 </div>
               </div>
