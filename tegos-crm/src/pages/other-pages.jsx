@@ -730,7 +730,6 @@ export function Comercializando() {
             <thead><tr>
               <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
               <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
-              <th {...thProps('piso')}>Piso <span style={{fontSize:10}}>{sortIcon('piso')}</span></th>
               <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
               <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
               <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
@@ -740,7 +739,6 @@ export function Comercializando() {
                 <tr key={r.id}>
                   <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo || '—'}</strong></td>
                   <td>{r.calle || '—'}</td>
-                  <td>{r.piso || '—'}</td>
                   <td>{r.poblacion || '—'}</td>
                   <td>{propName(r) || '—'}</td>
                   <td>{r.seguro?.compania || '—'}</td>
