@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 
 const BUCKET = 'documentos-tegos'
 
-export async function subirDocumento(file, entidadTipo, entidadId, nombre) {
+export async function subirDocumento(file, entidadTipo, entidadId, nombre, tipoDocumento) {
   const ext = file.name.split('.').pop()
   const path = `${entidadTipo}/${entidadId}/${Date.now()}_${nombre.replace(/\s+/g, '_')}.${ext}`
 
@@ -17,6 +17,7 @@ export async function subirDocumento(file, entidadTipo, entidadId, nombre) {
     nombre,
     url_archivo: publicUrl,
     tamano: `${(file.size / 1024).toFixed(0)} KB`,
+    tipo_documento: tipoDocumento || null,
   })
   if (dbError) throw dbError
   return publicUrl
