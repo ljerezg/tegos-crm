@@ -236,6 +236,7 @@ export default function Configuracion() {
     { id: 'tipo_contacto', label: 'Tipos de contacto' },
     { id: 'clasificacion', label: 'Clasificaciones' },
     { id: 'conocimiento', label: 'Orígenes' },
+    { id: 'tipo_documento', label: 'Tipos de documento' },
     { id: 'backup', label: 'Copia de seguridad' },
   ]
 
@@ -314,6 +315,14 @@ export default function Configuracion() {
           titulo="Orígenes de conocimiento"
           tabla="conocimiento"
           columnas={[{ field: 'origen', label: 'Origen', full: true }]}
+        />
+      )}
+
+      {tab === 'tipo_documento' && (
+        <TablaAuxiliar
+          titulo="Tipos de documento"
+          tabla="tipo_documento"
+          columnas={[{ field: 'nombre', label: 'Tipo', full: true }]}
         />
       )}
 
