@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { supabase } from '../lib/supabase'
 import { subirDocumento, obtenerDocumentos, eliminarDocumento } from '../lib/documentos'
 
 export default function Documentos({ entidadTipo, entidadId, readOnly }) {
@@ -6,10 +7,13 @@ export default function Documentos({ entidadTipo, entidadId, readOnly }) {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [nombre, setNombre] = useState('')
+  const [tipoDoc, setTipoDoc] = useState('')
+  const [tiposDoc, setTiposDoc] = useState([])
   const [showForm, setShowForm] = useState(false)
   const fileRef = useRef()
 
   useEffect(() => { if (entidadId) cargar() }, [entidadId])
+  useEffect(() => { cargarTipos() }, [])
 
   async function cargar() {
     setLoading(true)
@@ -20,13 +24,18 @@ export default function Documentos({ entidadTipo, entidadId, readOnly }) {
     setLoading(false)
   }
 
+  async function cargarTipos() {
+    const { data } = await supabase.from('tipo_documento').select('*').order('id')
+    setTiposDoc(data || [])
+  }
+
   async function subir() {
     const file = fileRef.current?.files[0]
     if (!file || !nombre.trim()) return alert('Indica el nombre del documento y selecciona un archivo')
     setUploading(true)
     try {
-      await subirDocumento(file, entidadTipo, entidadId, nombre.trim())
-      setNombre(''); fileRef.current.value = ''; setShowForm(false)
+      await subirDocumento(file, entidadTipo, entidadId, nombre.trim(), tipoDoc || null)
+      setNombre(''); setTipoDoc(''); fileRef.current.value = ''; setShowForm(false)
       cargar()
     } catch(e) { alert('Error al subir: ' + e.message) }
     setUploading(false)
@@ -61,6 +70,15 @@ export default function Documentos({ entidadTipo, entidadId, readOnly }) {
             <label>Nombre del documento</label>
             <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Contrato 2024, Fianza IVIMA..." />
           </div>
+          <div className="form-group" style={{ marginBottom: 8 }}>
+            <label>Tipo de documento</label>
+            <select value={tipoDoc} onChange={e => setTipoDoc(e.target.value)}>
+              <option value="">— Sin tipo —</option>
+              {tiposDoc.map(t => (
+                <option key={t.id} value={t.nombre}>{t.nombre}</option>
+              ))}
+            </select>
+          </div>
           <div className="form-group" style={{ marginBottom: 10 }}>
             <label>Archivo (PDF, Word, imagen...)</label>
             <input type="file" ref={fileRef} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ fontSize: 13 }} />
@@ -82,7 +100,10 @@ export default function Documentos({ entidadTipo, entidadId, readOnly }) {
               <i className={`ti ${iconDoc(doc.url_archivo)}`} style={{ color: 'var(--accent)', fontSize: 20, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.nombre}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{doc.tamano} · {new Date(doc.created_at).toLocaleDateString('es-ES')}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {doc.tipo_documento && <span style={{ marginRight: 6 }}><span className="badge badge-gray">{doc.tipo_documento}</span></span>}
+                  {doc.tamano} · {new Date(doc.created_at).toLocaleDateString('es-ES')}
+                </div>
               </div>
               <a href={doc.url_archivo} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" title="Abrir">
                 <i className="ti ti-external-link" />
