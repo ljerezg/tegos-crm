@@ -1,0 +1,11 @@
+{
+  "name": "imap-poll",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sondeo IMAP para Tegos CRM",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "imap": "^0.8.19",
+    "mailparser": "^3.7.1"
+  }
+}
