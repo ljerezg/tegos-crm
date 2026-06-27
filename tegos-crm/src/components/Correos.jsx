@@ -107,14 +107,13 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
                 >
                   <i className={`ti ${open ? 'ti-chevron-down' : 'ti-chevron-right'}`} style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }} />
                   <span className={`badge ${r.sentido === 'recibido' ? 'badge-blue' : 'badge-green'}`} style={{ flexShrink: 0 }}>{r.sentido === 'recibido' ? 'Recib.' : 'Env.'}</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asunto || '(sin asunto)'}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>{fmt(r.fecha)}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asunto || '(sin asunto)'}</span>
                   {r.archivo_url && <i className="ti ti-paperclip" style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }} />}
                   {!readOnly && <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={e => { e.stopPropagation(); eliminar(r) }} style={{ padding: '0 4px', height: 'fit-content' }}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
                 </div>
                 {open && (
                   <div style={{ padding: '4px 0 12px 20px' }}>
-                    {r.remitente && <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>De: {r.remitente}{r.destinatario ? ` → ${r.destinatario}` : ''}</div>}
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{fmt(r.fecha)}{r.remitente ? ` · De: ${r.remitente}` : ''}{r.destinatario ? ` → ${r.destinatario}` : ''}</div>
                     {r.cuerpo && <div style={{ fontSize: 12, color: 'var(--text2)', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 300, overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>{r.cuerpo}</div>}
                     {r.archivo_url && <div style={{ marginTop: 6 }}><a href={r.archivo_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--info-text)' }}><i className="ti ti-paperclip" /> {r.archivo_nombre || 'adjunto'}</a></div>}
                   </div>
