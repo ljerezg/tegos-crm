@@ -10,6 +10,7 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [expanded, setExpanded] = useState(null)
   const empty = { sentido: 'enviado', fecha: new Date().toISOString().split('T')[0], asunto: '', cuerpo: '' }
   const [form, setForm] = useState(empty)
   const fileRef = useRef()
@@ -96,18 +97,32 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
       {loading ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Cargando...</div> : (
         rows.length === 0
           ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin correos registrados</div>
-          : rows.map(r => (
-            <div key={r.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-              <span className={`badge ${r.sentido === 'recibido' ? 'badge-blue' : 'badge-green'}`} style={{ flexShrink: 0, height: 'fit-content' }}>{r.sentido === 'recibido' ? 'Recibido' : 'Enviado'}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>{r.asunto || '(sin asunto)'}</div>
-                {r.cuerpo && <div style={{ fontSize: 12, color: 'var(--text2)', whiteSpace: 'pre-wrap', marginTop: 2 }}>{r.cuerpo}</div>}
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{fmt(r.fecha)}{r.archivo_url && <> · <a href={r.archivo_url} target="_blank" rel="noreferrer" style={{ color: 'var(--info-text)' }}><i className="ti ti-paperclip" /> {r.archivo_nombre || 'adjunto'}</a></>}</div>
+          : rows.map(r => {
+            const open = expanded === r.id
+            return (
+              <div key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <div
+                  onClick={() => setExpanded(open ? null : r.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <i className={`ti ${open ? 'ti-chevron-down' : 'ti-chevron-right'}`} style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }} />
+                  <span className={`badge ${r.sentido === 'recibido' ? 'badge-blue' : 'badge-green'}`} style={{ flexShrink: 0 }}>{r.sentido === 'recibido' ? 'Recib.' : 'Env.'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asunto || '(sin asunto)'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>{fmt(r.fecha)}</span>
+                  {r.archivo_url && <i className="ti ti-paperclip" style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }} />}
+                  {!readOnly && <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={e => { e.stopPropagation(); eliminar(r) }} style={{ padding: '0 4px', height: 'fit-content' }}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
+                </div>
+                {open && (
+                  <div style={{ padding: '4px 0 12px 20px' }}>
+                    {r.remitente && <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>De: {r.remitente}{r.destinatario ? ` → ${r.destinatario}` : ''}</div>}
+                    {r.cuerpo && <div style={{ fontSize: 12, color: 'var(--text2)', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 300, overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>{r.cuerpo}</div>}
+                    {r.archivo_url && <div style={{ marginTop: 6 }}><a href={r.archivo_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--info-text)' }}><i className="ti ti-paperclip" /> {r.archivo_nombre || 'adjunto'}</a></div>}
+                  </div>
+                )}
               </div>
-              {!readOnly && <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={() => eliminar(r)} style={{ height: 'fit-content' }}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
-            </div>
-          ))
+            )
+          })
       )}
     </div>
   )
-}
+                  }
