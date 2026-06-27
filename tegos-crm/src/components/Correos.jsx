@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 const BUCKET = 'documentos-tegos'
 const COL = { inquilino: 'inquilino_id', propietario: 'propietario_id', contacto: 'contacto_id' }
 
-export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
+export default function Correos({ entidadTipo, entidadId, email, readOnly, onCountChange }) {
   const col = COL[entidadTipo]
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +20,9 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
   async function cargar() {
     setLoading(true)
     const { data } = await supabase.from('correo').select('*').eq(col, entidadId).order('fecha', { ascending: false }).order('id', { ascending: false })
-    setRows(data || [])
+    const result = data || []
+    setRows(result)
+    onCountChange?.(result.length)
     setLoading(false)
   }
 
@@ -58,7 +60,7 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
   }
 
   async function eliminar(r) {
-    if (!confirm('¿Eliminar este correo del registro?')) return
+    if (!confirm('\u00BFEliminar este correo del registro?')) return
     if (r.archivo_url) { const p = r.archivo_url.split(`${BUCKET}/`)[1]; if (p) await supabase.storage.from(BUCKET).remove([p]) }
     await supabase.from('correo').delete().eq('id', r.id); cargar()
   }
@@ -113,7 +115,7 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
                 </div>
                 {open && (
                   <div style={{ padding: '4px 0 12px 20px' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{fmt(r.fecha)}{r.remitente ? ` · De: ${r.remitente}` : ''}{r.destinatario ? ` → ${r.destinatario}` : ''}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{fmt(r.fecha)}{r.remitente ? ` \u00B7 De: ${r.remitente}` : ''}{r.destinatario ? ` \u2192 ${r.destinatario}` : ''}</div>
                     {r.cuerpo && <div style={{ fontSize: 12, color: 'var(--text2)', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 300, overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>{r.cuerpo}</div>}
                     {r.archivo_url && <div style={{ marginTop: 6 }}><a href={r.archivo_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--info-text)' }}><i className="ti ti-paperclip" /> {r.archivo_nombre || 'adjunto'}</a></div>}
                   </div>
@@ -124,4 +126,4 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly }) {
       )}
     </div>
   )
-                  }
+}
