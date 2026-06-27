@@ -17,10 +17,10 @@ function ms(fields, q) {
 }
 
 function mailLink(v) {
-  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : '—'
+  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : 'â'
 }
 function waLink(v) {
-  if (!v) return '—'
+  if (!v) return 'â'
   let d = String(v).replace(/[^\d+]/g, '')
   if (d.startsWith('+')) d = d.slice(1)
   else if (d.startsWith('00')) d = d.slice(2)
@@ -49,7 +49,7 @@ function ultimaRentaFecha(r) {
   const last = ultimaRentaRow(r)
   return last && last.fecha ? last.fecha : null
 }
-// Comparador genérico: vacíos al final, números numéricos, texto natural (es)
+// Comparador genÃ©rico: vacÃ­os al final, nÃºmeros numÃ©ricos, texto natural (es)
 function cmpVals(va, vb, dir) {
   const ea = va === null || va === undefined || va === ''
   const eb = vb === null || vb === undefined || vb === ''
@@ -89,6 +89,7 @@ export default function Inquilinos({ perfil }) {
   const [rentas, setRentas] = useState([])
   const [nuevaRenta, setNuevaRenta] = useState(null)
   const [guardandoRenta, setGuardandoRenta] = useState(false)
+  const [correoCount, setCorreoCount] = useState(0)
 
   useEffect(() => { load() }, [])
   useEffect(() => { if (modal) { setTabInq('1'); setNuevaAccion(null); setNuevaRenta(null) } }, [modal])
@@ -172,7 +173,7 @@ export default function Inquilinos({ perfil }) {
   }
 
   async function borrarRenta(id) {
-    if (!confirm('¿Eliminar este cambio de renta?')) return
+    if (!confirm('Â¿Eliminar este cambio de renta?')) return
     await supabase.from('renta_inquilino').delete().eq('id', id)
     if (form.id) loadRentas(form.id)
   }
@@ -185,7 +186,7 @@ export default function Inquilinos({ perfil }) {
 
   async function guardarAccion() {
     if (!form.id) return
-    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acción'); return }
+    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acciÃ³n'); return }
     setGuardandoAccion(true)
     const payload = {
       inquilino_id: form.id,
@@ -201,7 +202,7 @@ export default function Inquilinos({ perfil }) {
     }
     const { error } = await supabase.from('accion_inquilino').insert(payload)
     setGuardandoAccion(false)
-    if (error) { alert('Error al guardar la acción: ' + error.message); return }
+    if (error) { alert('Error al guardar la acciÃ³n: ' + error.message); return }
     setNuevaAccion(null)
     loadAcciones(form.id)
   }
@@ -220,7 +221,7 @@ export default function Inquilinos({ perfil }) {
   async function sincronizarAvisoFin(inquilinoId, d) {
     if (!inquilinoId) return
     await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'Vencimiento de contrato%')
-    await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'Revisión de renta%')
+    await supabase.from('accion_inquilino').delete().eq('inquilino_id', inquilinoId).like('proxima_accion', 'RevisiÃ³n de renta%')
     if (d.aviso_fin && !d.fecha_fin_contrato && d.fecha_contrato && d.duracion_contrato) {
       const iso = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
       const resp = d.responsable_id || null
@@ -235,19 +236,19 @@ export default function Inquilinos({ perfil }) {
         fecha: iso(aviso),
         proxima_fecha: iso(aviso),
         proxima_accion: 'Vencimiento de contrato el ' + venc.toLocaleDateString('es-ES'),
-        indicaciones: 'Aviso automático: el contrato vence en ' + meses + ' meses',
+        indicaciones: 'Aviso automÃ¡tico: el contrato vence en ' + meses + ' meses',
         completada: false,
         responsable_id: resp,
       }]
-      // Última revisión e importe actual de la renta (del historial renta_inquilino)
-      let ultRev = '—', ultImp = '—'
+      // Ãltima revisiÃ³n e importe actual de la renta (del historial renta_inquilino)
+      let ultRev = 'â', ultImp = 'â'
       const { data: rentas } = await supabase.from('renta_inquilino').select('importe, fecha').eq('inquilino_id', inquilinoId).order('fecha', { ascending: false }).limit(1)
       if (rentas && rentas.length) {
         if (rentas[0].fecha) ultRev = new Date(rentas[0].fecha).toLocaleDateString('es-ES')
         if (rentas[0].importe != null) ultImp = Number(rentas[0].importe).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
       }
-      const indicRev = `Revisión anual de renta. Última revisión: ${ultRev} · Renta actual: ${ultImp}`
-      // Revisión de renta: aniversario del inicio de devengo, cada año hasta el vencimiento
+      const indicRev = `RevisiÃ³n anual de renta. Ãltima revisiÃ³n: ${ultRev} Â· Renta actual: ${ultImp}`
+      // RevisiÃ³n de renta: aniversario del inicio de devengo, cada aÃ±o hasta el vencimiento
       const base = d.fecha_inicio_devengo || d.fecha_contrato
       const [by, bm, bdd] = String(base).split('-').map(Number)
       const dur = Number(d.duracion_contrato)
@@ -257,7 +258,7 @@ export default function Inquilinos({ perfil }) {
           inquilino_id: inquilinoId,
           fecha: iso(rev),
           proxima_fecha: iso(rev),
-          proxima_accion: 'Revisión de renta',
+          proxima_accion: 'RevisiÃ³n de renta',
           indicaciones: indicRev,
           completada: false,
           responsable_id: resp,
@@ -272,7 +273,7 @@ export default function Inquilinos({ perfil }) {
     if (Object.keys(errs).length) {
       setErrors(errs)
       setTabInq('1')
-      alert('Falta el campo obligatorio "Tipo" en la pestaña Inquilino 1')
+      alert('Falta el campo obligatorio "Tipo" en la pestaÃ±a Inquilino 1')
       return
     }
     const data = { ...form }
@@ -292,7 +293,7 @@ export default function Inquilinos({ perfil }) {
   }
 
   async function del(id) {
-    if (!confirm('¿Eliminar este inquilino?')) return
+    if (!confirm('Â¿Eliminar este inquilino?')) return
     await supabase.from('inquilinos').delete().eq('id', id)
     setSelected(null); load()
   }
@@ -307,50 +308,50 @@ export default function Inquilinos({ perfil }) {
       'DNI / NIE': r.dni_cif || '',
       'Tipo': r.tipo_persona?.tipo || '',
       'Responsable': r.responsable?.nombre_responsable || '',
-      'Teléfono': r.telefono || '',
-      'Teléfono 2': r.telefono_2 || '',
-      'Móvil': r.movil || '',
+      'TelÃ©fono': r.telefono || '',
+      'TelÃ©fono 2': r.telefono_2 || '',
+      'MÃ³vil': r.movil || '',
       'Email': r.email || '',
       'Email 2': r.email_2 || '',
       'Inmueble': r.inmuebles?.codigo || '',
-      'Dirección inmueble': r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
+      'DirecciÃ³n inmueble': r.inmuebles ? `${r.inmuebles.calle || ''}${r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}${r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}` : '',
       'Firma contrato': fmtDate(r.fecha_contrato),
       'Inicio devengo': fmtDate(r.fecha_inicio_devengo),
-      'Duración (años)': r.duracion_contrato ?? '',
+      'DuraciÃ³n (aÃ±os)': r.duracion_contrato ?? '',
       'Fin contrato': fmtDate(r.fecha_fin_contrato),
       'Fianza IVIMA': fmtMoney(r.importe_fianza_ivima),
-      'Depósito': fmtMoney(r.importe_deposito),
+      'DepÃ³sito': fmtMoney(r.importe_deposito),
       'Seg. rentas': r.seguro?.compania || '',
-      'Nº póliza seg. rentas': r.num_poliza_seg_rentas || '',
+      'NÂº pÃ³liza seg. rentas': r.num_poliza_seg_rentas || '',
       'Nombre contacto 2': r.nombre_conyuge || '',
       'Apellidos contacto 2': r.apellidos_conyuge || '',
-      'Móvil contacto 2': r.movil_conyuge || '',
+      'MÃ³vil contacto 2': r.movil_conyuge || '',
       'Email contacto 2': r.email_conyuge || '',
-      'Teléfono 2 contacto 2': r.telefono_2_conyuge || '',
+      'TelÃ©fono 2 contacto 2': r.telefono_2_conyuge || '',
       'Email 2 contacto 2': r.email_2_conyuge || '',
-      '2º inq. Nombre': r.nombre_inq2 || '',
-      '2º inq. Apellidos': r.apellidos_inq2 || '',
-      '2º inq. DNI': r.dni_inq2 || '',
-      '2º inq. Tipo': tipos.find(t => t.id === r.tipo_inq2_id)?.tipo || '',
-      '2º inq. Relación': r.relacion_inq2 || '',
-      '2º inq. Teléfono': r.telefono_inq2 || '',
-      '2º inq. Teléfono 2': r.telefono_2_inq2 || '',
-      '2º inq. Móvil': r.movil_inq2 || '',
-      '2º inq. Email': r.email_inq2 || '',
-      '2º inq. Email 2': r.email_2_inq2 || '',
-      '3º inq. Nombre': r.nombre_inq3 || '',
-      '3º inq. Apellidos': r.apellidos_inq3 || '',
-      '3º inq. DNI': r.dni_inq3 || '',
-      '3º inq. Tipo': tipos.find(t => t.id === r.tipo_inq3_id)?.tipo || '',
-      '3º inq. Relación': r.relacion_inq3 || '',
-      '3º inq. Teléfono': r.telefono_inq3 || '',
-      '3º inq. Teléfono 2': r.telefono_2_inq3 || '',
-      '3º inq. Móvil': r.movil_inq3 || '',
-      '3º inq. Email': r.email_inq3 || '',
-      '3º inq. Email 2': r.email_2_inq3 || '',
+      '2Âº inq. Nombre': r.nombre_inq2 || '',
+      '2Âº inq. Apellidos': r.apellidos_inq2 || '',
+      '2Âº inq. DNI': r.dni_inq2 || '',
+      '2Âº inq. Tipo': tipos.find(t => t.id === r.tipo_inq2_id)?.tipo || '',
+      '2Âº inq. RelaciÃ³n': r.relacion_inq2 || '',
+      '2Âº inq. TelÃ©fono': r.telefono_inq2 || '',
+      '2Âº inq. TelÃ©fono 2': r.telefono_2_inq2 || '',
+      '2Âº inq. MÃ³vil': r.movil_inq2 || '',
+      '2Âº inq. Email': r.email_inq2 || '',
+      '2Âº inq. Email 2': r.email_2_inq2 || '',
+      '3Âº inq. Nombre': r.nombre_inq3 || '',
+      '3Âº inq. Apellidos': r.apellidos_inq3 || '',
+      '3Âº inq. DNI': r.dni_inq3 || '',
+      '3Âº inq. Tipo': tipos.find(t => t.id === r.tipo_inq3_id)?.tipo || '',
+      '3Âº inq. RelaciÃ³n': r.relacion_inq3 || '',
+      '3Âº inq. TelÃ©fono': r.telefono_inq3 || '',
+      '3Âº inq. TelÃ©fono 2': r.telefono_2_inq3 || '',
+      '3Âº inq. MÃ³vil': r.movil_inq3 || '',
+      '3Âº inq. Email': r.email_inq3 || '',
+      '3Âº inq. Email 2': r.email_2_inq3 || '',
       'Otra persona contacto': r.otra_persona_contacto || '',
-      'Relación otra persona': r.relacion_otra_persona || '',
-      'Móvil otra persona': r.movil_otra_persona || '',
+      'RelaciÃ³n otra persona': r.relacion_otra_persona || '',
+      'MÃ³vil otra persona': r.movil_otra_persona || '',
       'Email otra persona': r.email_otra_persona || '',
       'Carpeta Dropbox': r.carpeta_dropbox || '',
       'Fianza IVIMA (URL)': r.fianza_ivima_url || '',
@@ -364,9 +365,9 @@ export default function Inquilinos({ perfil }) {
     XLSX.writeFile(wb, 'Inquilinos.xlsx')
   }
 
-  const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
-  const fmtMoney = v => v != null ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'
-  const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '—'
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : 'â'
+  const fmtMoney = v => v != null ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : 'â'
+  const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || 'â'
   const initials = r => nombre(r).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
   const diasRestantes = d => d ? Math.ceil((new Date(d) - new Date()) / 86400000) : null
@@ -388,14 +389,14 @@ export default function Inquilinos({ perfil }) {
       <div className="form-group"><label>DNI / NIE</label><input value={form[`dni_${suf}`] ?? ''} onChange={f(`dni_${suf}`)} /></div>
       <div className="form-group"><label>Tipo</label>
         <select value={form[`tipo_${suf}_id`] ?? ''} onChange={f(`tipo_${suf}_id`)}>
-          <option value="">—</option>
+          <option value="">â</option>
           {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
         </select>
       </div>
-      <div className="form-group"><label>Relación</label><input value={form[`relacion_${suf}`] ?? ''} onChange={f(`relacion_${suf}`)} placeholder="Ej: pareja, compañero piso..." /></div>
-      <div className="form-group"><label>Teléfono</label><input value={form[`telefono_${suf}`] ?? ''} onChange={f(`telefono_${suf}`)} /></div>
-      <div className="form-group"><label>Teléfono 2</label><input value={form[`telefono_2_${suf}`] ?? ''} onChange={f(`telefono_2_${suf}`)} /></div>
-      <div className="form-group"><label>Móvil</label><input value={form[`movil_${suf}`] ?? ''} onChange={f(`movil_${suf}`)} /></div>
+      <div className="form-group"><label>RelaciÃ³n</label><input value={form[`relacion_${suf}`] ?? ''} onChange={f(`relacion_${suf}`)} placeholder="Ej: pareja, compaÃ±ero piso..." /></div>
+      <div className="form-group"><label>TelÃ©fono</label><input value={form[`telefono_${suf}`] ?? ''} onChange={f(`telefono_${suf}`)} /></div>
+      <div className="form-group"><label>TelÃ©fono 2</label><input value={form[`telefono_2_${suf}`] ?? ''} onChange={f(`telefono_2_${suf}`)} /></div>
+      <div className="form-group"><label>MÃ³vil</label><input value={form[`movil_${suf}`] ?? ''} onChange={f(`movil_${suf}`)} /></div>
       <div className="form-group"><label>Email</label><input value={form[`email_${suf}`] ?? ''} onChange={f(`email_${suf}`)} /></div>
       <div className="form-group"><label>Email 2</label><input value={form[`email_2_${suf}`] ?? ''} onChange={f(`email_2_${suf}`)} /></div>
     </div>
@@ -403,7 +404,7 @@ export default function Inquilinos({ perfil }) {
 
   const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos'], ['correos', 'Correos']] : [])].map(([v,l]) => (
+      {[['1','Inquilino 1'],['2','2Âº inquilino'],['3','3Âº inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos'], ['correos', `Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]] : [])].map(([v,l]) => (
         <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
     </div>
@@ -430,7 +431,7 @@ export default function Inquilinos({ perfil }) {
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
           <div className="form-grid">
             <div className="form-group"><label>Fecha</label><input type="date" value={nuevaRenta.fecha ?? ''} onChange={fR('fecha')} /></div>
-            <div className="form-group"><label>Importe (€)</label><input type="number" value={nuevaRenta.importe ?? ''} onChange={fR('importe')} /></div>
+            <div className="form-group"><label>Importe (â¬)</label><input type="number" value={nuevaRenta.importe ?? ''} onChange={fR('importe')} /></div>
             <div className="form-group form-full"><label>Observaciones</label><textarea value={nuevaRenta.observaciones ?? ''} onChange={fR('observaciones')} rows={2} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
@@ -446,8 +447,8 @@ export default function Inquilinos({ perfil }) {
             {rentas.map(r => (
               <tr key={r.id}>
                 <td>{fmtDate(r.fecha)}</td>
-                <td>{r.importe != null ? fmtMoney(r.importe) : '—'}</td>
-                <td style={{ fontSize: 13, color: 'var(--text2)' }}>{r.observaciones || '—'}</td>
+                <td>{r.importe != null ? fmtMoney(r.importe) : 'â'}</td>
+                <td style={{ fontSize: 13, color: 'var(--text2)' }}>{r.observaciones || 'â'}</td>
                 {!readOnly && <td><button className="btn btn-ghost btn-sm" title="Eliminar" onClick={() => borrarRenta(r.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button></td>}
               </tr>
             ))}
@@ -462,8 +463,8 @@ export default function Inquilinos({ perfil }) {
   const accionesTab = (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
-        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acciÃ³n' : 'acciones'}</span>
+        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acciÃ³n</button>}
       </div>
       {nuevaAccion && (
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
@@ -472,24 +473,24 @@ export default function Inquilinos({ perfil }) {
             <div className="form-group"><label>Hora</label><input type="time" value={nuevaAccion.hora ?? ''} onChange={fA('hora')} /></div>
             <div className="form-group"><label>Tipo de contacto</label>
               <select value={nuevaAccion.tipo_contacto_id ?? ''} onChange={fA('tipo_contacto_id')}>
-                <option value="">—</option>
+                <option value="">â</option>
                 {tiposContacto.map(t => <option key={t.id} value={t.id}>{t.tipo_contacto}</option>)}
               </select>
             </div>
             <div className="form-group"><label>Responsable</label>
               <select value={nuevaAccion.responsable_id ?? ''} onChange={fA('responsable_id')}>
-                <option value="">—</option>
+                <option value="">â</option>
                 {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
               </select>
             </div>
             <div className="form-group form-full"><label>Indicaciones / Notas</label><textarea value={nuevaAccion.indicaciones ?? ''} onChange={fA('indicaciones')} rows={3} /></div>
-            <div className="form-group"><label>Próxima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
-            <div className="form-group"><label>Próxima acción</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
+            <div className="form-group"><label>PrÃ³xima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
+            <div className="form-group"><label>PrÃ³xima acciÃ³n</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
             <div className="form-group form-full"><label>Documento (URL)</label><input value={nuevaAccion.documento ?? ''} onChange={fA('documento')} placeholder="https://..." /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
             <button className="btn btn-sm" onClick={() => setNuevaAccion(null)}>Cancelar</button>
-            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acción'}</button>
+            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acciÃ³n'}</button>
           </div>
         </div>
       )}
@@ -499,8 +500,8 @@ export default function Inquilinos({ perfil }) {
             <div className="tl-item" key={a.id}>
               <div className="tl-dot" style={{ background: a.completada ? 'var(--accent)' : 'var(--border2)' }} />
               <div className="tl-content">
-                <div className="tl-text">{a.indicaciones || '—'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
-                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} · {a.tipo_contacto?.tipo_contacto || ''} · {a.responsable?.nombre_responsable || '—'}{a.proxima_fecha ? ` · Próx: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' — ' + a.proxima_accion : ''}` : ''}</div>
+                <div className="tl-text">{a.indicaciones || 'â'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
+                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} Â· {a.tipo_contacto?.tipo_contacto || ''} Â· {a.responsable?.nombre_responsable || 'â'}{a.proxima_fecha ? ` Â· PrÃ³x: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' â ' + a.proxima_accion : ''}` : ''}</div>
               </div>
             </div>
           ))}
@@ -559,12 +560,12 @@ export default function Inquilinos({ perfil }) {
                 <tr>
                   <th onClick={() => toggleSort('nombre')} style={{ cursor: 'pointer' }}>Nombre <SortIcon col="nombre" /></th>
                   <th onClick={() => toggleSort('inmueble')} style={{ cursor: 'pointer' }}>Inmueble <SortIcon col="inmueble" /></th>
-                  <th onClick={() => toggleSort('movil')} style={{ cursor: 'pointer' }}>Móvil <SortIcon col="movil" /></th>
+                  <th onClick={() => toggleSort('movil')} style={{ cursor: 'pointer' }}>MÃ³vil <SortIcon col="movil" /></th>
                   <th onClick={() => toggleSort('fecha_contrato')} style={{ cursor: 'pointer' }}>Inicio <SortIcon col="fecha_contrato" /></th>
                   <th onClick={() => toggleSort('fecha_fin_contrato')} style={{ cursor: 'pointer' }}>Fin previsto <SortIcon col="fecha_fin_contrato" /></th>
                   <th onClick={() => toggleSort('ult_renta')} style={{ cursor: 'pointer' }}>Ult. Renta <SortIcon col="ult_renta" /></th>
                   <th onClick={() => toggleSort('f_ult_rev')} style={{ cursor: 'pointer' }}>F. Ult. Rev. <SortIcon col="f_ult_rev" /></th>
-                  <th onClick={() => toggleSort('prox_act')} style={{ cursor: 'pointer' }}>Próx. act. renta <SortIcon col="prox_act" /></th>
+                  <th onClick={() => toggleSort('prox_act')} style={{ cursor: 'pointer' }}>PrÃ³x. act. renta <SortIcon col="prox_act" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -575,15 +576,15 @@ export default function Inquilinos({ perfil }) {
                   return (
                     <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', inmueble_id: r.inmueble_id || '', seguro_rentas_id: r.seguro_rentas_id || '', fecha_contrato: r.fecha_contrato || '', fecha_fin_contrato: r.fecha_fin_contrato || '' }); setErrors({}); setModal('edit') }}>
                       <td><strong>{nombre(r)}</strong></td>
-                      <td>{r.inmuebles ? <><span className="badge badge-gray">{r.inmuebles.codigo}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.inmuebles.calle}{r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}{r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}</span></> : '—'}</td>
-                      <td>{r.movil || '—'}</td>
+                      <td>{r.inmuebles ? <><span className="badge badge-gray">{r.inmuebles.codigo}</span> <span style={{ fontSize: 12, color: 'var(--text2)' }}>{r.inmuebles.calle}{r.inmuebles.numero_calle ? ` ${r.inmuebles.numero_calle}` : ''}{r.inmuebles.piso ? `, ${r.inmuebles.piso}` : ''}</span></> : 'â'}</td>
+                      <td>{r.movil || 'â'}</td>
                       <td>{fmtDate(r.fecha_contrato)}</td>
                       <td>{r.fecha_fin_contrato
-                        ? <span className={`badge ${badge}`}>{fmtDate(r.fecha_fin_contrato)} · Finalizado</span>
+                        ? <span className={`badge ${badge}`}>{fmtDate(r.fecha_fin_contrato)} Â· Finalizado</span>
                         : <span>{calcVenc(r) ? fmtDate(calcVenc(r)) + ' ' : ''}<span className="badge badge-green">En vigor</span></span>}</td>
-                      <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—'}</td>
-                      <td>{ultimaRentaFecha(r) ? fmtDate(ultimaRentaFecha(r)) : '—'}</td>
-                      <td>{act ? <span style={act.dias < 30 ? { color: 'var(--danger-text)', fontWeight: 600 } : undefined}>{fmtDate(act.fecha)} ({act.dias} días)</span> : '—'}</td>
+                      <td>{ultimaRentaVal(r) != null ? Number(ultimaRentaVal(r)).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : 'â'}</td>
+                      <td>{ultimaRentaFecha(r) ? fmtDate(ultimaRentaFecha(r)) : 'â'}</td>
+                      <td>{act ? <span style={act.dias < 30 ? { color: 'var(--danger-text)', fontWeight: 600 } : undefined}>{fmtDate(act.fecha)} ({act.dias} dÃ­as)</span> : 'â'}</td>
                     </tr>
                   )
                 })}
@@ -601,7 +602,7 @@ export default function Inquilinos({ perfil }) {
               <div className="panel-avatar av-yellow">{initials(selected)}</div>
               <div style={{ flex: 1 }}>
                 <h3>{nombre(selected)}</h3>
-                <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} · ${selected.inmuebles.calle}${selected.inmuebles.numero_calle ? ` ${selected.inmuebles.numero_calle}` : ''}${selected.inmuebles.piso ? `, ${selected.inmuebles.piso}` : ''}` : 'Sin inmueble'}</div>
+                <div className="panel-sub">{selected.inmuebles ? `${selected.inmuebles.codigo} Â· ${selected.inmuebles.calle}${selected.inmuebles.numero_calle ? ` ${selected.inmuebles.numero_calle}` : ''}${selected.inmuebles.piso ? `, ${selected.inmuebles.piso}` : ''}` : 'Sin inmueble'}</div>
               </div>
               <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected, tipo_id: selected.tipo_id || '', responsable_id: selected.responsable_id || '', inmueble_id: selected.inmueble_id || '', seguro_rentas_id: selected.seguro_rentas_id || '', fecha_contrato: selected.fecha_contrato || '', fecha_fin_contrato: selected.fecha_fin_contrato || '', fecha_baja: selected.fecha_baja || '' }); setErrors({}); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
@@ -610,11 +611,11 @@ export default function Inquilinos({ perfil }) {
             <div className="panel-body">
               <div className="field-section">Datos personales</div>
               <div className="field-grid">
-                <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_cif || '—'}</div></div>
-                <div className="field"><label>Tipo</label><div className="val">{selected.tipo_persona?.tipo || '—'}</div></div>
-                <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono)}</div></div>
-                <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
-                <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil)}</div></div>
+                <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_cif || 'â'}</div></div>
+                <div className="field"><label>Tipo</label><div className="val">{selected.tipo_persona?.tipo || 'â'}</div></div>
+                <div className="field"><label>TelÃ©fono</label><div className="val">{waLink(selected.telefono)}</div></div>
+                <div className="field"><label>TelÃ©fono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
+                <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil)}</div></div>
                 <div className="field"><label>Email</label><div className="val">{mailLink(selected.email)}</div></div>
                 <div className="field field-full"><label>Email 2</label><div className="val">{mailLink(selected.email_2)}</div></div>
               </div>
@@ -622,12 +623,12 @@ export default function Inquilinos({ perfil }) {
               <div className="field-grid">
                 <div className="field"><label>Firma</label><div className="val">{fmtDate(selected.fecha_contrato)}</div></div>
                 <div className="field"><label>Inicio devengo</label><div className="val">{fmtDate(selected.fecha_inicio_devengo)}</div></div>
-                <div className="field"><label>Duración</label><div className="val">{selected.duracion_contrato != null ? `${selected.duracion_contrato} año${selected.duracion_contrato === 1 ? '' : 's'}` : '—'}</div></div>
+                <div className="field"><label>DuraciÃ³n</label><div className="val">{selected.duracion_contrato != null ? `${selected.duracion_contrato} aÃ±o${selected.duracion_contrato === 1 ? '' : 's'}` : 'â'}</div></div>
                 <div className="field"><label>Fin</label><div className="val">{selected.fecha_fin_contrato ? fmtDate(selected.fecha_fin_contrato) : <span className="badge badge-green">En vigor</span>}</div></div>
                 <div className="field"><label>Fianza IVIMA</label><div className="val">{fmtMoney(selected.importe_fianza_ivima)}</div></div>
-                <div className="field"><label>Depósito</label><div className="val">{fmtMoney(selected.importe_deposito)}</div></div>
-                <div className="field"><label>Seg. rentas</label><div className="val">{selected.seguro?.compania || '—'}</div></div>
-                <div className="field"><label>Nº póliza</label><div className="val">{selected.num_poliza_seg_rentas || '—'}</div></div>
+                <div className="field"><label>DepÃ³sito</label><div className="val">{fmtMoney(selected.importe_deposito)}</div></div>
+                <div className="field"><label>Seg. rentas</label><div className="val">{selected.seguro?.compania || 'â'}</div></div>
+                <div className="field"><label>NÂº pÃ³liza</label><div className="val">{selected.num_poliza_seg_rentas || 'â'}</div></div>
               </div>
               <div className="field-section">Enlaces</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -639,34 +640,34 @@ export default function Inquilinos({ perfil }) {
               {(selected.nombre_conyuge || selected.apellidos_conyuge || selected.movil_conyuge || selected.email_conyuge || selected.email_2_conyuge || selected.telefono_2_conyuge) && <>
                 <div className="field-section">Contacto 2</div>
                 <div className="field-grid">
-                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || '—'}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || 'â'}</div></div>
+                  <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
                   <div className="field"><label>Email</label><div className="val">{mailLink(selected.email_conyuge)}</div></div>
                   <div className="field"><label>Email 2</label><div className="val">{mailLink(selected.email_2_conyuge)}</div></div>
-                  <div className="field"><label>Teléfono 2</label><div className="val">{waLink(selected.telefono_2_conyuge)}</div></div>
+                  <div className="field"><label>TelÃ©fono 2</label><div className="val">{waLink(selected.telefono_2_conyuge)}</div></div>
                 </div>
               </>}
               {(selected.nombre_inq2 || selected.movil_inq2) && <>
-                <div className="field-section">2º inquilino</div>
+                <div className="field-section">2Âº inquilino</div>
                 <div className="field-grid">
-                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_inq2 || ''} ${selected.apellidos_inq2 || ''}`.trim() || '—'}</div></div>
-                  <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq2 || '—'}</div></div>
-                  <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq2_id)?.tipo || '—'}</div></div>
-                  <div className="field"><label>Relación</label><div className="val">{selected.relacion_inq2 || '—'}</div></div>
-                  <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono_inq2)}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_inq2)}</div></div>
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_inq2 || ''} ${selected.apellidos_inq2 || ''}`.trim() || 'â'}</div></div>
+                  <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq2 || 'â'}</div></div>
+                  <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq2_id)?.tipo || 'â'}</div></div>
+                  <div className="field"><label>RelaciÃ³n</label><div className="val">{selected.relacion_inq2 || 'â'}</div></div>
+                  <div className="field"><label>TelÃ©fono</label><div className="val">{waLink(selected.telefono_inq2)}</div></div>
+                  <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil_inq2)}</div></div>
                   <div className="field field-full"><label>Email</label><div className="val">{mailLink(selected.email_inq2)}</div></div>
                 </div>
               </>}
               {(selected.nombre_inq3 || selected.movil_inq3) && <>
-                <div className="field-section">3º inquilino</div>
+                <div className="field-section">3Âº inquilino</div>
                 <div className="field-grid">
-                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_inq3 || ''} ${selected.apellidos_inq3 || ''}`.trim() || '—'}</div></div>
-                  <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq3 || '—'}</div></div>
-                  <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq3_id)?.tipo || '—'}</div></div>
-                  <div className="field"><label>Relación</label><div className="val">{selected.relacion_inq3 || '—'}</div></div>
-                  <div className="field"><label>Teléfono</label><div className="val">{waLink(selected.telefono_inq3)}</div></div>
-                  <div className="field"><label>Móvil</label><div className="val">{waLink(selected.movil_inq3)}</div></div>
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_inq3 || ''} ${selected.apellidos_inq3 || ''}`.trim() || 'â'}</div></div>
+                  <div className="field"><label>DNI / NIE</label><div className="val">{selected.dni_inq3 || 'â'}</div></div>
+                  <div className="field"><label>Tipo</label><div className="val">{tipos.find(t => t.id === selected.tipo_inq3_id)?.tipo || 'â'}</div></div>
+                  <div className="field"><label>RelaciÃ³n</label><div className="val">{selected.relacion_inq3 || 'â'}</div></div>
+                  <div className="field"><label>TelÃ©fono</label><div className="val">{waLink(selected.telefono_inq3)}</div></div>
+                  <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil_inq3)}</div></div>
                   <div className="field field-full"><label>Email</label><div className="val">{mailLink(selected.email_inq3)}</div></div>
                 </div>
               </>}
@@ -679,8 +680,8 @@ export default function Inquilinos({ perfil }) {
                     <div className="tl-item" key={a.id}>
                       <div className="tl-dot" />
                       <div className="tl-content">
-                        <div className="tl-text">{a.indicaciones || '—'}</div>
-                        <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora}` : ''} · {a.tipo_contacto?.tipo_contacto || ''} · {a.responsable?.nombre_responsable || '—'}</div>
+                        <div className="tl-text">{a.indicaciones || 'â'}</div>
+                        <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora}` : ''} Â· {a.tipo_contacto?.tipo_contacto || ''} Â· {a.responsable?.nombre_responsable || 'â'}</div>
                       </div>
                     </div>
                   ))}
@@ -696,12 +697,12 @@ export default function Inquilinos({ perfil }) {
                   <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
                 </div>
                 <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                  {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
+                  {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura â no puedes modificar estos datos</div>}
                   {inqTabs(true)}
                   {tabInq === 'acc' && accionesTab}
                   {tabInq === 'renta' && rentaTab}
                   {tabInq === 'docs' && <Documentos entidadTipo="inquilino" entidadId={form.id} readOnly={readOnly} />}
-                  {tabInq === 'correos' && <Correos entidadTipo="inquilino" entidadId={form.id} email={form.email} readOnly={readOnly} />}
+                  {tabInq === 'correos' && <Correos entidadTipo="inquilino" entidadId={form.id} email={form.email} readOnly={readOnly} onCountChange={setCorreoCount} />}
                   {tabInq === '2' && extraInqGrid('inq2')}
                   {tabInq === '3' && extraInqGrid('inq3')}
                   {tabInq === '1' && <div className="form-grid">
@@ -710,47 +711,47 @@ export default function Inquilinos({ perfil }) {
                     <div className="form-group"><label>DNI / NIE</label><input value={form.dni_cif ?? ''} onChange={e => setForm(p => ({ ...p, dni_cif: e.target.value }))} /></div>
                     <div className="form-group"><label>Tipo *</label>
                       <select value={form.tipo_id ?? ''} onChange={e => setForm(p => ({ ...p, tipo_id: e.target.value }))}>
-                        <option value="">— Selecciona —</option>
+                        <option value="">â Selecciona â</option>
                         {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
                       </select>
                     </div>
                     <div className="form-group"><label>Responsable</label>
                       <select value={form.responsable_id ?? ''} onChange={e => setForm(p => ({ ...p, responsable_id: e.target.value }))}>
-                        <option value="">—</option>
+                        <option value="">â</option>
                         {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
                       </select>
                     </div>
-                    <div className="form-group"><label>Teléfono</label><input value={form.telefono ?? ''} onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))} /></div>
-                    <div className="form-group"><label>Teléfono 2</label><input value={form.telefono_2 ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2: e.target.value }))} /></div>
-                    <div className="form-group"><label>Móvil</label><input value={form.movil ?? ''} onChange={e => setForm(p => ({ ...p, movil: e.target.value }))} /></div>
+                    <div className="form-group"><label>TelÃ©fono</label><input value={form.telefono ?? ''} onChange={e => setForm(p => ({ ...p, telefono: e.target.value }))} /></div>
+                    <div className="form-group"><label>TelÃ©fono 2</label><input value={form.telefono_2 ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2: e.target.value }))} /></div>
+                    <div className="form-group"><label>MÃ³vil</label><input value={form.movil ?? ''} onChange={e => setForm(p => ({ ...p, movil: e.target.value }))} /></div>
                     <div className="form-group"><label>Email</label><input value={form.email ?? ''} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
                     <div className="form-group"><label>Email 2</label><input value={form.email_2 ?? ''} onChange={e => setForm(p => ({ ...p, email_2: e.target.value }))} /></div>
                     <div className="form-section-title">Contrato</div>
                     <div className="form-group"><label>Inmueble</label>
                       <select value={form.inmueble_id ?? ''} onChange={e => setForm(p => ({ ...p, inmueble_id: e.target.value }))}>
-                        <option value="">— Sin asignar —</option>
-                        {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} — {i.calle}</option>)}
+                        <option value="">â Sin asignar â</option>
+                        {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} â {i.calle}</option>)}
                       </select>
                     </div>
                     <div className="form-group"><label>Firma contrato</label><input type="date" value={form.fecha_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value, fecha_inicio_devengo: calcDevengo(e.target.value) }))} /></div>
                     <div className="form-group"><label>Inicio devengo</label><input type="date" value={form.fecha_inicio_devengo ?? ''} onChange={e => setForm(p => ({ ...p, fecha_inicio_devengo: e.target.value }))} /></div>
-                    <div className="form-group"><label>Duración (años)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={e => setForm(p => ({ ...p, duracion_contrato: e.target.value }))} /></div>
+                    <div className="form-group"><label>DuraciÃ³n (aÃ±os)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={e => setForm(p => ({ ...p, duracion_contrato: e.target.value }))} /></div>
                     <div className="form-group"><label>Fin</label><input type="date" value={form.fecha_fin_contrato ?? ''} onChange={e => setForm(p => ({ ...p, fecha_fin_contrato: e.target.value }))} /></div>
                     <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.aviso_fin ?? false} onChange={e => setForm(p => ({ ...p, aviso_fin: e.target.checked }))} style={{ width: 16, height: 16 }} /> Generar aviso de fin de contrato</label>{form.aviso_fin && (<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}><span style={{ fontSize: 13, color: 'var(--text2)' }}>Avisar</span><input type="number" min="1" max="60" value={form.aviso_meses_antes ?? 5} onChange={e => setForm(p => ({ ...p, aviso_meses_antes: e.target.value }))} style={{ width: 70 }} /><span style={{ fontSize: 13, color: 'var(--text2)' }}>meses antes del vencimiento</span></div>)}</div>
-                    <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
-                    <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
+                    <div className="form-group"><label>Fianza IVIMA (â¬)</label><input type="number" value={form.importe_fianza_ivima ?? ''} onChange={e => setForm(p => ({ ...p, importe_fianza_ivima: e.target.value }))} /></div>
+                    <div className="form-group"><label>DepÃ³sito (â¬)</label><input type="number" value={form.importe_deposito ?? ''} onChange={e => setForm(p => ({ ...p, importe_deposito: e.target.value }))} /></div>
                     <div className="form-group"><label>Seg. rentas</label>
                       <select value={form.seguro_rentas_id ?? ''} onChange={e => setForm(p => ({ ...p, seguro_rentas_id: e.target.value }))}>
-                        <option value="">—</option>
+                        <option value="">â</option>
                         {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
                       </select>
                     </div>
                     <div className="form-section-title">Contacto 2</div>
                     <div className="form-group"><label>Nombre contacto 2</label><input value={form.nombre_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, nombre_conyuge: e.target.value }))} /></div>
                     <div className="form-group"><label>Apellidos contacto 2</label><input value={form.apellidos_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, apellidos_conyuge: e.target.value }))} /></div>
-                    <div className="form-group"><label>Móvil contacto 2</label><input value={form.movil_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, movil_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>MÃ³vil contacto 2</label><input value={form.movil_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, movil_conyuge: e.target.value }))} /></div>
                     <div className="form-group"><label>Email contacto 2</label><input value={form.email_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, email_conyuge: e.target.value }))} /></div>
-                    <div className="form-group"><label>Teléfono 2 contacto 2</label><input value={form.telefono_2_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2_conyuge: e.target.value }))} /></div>
+                    <div className="form-group"><label>TelÃ©fono 2 contacto 2</label><input value={form.telefono_2_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, telefono_2_conyuge: e.target.value }))} /></div>
                     <div className="form-group"><label>Email 2 contacto 2</label><input value={form.email_2_conyuge ?? ''} onChange={e => setForm(p => ({ ...p, email_2_conyuge: e.target.value }))} /></div>
                     <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={e => setForm(p => ({ ...p, observaciones: e.target.value }))} /></div>
                   </div>}
@@ -783,43 +784,43 @@ export default function Inquilinos({ perfil }) {
                 <div className="form-group">
                   <label>Tipo <span style={{ color: 'var(--danger-text)' }}>*</span></label>
                   <select value={form.tipo_id || ''} onChange={f('tipo_id')} style={{ borderColor: errors.tipo_id ? 'var(--danger-text)' : '' }}>
-                    <option value="">— Selecciona —</option>
+                    <option value="">â Selecciona â</option>
                     {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
                   </select>
                   {errors.tipo_id && <span style={{ color: 'var(--danger-text)', fontSize: 11 }}>{errors.tipo_id}</span>}
                 </div>
                 <div className="form-group"><label>Responsable</label>
                   <select value={form.responsable_id || ''} onChange={f('responsable_id')}>
-                    <option value="">—</option>
+                    <option value="">â</option>
                     {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
                   </select>
                 </div>
-                <div className="form-group"><label>Teléfono</label><input value={form.telefono || ''} onChange={f('telefono')} /></div>
-                <div className="form-group"><label>Teléfono 2</label><input value={form.telefono_2 || ''} onChange={f('telefono_2')} /></div>
-                <div className="form-group"><label>Móvil</label><input value={form.movil || ''} onChange={f('movil')} /></div>
+                <div className="form-group"><label>TelÃ©fono</label><input value={form.telefono || ''} onChange={f('telefono')} /></div>
+                <div className="form-group"><label>TelÃ©fono 2</label><input value={form.telefono_2 || ''} onChange={f('telefono_2')} /></div>
+                <div className="form-group"><label>MÃ³vil</label><input value={form.movil || ''} onChange={f('movil')} /></div>
                 <div className="form-group"><label>Email</label><input value={form.email || ''} onChange={f('email')} /></div>
                 <div className="form-group"><label>Email 2</label><input value={form.email_2 || ''} onChange={f('email_2')} /></div>
                 <div className="form-section-title">Contrato</div>
                 <div className="form-group"><label>Inmueble</label>
                   <select value={form.inmueble_id || ''} onChange={f('inmueble_id')}>
-                    <option value="">— Sin asignar —</option>
-                    {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} — {i.calle}</option>)}
+                    <option value="">â Sin asignar â</option>
+                    {inmuebles.map(i => <option key={i.id} value={i.id}>{i.codigo} â {i.calle}</option>)}
                   </select>
                 </div>
                 <div className="form-group"><label>Seg. rentas</label>
                   <select value={form.seguro_rentas_id || ''} onChange={f('seguro_rentas_id')}>
-                    <option value="">—</option>
+                    <option value="">â</option>
                     {seguros.map(s => <option key={s.id} value={s.id}>{s.compania}</option>)}
                   </select>
                 </div>
                 <div className="form-group"><label>Firma contrato</label><input type="date" value={form.fecha_contrato || ''} onChange={e => setForm(p => ({ ...p, fecha_contrato: e.target.value, fecha_inicio_devengo: calcDevengo(e.target.value) }))} /></div>
                 <div className="form-group"><label>Inicio devengo</label><input type="date" value={form.fecha_inicio_devengo || ''} onChange={f('fecha_inicio_devengo')} /></div>
-                <div className="form-group"><label>Duración (años)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={f('duracion_contrato')} /></div>
+                <div className="form-group"><label>DuraciÃ³n (aÃ±os)</label><input type="number" min="1" value={form.duracion_contrato ?? ''} onChange={f('duracion_contrato')} /></div>
                 <div className="form-group"><label>Fin contrato</label><input type="date" value={form.fecha_fin_contrato || ''} onChange={f('fecha_fin_contrato')} /></div>
                 <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.aviso_fin ?? false} onChange={e => setForm(p => ({ ...p, aviso_fin: e.target.checked }))} style={{ width: 16, height: 16 }} /> Generar aviso de fin de contrato</label>{form.aviso_fin && (<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}><span style={{ fontSize: 13, color: 'var(--text2)' }}>Avisar</span><input type="number" min="1" max="60" value={form.aviso_meses_antes ?? 5} onChange={e => setForm(p => ({ ...p, aviso_meses_antes: e.target.value }))} style={{ width: 70 }} /><span style={{ fontSize: 13, color: 'var(--text2)' }}>meses antes del vencimiento</span></div>)}</div>
-                <div className="form-group"><label>Fianza IVIMA (€)</label><input type="number" value={form.importe_fianza_ivima || ''} onChange={f('importe_fianza_ivima')} /></div>
-                <div className="form-group"><label>Depósito (€)</label><input type="number" value={form.importe_deposito || ''} onChange={f('importe_deposito')} /></div>
-                <div className="form-group form-full"><label>Nº póliza seg. rentas</label><input value={form.num_poliza_seg_rentas || ''} onChange={f('num_poliza_seg_rentas')} /></div>
+                <div className="form-group"><label>Fianza IVIMA (â¬)</label><input type="number" value={form.importe_fianza_ivima || ''} onChange={f('importe_fianza_ivima')} /></div>
+                <div className="form-group"><label>DepÃ³sito (â¬)</label><input type="number" value={form.importe_deposito || ''} onChange={f('importe_deposito')} /></div>
+                <div className="form-group form-full"><label>NÂº pÃ³liza seg. rentas</label><input value={form.num_poliza_seg_rentas || ''} onChange={f('num_poliza_seg_rentas')} /></div>
                 <div className="form-section-title">Enlaces Dropbox / documentos</div>
                 <div className="form-group form-full"><label>Carpeta Dropbox (URL)</label><input value={form.carpeta_dropbox || ''} onChange={f('carpeta_dropbox')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Fianza IVIMA (URL PDF)</label><input value={form.fianza_ivima_url || ''} onChange={f('fianza_ivima_url')} placeholder="https://..." /></div>
@@ -827,9 +828,9 @@ export default function Inquilinos({ perfil }) {
                 <div className="form-section-title">Contacto 2</div>
                 <div className="form-group"><label>Nombre contacto 2</label><input value={form.nombre_conyuge || ''} onChange={f('nombre_conyuge')} /></div>
                 <div className="form-group"><label>Apellidos contacto 2</label><input value={form.apellidos_conyuge || ''} onChange={f('apellidos_conyuge')} /></div>
-                <div className="form-group"><label>Móvil contacto 2</label><input value={form.movil_conyuge || ''} onChange={f('movil_conyuge')} /></div>
+                <div className="form-group"><label>MÃ³vil contacto 2</label><input value={form.movil_conyuge || ''} onChange={f('movil_conyuge')} /></div>
                 <div className="form-group"><label>Email contacto 2</label><input value={form.email_conyuge || ''} onChange={f('email_conyuge')} /></div>
-                <div className="form-group"><label>Teléfono 2 contacto 2</label><input value={form.telefono_2_conyuge || ''} onChange={f('telefono_2_conyuge')} /></div>
+                <div className="form-group"><label>TelÃ©fono 2 contacto 2</label><input value={form.telefono_2_conyuge || ''} onChange={f('telefono_2_conyuge')} /></div>
                 <div className="form-group"><label>Email 2 contacto 2</label><input value={form.email_2_conyuge || ''} onChange={f('email_2_conyuge')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones || ''} onChange={f('observaciones')} /></div>
               </div>}
