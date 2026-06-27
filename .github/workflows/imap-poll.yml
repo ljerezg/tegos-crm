@@ -1,8 +1,10 @@
-name: IMAP Poll - Tegos CRM
+name: IMAP Poll — Tegos CRM
 
 on:
   schedule:
+    # Cada 15 minutos
     - cron: '*/15 * * * *'
+  # Permite lanzarlo manualmente desde GitHub → Actions
   workflow_dispatch:
 
 jobs:
@@ -18,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: .github/scripts/package.json
 
