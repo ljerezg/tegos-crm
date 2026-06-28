@@ -17,10 +17,10 @@ function ms(fields, q) {
 }
 
 function mailLink(v) {
-  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : 'â'
+  return v ? <a href={`mailto:${v}`} style={{ color: 'var(--info-text)' }}>{v}</a> : 'Ã¢ÂÂ'
 }
 function waLink(v) {
-  if (!v) return 'â'
+  if (!v) return 'Ã¢ÂÂ'
   let d = String(v).replace(/[^\d+]/g, '')
   if (d.startsWith('+')) d = d.slice(1)
   else if (d.startsWith('00')) d = d.slice(2)
@@ -52,6 +52,10 @@ export default function Propietarios({ perfil }) {
   const [guardandoAccion, setGuardandoAccion] = useState(false)
   const [inmueblesPorProp, setInmueblesPorProp] = useState({})
   const [correoCount, setCorreoCount] = useState(0)
+  useEffect(() => {
+    if (form.id) supabase.from('correo').select('id', { count: 'exact', head: true }).eq('propietario_id', form.id).then(({ count }) => setCorreoCount(count || 0))
+    else setCorreoCount(0)
+  }, [form.id])
 
   useEffect(() => { load() }, [])
   useEffect(() => { if (modal) { setTabProp('datos'); setNuevaAccion(null) } }, [modal])
@@ -71,7 +75,7 @@ export default function Propietarios({ perfil }) {
     ])
     const listaProp = props || []
     setRows(listaProp)
-    // Inmuebles (cÃ³digo + id) por propietario, para mostrarlos en la lista
+    // Inmuebles (cÃÂ³digo + id) por propietario, para mostrarlos en la lista
     const idsProp = listaProp.map(p => p.id)
     if (idsProp.length) {
       const [{ data: dirInm }, { data: coInm }] = await Promise.all([
@@ -113,7 +117,7 @@ export default function Propietarios({ perfil }) {
 
   async function guardarAccion() {
     if (!form.id) return
-    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acciÃ³n'); return }
+    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acciÃÂ³n'); return }
     setGuardandoAccion(true)
     const { error } = await supabase.from('accion_propietario').insert({
       propietario_id: form.id,
@@ -128,7 +132,7 @@ export default function Propietarios({ perfil }) {
       completada: false,
     })
     setGuardandoAccion(false)
-    if (error) { alert('Error al guardar la acciÃ³n: ' + error.message); return }
+    if (error) { alert('Error al guardar la acciÃÂ³n: ' + error.message); return }
     setNuevaAccion(null)
     loadAcciones(form.id)
   }
@@ -152,7 +156,7 @@ export default function Propietarios({ perfil }) {
   }
 
   async function del(id) {
-    if (!confirm('Â¿Eliminar este propietario?')) return
+    if (!confirm('ÃÂ¿Eliminar este propietario?')) return
     await supabase.from('propietarios').delete().eq('id', id)
     setSelected(null); load()
   }
@@ -186,26 +190,26 @@ export default function Propietarios({ perfil }) {
         'DNI / CIF': r.dni_cif || '',
         'Tipo': r.tipo_persona?.tipo || '',
         'Responsable': r.responsable?.nombre_responsable || '',
-        'TelÃ©fono': r.telefono || '',
-        'TelÃ©fono 2': r.telefono_2 || '',
-        'MÃ³vil': r.movil || '',
+        'TelÃÂ©fono': r.telefono || '',
+        'TelÃÂ©fono 2': r.telefono_2 || '',
+        'MÃÂ³vil': r.movil || '',
         'Email': r.email || '',
         'Email 2': r.email_2 || '',
-        'DirecciÃ³n': r.calle || '',
+        'DirecciÃÂ³n': r.calle || '',
         'Municipio': r.municipio || '',
         'Provincia': r.provincia || '',
-        'CÃ³digo postal': r.cod_postal || '',
+        'CÃÂ³digo postal': r.cod_postal || '',
         'Fecha baja': fmtDate(r.fecha_baja),
-        'Nombre cÃ³nyuge': r.nombre_conyuge || '',
-        'Apellidos cÃ³nyuge': r.apellidos_conyuge || '',
-        'DNI cÃ³nyuge': r.dni_conyuge || '',
-        'MÃ³vil cÃ³nyuge': r.movil_conyuge || '',
-        'Email cÃ³nyuge': r.email_conyuge || '',
-        'TelÃ©fono 2 cÃ³nyuge': r.telefono_2_conyuge || '',
-        'Email 2 cÃ³nyuge': r.email_2_conyuge || '',
+        'Nombre cÃÂ³nyuge': r.nombre_conyuge || '',
+        'Apellidos cÃÂ³nyuge': r.apellidos_conyuge || '',
+        'DNI cÃÂ³nyuge': r.dni_conyuge || '',
+        'MÃÂ³vil cÃÂ³nyuge': r.movil_conyuge || '',
+        'Email cÃÂ³nyuge': r.email_conyuge || '',
+        'TelÃÂ©fono 2 cÃÂ³nyuge': r.telefono_2_conyuge || '',
+        'Email 2 cÃÂ³nyuge': r.email_2_conyuge || '',
         'Otra persona contacto': r.otra_persona_contacto || '',
-        'RelaciÃ³n otra persona': r.relacion_otra_persona || '',
-        'MÃ³vil otra persona': r.movil_otra_persona || '',
+        'RelaciÃÂ³n otra persona': r.relacion_otra_persona || '',
+        'MÃÂ³vil otra persona': r.movil_otra_persona || '',
         'Email otra persona': r.email_otra_persona || '',
         'Observaciones': r.observaciones || '',
         'Inmuebles': inmsStr,
@@ -218,9 +222,9 @@ export default function Propietarios({ perfil }) {
     XLSX.writeFile(wb, 'Propietarios.xlsx')
   }
 
-  const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || 'â'
+  const nombre = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || 'Ã¢ÂÂ'
   const initials = r => nombre(r).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : 'â'
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : 'Ã¢ÂÂ'
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
   const fA = key => e => setNuevaAccion(prev => ({ ...prev, [key]: e.target.value }))
@@ -228,8 +232,8 @@ export default function Propietarios({ perfil }) {
   const accionesTab = (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acciÃ³n' : 'acciones'}</span>
-        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acciÃ³n</button>}
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acciÃÂ³n' : 'acciones'}</span>
+        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acciÃÂ³n</button>}
       </div>
       {nuevaAccion && (
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
@@ -238,24 +242,24 @@ export default function Propietarios({ perfil }) {
             <div className="form-group"><label>Hora</label><input type="time" value={nuevaAccion.hora ?? ''} onChange={fA('hora')} /></div>
             <div className="form-group"><label>Tipo de contacto</label>
               <select value={nuevaAccion.tipo_contacto_id ?? ''} onChange={fA('tipo_contacto_id')}>
-                <option value="">â</option>
+                <option value="">Ã¢ÂÂ</option>
                 {tiposContacto.map(t => <option key={t.id} value={t.id}>{t.tipo_contacto}</option>)}
               </select>
             </div>
             <div className="form-group"><label>Responsable</label>
               <select value={nuevaAccion.responsable_id ?? ''} onChange={fA('responsable_id')}>
-                <option value="">â</option>
+                <option value="">Ã¢ÂÂ</option>
                 {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
               </select>
             </div>
             <div className="form-group form-full"><label>Indicaciones / Notas</label><textarea value={nuevaAccion.indicaciones ?? ''} onChange={fA('indicaciones')} rows={3} /></div>
-            <div className="form-group"><label>PrÃ³xima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
-            <div className="form-group"><label>PrÃ³xima acciÃ³n</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
+            <div className="form-group"><label>PrÃÂ³xima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
+            <div className="form-group"><label>PrÃÂ³xima acciÃÂ³n</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
             <div className="form-group form-full"><label>Documento (URL)</label><input value={nuevaAccion.documento ?? ''} onChange={fA('documento')} placeholder="https://..." /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
             <button className="btn btn-sm" onClick={() => setNuevaAccion(null)}>Cancelar</button>
-            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acciÃ³n'}</button>
+            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acciÃÂ³n'}</button>
           </div>
         </div>
       )}
@@ -265,8 +269,8 @@ export default function Propietarios({ perfil }) {
             <div className="tl-item" key={a.id}>
               <div className="tl-dot" style={{ background: a.completada ? 'var(--accent)' : 'var(--border2)' }} />
               <div className="tl-content">
-                <div className="tl-text">{a.indicaciones || 'â'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
-                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} Â· {a.tipo_contacto?.tipo_contacto || ''} Â· {a.responsable?.nombre_responsable || 'â'}{a.proxima_fecha ? ` Â· PrÃ³x: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' â ' + a.proxima_accion : ''}` : ''}</div>
+                <div className="tl-text">{a.indicaciones || 'Ã¢ÂÂ'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
+                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} ÃÂ· {a.tipo_contacto?.tipo_contacto || ''} ÃÂ· {a.responsable?.nombre_responsable || 'Ã¢ÂÂ'}{a.proxima_fecha ? ` ÃÂ· PrÃÂ³x: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' Ã¢ÂÂ ' + a.proxima_accion : ''}` : ''}</div>
               </div>
             </div>
           ))}
@@ -308,9 +312,9 @@ export default function Propietarios({ perfil }) {
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
               <thead><tr>
-                <th {...thProps('nombre')}>Nombre / RazÃ³n social <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
+                <th {...thProps('nombre')}>Nombre / RazÃÂ³n social <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th>
                 <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
-                <th {...thProps('movil')}>MÃ³vil <span style={{fontSize:10}}>{sortIcon('movil')}</span></th>
+                <th {...thProps('movil')}>MÃÂ³vil <span style={{fontSize:10}}>{sortIcon('movil')}</span></th>
                 <th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th>
                 <th {...thProps('responsable')}>Responsable <span style={{fontSize:10}}>{sortIcon('responsable')}</span></th>
                 <th {...thProps('inmuebles')}>Inmuebles <span style={{fontSize:10}}>{sortIcon('inmuebles')}</span></th>
@@ -321,11 +325,11 @@ export default function Propietarios({ perfil }) {
                     onClick={() => selectRow(r)}
                     onDoubleClick={() => { selectRow(r); setForm({ ...r, tipo_id: r.tipo_id || '', responsable_id: r.responsable_id || '', fecha_baja: r.fecha_baja || '' }); setModal('edit') }}>
                     <td><strong>{nombre(r)}</strong>{r.fecha_baja && <span className="badge badge-red" style={{ marginLeft: 6, fontSize: 10 }}>Baja</span>}</td>
-                    <td><span className="badge badge-gray">{r.tipo_persona?.tipo || 'â'}</span></td>
-                    <td>{r.movil || 'â'}</td>
-                    <td style={{ color: 'var(--info-text)' }}>{r.email || 'â'}</td>
-                    <td>{r.responsable?.nombre_responsable || 'â'}</td>
-                    <td>{(inmueblesPorProp[r.id] || []).length ? inmueblesPorProp[r.id].map(i => <span key={i.id} className="badge badge-gray" style={{ marginRight: 4, cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11 }} onClick={e => { e.stopPropagation(); navigate(`/inmuebles?sel=${i.id}`) }}>{i.codigo}</span>) : 'â'}</td>
+                    <td><span className="badge badge-gray">{r.tipo_persona?.tipo || 'Ã¢ÂÂ'}</span></td>
+                    <td>{r.movil || 'Ã¢ÂÂ'}</td>
+                    <td style={{ color: 'var(--info-text)' }}>{r.email || 'Ã¢ÂÂ'}</td>
+                    <td>{r.responsable?.nombre_responsable || 'Ã¢ÂÂ'}</td>
+                    <td>{(inmueblesPorProp[r.id] || []).length ? inmueblesPorProp[r.id].map(i => <span key={i.id} className="badge badge-gray" style={{ marginRight: 4, cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11 }} onClick={e => { e.stopPropagation(); navigate(`/inmuebles?sel=${i.id}`) }}>{i.codigo}</span>) : 'Ã¢ÂÂ'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -351,32 +355,32 @@ export default function Propietarios({ perfil }) {
             <div className="panel-body">
               <div className="field-section">Datos personales</div>
               <div className="field-grid">
-                <div className="field"><label>DNI / CIF</label><div className="val">{selected.dni_cif || 'â'}</div></div>
-                <div className="field"><label>Responsable</label><div className="val">{selected.responsable?.nombre_responsable || 'â'}</div></div>
-                <div className="field"><label>TelÃ©fono</label><div className="val">{waLink(selected.telefono)}</div></div>
-                <div className="field"><label>TelÃ©fono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
-                <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil)}</div></div>
+                <div className="field"><label>DNI / CIF</label><div className="val">{selected.dni_cif || 'Ã¢ÂÂ'}</div></div>
+                <div className="field"><label>Responsable</label><div className="val">{selected.responsable?.nombre_responsable || 'Ã¢ÂÂ'}</div></div>
+                <div className="field"><label>TelÃÂ©fono</label><div className="val">{waLink(selected.telefono)}</div></div>
+                <div className="field"><label>TelÃÂ©fono 2</label><div className="val">{waLink(selected.telefono_2)}</div></div>
+                <div className="field"><label>MÃÂ³vil</label><div className="val">{waLink(selected.movil)}</div></div>
                 <div className="field"><label>Email</label><div className="val">{mailLink(selected.email)}</div></div>
                 <div className="field field-full"><label>Email 2</label><div className="val">{mailLink(selected.email_2)}</div></div>
-                <div className="field field-full"><label>DirecciÃ³n</label><div className="val">{[selected.calle, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || 'â'}</div></div>
+                <div className="field field-full"><label>DirecciÃÂ³n</label><div className="val">{[selected.calle, selected.municipio, selected.provincia, selected.cod_postal].filter(Boolean).join(', ') || 'Ã¢ÂÂ'}</div></div>
                 {selected.fecha_baja && <div className="field"><label>Fecha baja</label><div className="val" style={{ color: 'var(--danger-text)' }}>{fmtDate(selected.fecha_baja)}</div></div>}
               </div>
               {(selected.nombre_conyuge || selected.movil_conyuge) && <>
-                <div className="field-section">CÃ³nyuge</div>
+                <div className="field-section">CÃÂ³nyuge</div>
                 <div className="field-grid">
-                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || 'â'}</div></div>
-                  <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
+                  <div className="field"><label>Nombre</label><div className="val">{`${selected.nombre_conyuge || ''} ${selected.apellidos_conyuge || ''}`.trim() || 'Ã¢ÂÂ'}</div></div>
+                  <div className="field"><label>MÃÂ³vil</label><div className="val">{waLink(selected.movil_conyuge)}</div></div>
                   <div className="field"><label>Email</label><div className="val">{mailLink(selected.email_conyuge)}</div></div>
                   <div className="field"><label>Email 2</label><div className="val">{mailLink(selected.email_2_conyuge)}</div></div>
-                  <div className="field"><label>TelÃ©fono 2</label><div className="val">{waLink(selected.telefono_2_conyuge)}</div></div>
+                  <div className="field"><label>TelÃÂ©fono 2</label><div className="val">{waLink(selected.telefono_2_conyuge)}</div></div>
                 </div>
               </>}
               {selected.otra_persona_contacto && <>
                 <div className="field-section">Otra persona de contacto</div>
                 <div className="field-grid">
                   <div className="field"><label>Nombre</label><div className="val">{selected.otra_persona_contacto}</div></div>
-                  <div className="field"><label>RelaciÃ³n</label><div className="val">{selected.relacion_otra_persona || 'â'}</div></div>
-                  <div className="field"><label>MÃ³vil</label><div className="val">{waLink(selected.movil_otra_persona)}</div></div>
+                  <div className="field"><label>RelaciÃÂ³n</label><div className="val">{selected.relacion_otra_persona || 'Ã¢ÂÂ'}</div></div>
+                  <div className="field"><label>MÃÂ³vil</label><div className="val">{waLink(selected.movil_otra_persona)}</div></div>
                   <div className="field"><label>Email</label><div className="val">{mailLink(selected.email_otra_persona)}</div></div>
                 </div>
               </>}
@@ -399,8 +403,8 @@ export default function Propietarios({ perfil }) {
                     <div className="tl-item" key={a.id}>
                       <div className="tl-dot" style={{ background: a.completada ? 'var(--accent)' : 'var(--border2)' }} />
                       <div className="tl-content">
-                        <div className="tl-text">{a.indicaciones || 'â'} {a.completada && <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span>}</div>
-                        <div className="tl-meta">{fmtDate(a.fecha)} Â· {a.tipo_contacto?.tipo_contacto || ''} Â· {a.responsable?.nombre_responsable || 'â'}</div>
+                        <div className="tl-text">{a.indicaciones || 'Ã¢ÂÂ'} {a.completada && <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span>}</div>
+                        <div className="tl-meta">{fmtDate(a.fecha)} ÃÂ· {a.tipo_contacto?.tipo_contacto || ''} ÃÂ· {a.responsable?.nombre_responsable || 'Ã¢ÂÂ'}</div>
                       </div>
                     </div>
                   ))}
@@ -415,11 +419,11 @@ export default function Propietarios({ perfil }) {
         <div className={modal === 'edit' && selected ? "edit-modal-overlay" : "modal-overlay"} onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo propietario' : `${readOnly ? 'Ver' : 'Editar'} â ${nombre(form)}`}</h2>
+              <h2>{modal === 'new' ? 'Nuevo propietario' : `${readOnly ? 'Ver' : 'Editar'} Ã¢ÂÂ ${nombre(form)}`}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
-              {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura â no puedes modificar estos datos</div>}
+              {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura Ã¢ÂÂ no puedes modificar estos datos</div>}
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                   {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos'],['correos',`Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]].map(([v,l]) => (
@@ -436,38 +440,38 @@ export default function Propietarios({ perfil }) {
                 <div className="form-group"><label>DNI / CIF</label><input value={form.dni_cif ?? ''} onChange={f('dni_cif')} /></div>
                 <div className="form-group"><label>Tipo <span style={{ color: 'var(--danger-text)' }}>*</span></label>
                   <select value={form.tipo_id ?? ''} onChange={f('tipo_id')}>
-                    <option value="">â Selecciona â</option>
+                    <option value="">Ã¢ÂÂ Selecciona Ã¢ÂÂ</option>
                     {tipos.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
                   </select>
                 </div>
                 <div className="form-group"><label>Responsable</label>
                   <select value={form.responsable_id ?? ''} onChange={f('responsable_id')}>
-                    <option value="">â</option>
+                    <option value="">Ã¢ÂÂ</option>
                     {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
                   </select>
                 </div>
-                <div className="form-group"><label>TelÃ©fono</label><input value={form.telefono ?? ''} onChange={f('telefono')} /></div>
-                <div className="form-group"><label>TelÃ©fono 2</label><input value={form.telefono_2 ?? ''} onChange={f('telefono_2')} /></div>
-                <div className="form-group"><label>MÃ³vil</label><input value={form.movil ?? ''} onChange={f('movil')} /></div>
+                <div className="form-group"><label>TelÃÂ©fono</label><input value={form.telefono ?? ''} onChange={f('telefono')} /></div>
+                <div className="form-group"><label>TelÃÂ©fono 2</label><input value={form.telefono_2 ?? ''} onChange={f('telefono_2')} /></div>
+                <div className="form-group"><label>MÃÂ³vil</label><input value={form.movil ?? ''} onChange={f('movil')} /></div>
                 <div className="form-group"><label>Email</label><input value={form.email ?? ''} onChange={f('email')} /></div>
                 <div className="form-group"><label>Email 2</label><input value={form.email_2 ?? ''} onChange={f('email_2')} /></div>
-                <div className="form-group form-full"><label>DirecciÃ³n</label><input value={form.calle ?? ''} onChange={f('calle')} placeholder="Calle, nÃºmero, piso/puerta" /></div>
+                <div className="form-group form-full"><label>DirecciÃÂ³n</label><input value={form.calle ?? ''} onChange={f('calle')} placeholder="Calle, nÃÂºmero, piso/puerta" /></div>
                 <div className="form-group"><label>Municipio</label><input value={form.municipio ?? ''} onChange={f('municipio')} /></div>
                 <div className="form-group"><label>Provincia</label><input value={form.provincia ?? ''} onChange={f('provincia')} /></div>
-                <div className="form-group"><label>CÃ³digo postal</label><input value={form.cod_postal ?? ''} onChange={f('cod_postal')} /></div>
+                <div className="form-group"><label>CÃÂ³digo postal</label><input value={form.cod_postal ?? ''} onChange={f('cod_postal')} /></div>
                 <div className="form-group"><label>Fecha baja</label><input type="date" value={form.fecha_baja ?? ''} onChange={f('fecha_baja')} /></div>
-                <div className="form-section-title">CÃ³nyuge</div>
+                <div className="form-section-title">CÃÂ³nyuge</div>
                 <div className="form-group"><label>Nombre</label><input value={form.nombre_conyuge ?? ''} onChange={f('nombre_conyuge')} /></div>
                 <div className="form-group"><label>Apellidos</label><input value={form.apellidos_conyuge ?? ''} onChange={f('apellidos_conyuge')} /></div>
-                <div className="form-group"><label>DNI cÃ³nyuge</label><input value={form.dni_conyuge ?? ''} onChange={f('dni_conyuge')} /></div>
-                <div className="form-group"><label>MÃ³vil</label><input value={form.movil_conyuge ?? ''} onChange={f('movil_conyuge')} /></div>
+                <div className="form-group"><label>DNI cÃÂ³nyuge</label><input value={form.dni_conyuge ?? ''} onChange={f('dni_conyuge')} /></div>
+                <div className="form-group"><label>MÃÂ³vil</label><input value={form.movil_conyuge ?? ''} onChange={f('movil_conyuge')} /></div>
                 <div className="form-group"><label>Email</label><input value={form.email_conyuge ?? ''} onChange={f('email_conyuge')} /></div>
-                <div className="form-group"><label>TelÃ©fono 2</label><input value={form.telefono_2_conyuge ?? ''} onChange={f('telefono_2_conyuge')} /></div>
+                <div className="form-group"><label>TelÃÂ©fono 2</label><input value={form.telefono_2_conyuge ?? ''} onChange={f('telefono_2_conyuge')} /></div>
                 <div className="form-group"><label>Email 2</label><input value={form.email_2_conyuge ?? ''} onChange={f('email_2_conyuge')} /></div>
                 <div className="form-section-title">Otra persona de contacto</div>
                 <div className="form-group form-full"><label>Nombre</label><input value={form.otra_persona_contacto ?? ''} onChange={f('otra_persona_contacto')} /></div>
-                <div className="form-group"><label>RelaciÃ³n</label><input value={form.relacion_otra_persona ?? ''} onChange={f('relacion_otra_persona')} /></div>
-                <div className="form-group"><label>MÃ³vil</label><input value={form.movil_otra_persona ?? ''} onChange={f('movil_otra_persona')} /></div>
+                <div className="form-group"><label>RelaciÃÂ³n</label><input value={form.relacion_otra_persona ?? ''} onChange={f('relacion_otra_persona')} /></div>
+                <div className="form-group"><label>MÃÂ³vil</label><input value={form.movil_otra_persona ?? ''} onChange={f('movil_otra_persona')} /></div>
                 <div className="form-group form-full"><label>Email</label><input value={form.email_otra_persona ?? ''} onChange={f('email_otra_persona')} /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
               </div>}
