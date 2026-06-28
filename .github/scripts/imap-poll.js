@@ -16,7 +16,7 @@ const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Cuentas a monitorizar: inquilinos@tegos.es siempre; ljerezg@tegos.es si tiene credenciales
+// Cuentas a monitorizar: info@tegos.es siempre; ljerezg@tegos.es si tiene credenciales
 const ACCOUNTS = [
   { user: process.env.IMAP_USER,  password: process.env.IMAP_PASS  },
   { user: process.env.IMAP_USER2, password: process.env.IMAP_PASS2 },
@@ -24,7 +24,7 @@ const ACCOUNTS = [
 
 // Cuentas propias: ignorar al emparejar para que busquemos al interlocutor externo
 const OWN_EMAILS = new Set([
-  'inquilinos@tegos.es',
+  'info@tegos.es',
   'ljerezg@yahoo.es',
   'ljerezg@tegos.es',
 ]);
@@ -148,7 +148,7 @@ async function processEmail(parsed) {
   if (externalOther.length) addRows(await findEntitiesByEmails(externalOther), 'enviado');
 
   // Fallback: emails externos en el cuerpo (reenvíos internos entre cuentas propias)
-  // Típicamente Luis reenvía a inquilinos@tegos.es un correo que recibió → recibido
+  // Típicamente Luis reenvía a info@tegos.es un correo que recibió → recibido
   if (!rows.length) {
     const bodyEmails = extractExternalAddressesFromBody(body);
     if (bodyEmails.length) {
