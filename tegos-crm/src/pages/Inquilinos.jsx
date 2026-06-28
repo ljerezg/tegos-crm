@@ -677,6 +677,8 @@ export default function Inquilinos({ perfil }) {
               </>}
               <div className="field-section">Documentos</div>
               <Documentos entidadTipo="inquilino" entidadId={selected.id} readOnly={readOnly} />
+              <div className="field-section">Correos</div>
+              <Correos entidadTipo="inquilino" entidadId={selected.id} email={selected.email} readOnly={readOnly} />
               <div className="field-section">Acciones recientes</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">
