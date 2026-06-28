@@ -195,8 +195,11 @@ function runImapAccount(user, password) {
     const imap = new Imap({ user, password, host: IMAP_HOST, port: IMAP_PORT, tls: true, tlsOptions: { rejectUnauthorized: false }, connTimeout: 15000, authTimeout: 10000 });
     imap.once('error', (e) => { console.error(`Error IMAP (${user}):`, e.message); resolve(); });
     imap.once('ready', async () => {
-      await pollBox(imap, 'INBOX', ['UNSEEN'], true);
-      // Sent: últimos 7 días (dedupe_key evita duplicados)
+      // 1. INBOX — últimos 2 días (dedupe_key evita duplicados; cubre correos ya leídos)
+      const sinceInbox = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+      await pollBox(imap, 'INBOX', [['SINCE', sinceInbox]], false);
+
+      // 2. Sent — últimos 7 días (deduplicación vía dedupe_key en Supabase)
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const sentFolder = await findSentFolder(imap);
       if (sentFolder) {
