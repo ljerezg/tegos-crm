@@ -396,6 +396,8 @@ export default function Propietarios({ perfil }) {
               )}
               <div className="field-section">Documentos</div>
               <Documentos entidadTipo="propietario" entidadId={selected.id} readOnly={readOnly} />
+              <div className="field-section">Correos</div>
+              <Correos entidadTipo="propietario" entidadId={selected.id} email={selected.email} readOnly={readOnly} />
               <div className="field-section">Acciones ({acciones.length})</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">
