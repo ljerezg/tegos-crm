@@ -11,6 +11,7 @@ import Comercializando from './pages/Comercializando.jsx'
 import Listados from './pages/Listados.jsx'
 import Configuracion from './pages/Configuracion.jsx'
 import AdministradoresFinca from './pages/AdministradoresFinca.jsx'
+import Seguros from './pages/Seguros.jsx'
 import Usuarios from './pages/Usuarios.jsx'
 import CorreosSinAsignar from './pages/CorreosSinAsignar.jsx'
 
@@ -29,6 +30,7 @@ export default function App({ perfil }) {
     { to: '/propietarios', icon: 'ti-id-badge', label: 'Propietarios' },
     { to: '/inquilinos', icon: 'ti-users', label: 'Inquilinos' },
     ...(veTodo ? [{ to: '/administradores', icon: 'ti-building-community', label: 'Adm. Fincas' }] : []),
+    ...(veTodo ? [{ to: '/seguros', icon: 'ti-shield-check', label: 'Seguros' }] : []),
     { section: 'CRM' },
     ...(veTodo ? [{ to: '/contactos', icon: 'ti-address-book', label: 'Contactos' }] : []),
     { to: '/acciones', icon: 'ti-activity', label: 'Acciones' },
@@ -91,6 +93,7 @@ export default function App({ perfil }) {
             <Route path="/acciones" element={<Acciones perfil={perfil} />} />
             <Route path="/listados" element={<Listados perfil={perfil} />} />
             {veTodo && <Route path="/administradores" element={<AdministradoresFinca perfil={perfil} />} />}
+            {veTodo && <Route path="/seguros" element={<Seguros perfil={perfil} />} />}
             {veTodo && <Route path="/contactos" element={<Contactos perfil={perfil} />} />}
             {veTodo && <Route path="/correos" element={<CorreosSinAsignar perfil={perfil} />} />}
             {veTodo && <Route path="/comercializando" element={<Comercializando />} />}
