@@ -2,9 +2,11 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const BUCKET = 'documentos-tegos'
-const COL = { inquilino: 'inquilino_id', propietario: 'propietario_id', contacto: 'contacto_id' }
+const COL = { inquilino: 'inquilino_id', propietario: 'propietario_id', contacto: 'contacto_id', administrador_finca: 'administrador_finca_id', seguro: 'seguro_id' }
 
-export default function Correos({ entidadTipo, entidadId, email, readOnly, onCountChange }) {
+// contactoIds (opcional): además de los correos de la propia ficha (Datos), también
+// se muestran los correos que hayan casado con cualquiera de sus Contactos asociados.
+export default function Correos({ entidadTipo, entidadId, email, readOnly, onCountChange, contactoIds }) {
   const col = COL[entidadTipo]
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,12 +16,15 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly, onCou
   const empty = { sentido: 'enviado', fecha: new Date().toISOString().split('T')[0], asunto: '', cuerpo: '' }
   const [form, setForm] = useState(empty)
   const fileRef = useRef()
+  const ids = (contactoIds || []).filter(Boolean)
 
-  useEffect(() => { if (entidadId) cargar() }, [entidadId])
+  useEffect(() => { if (entidadId) cargar() }, [entidadId, ids.join(',')])
 
   async function cargar() {
     setLoading(true)
-    const { data } = await supabase.from('correo').select('*').eq(col, entidadId).order('fecha', { ascending: false }).order('id', { ascending: false })
+    let q = supabase.from('correo').select('*')
+    q = ids.length ? q.or(`${col}.eq.${entidadId},contacto_id.in.(${ids.join(',')})`) : q.eq(col, entidadId)
+    const { data } = await q.order('fecha', { ascending: false }).order('id', { ascending: false })
     const result = data || []
     setRows(result)
     onCountChange?.(result.length)
@@ -60,7 +65,7 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly, onCou
   }
 
   async function eliminar(r) {
-    if (!confirm('\u00BFEliminar este correo del registro?')) return
+    if (!confirm('¿Eliminar este correo del registro?')) return
     if (r.archivo_url) { const p = r.archivo_url.split(`${BUCKET}/`)[1]; if (p) await supabase.storage.from(BUCKET).remove([p]) }
     await supabase.from('correo').delete().eq('id', r.id); cargar()
   }
@@ -115,7 +120,7 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly, onCou
                 </div>
                 {open && (
                   <div style={{ padding: '4px 0 12px 20px' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{fmt(r.fecha)}{r.remitente ? ` \u00B7 De: ${r.remitente}` : ''}{r.destinatario ? ` \u2192 ${r.destinatario}` : ''}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{fmt(r.fecha)}{r.remitente ? ` · De: ${r.remitente}` : ''}{r.destinatario ? ` → ${r.destinatario}` : ''}</div>
                     {r.cuerpo && <div style={{ fontSize: 12, color: 'var(--text2)', whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 300, overflowY: 'auto', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>{r.cuerpo}</div>}
                     {r.archivo_url && <div style={{ marginTop: 6 }}><a href={r.archivo_url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--info-text)' }}><i className="ti ti-paperclip" /> {r.archivo_nombre || 'adjunto'}</a></div>}
                   </div>
