@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCtrlG } from '../lib/useCtrlG'
 import { useSortable } from '../components/SortableTable.jsx'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import Correos from '../components/Correos.jsx'
 
 const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
-const CONTACTO_EMPTY = { nombre: '', apellidos: '', cargo: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '' }
+const CONTACTO_EMPTY = { nombre: '', apellidos: '', cargo: '', broker_cia: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '' }
 
 export default function AdministradoresFinca({ perfil }) {
   const [rows, setRows] = useState([])
@@ -16,15 +17,18 @@ export default function AdministradoresFinca({ perfil }) {
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [contactos, setContactos] = useState([])
+  const [inmuebles, setInmuebles] = useState([])
   const [tab, setTab] = useState('datos')
   const [contactoForm, setContactoForm] = useState(null)
   const [guardandoContacto, setGuardandoContacto] = useState(false)
+  const [correoCount, setCorreoCount] = useState(0)
   const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('nombre')
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   useEffect(() => { load() }, [])
-  useEffect(() => { if (modal) { setTab('datos'); setContactoForm(null) } }, [modal])
+  useEffect(() => { if (modal) { setTab('datos'); setContactoForm(null); setCorreoCount(0) } }, [modal])
   useCtrlG(save, !!modal)
 
   async function load() {
@@ -37,13 +41,19 @@ export default function AdministradoresFinca({ perfil }) {
   }
 
   async function loadContactos(administradorId) {
-    const { data } = await supabase.from('persona_contacto').select('id, nombre, apellidos, cargo, telefono, movil, email, email_2, observaciones').eq('administrador_finca_id', administradorId).order('nombre')
+    const { data } = await supabase.from('persona_contacto').select('id, nombre, apellidos, cargo, broker_cia, telefono, movil, email, email_2, observaciones').eq('administrador_finca_id', administradorId).order('nombre')
     setContactos(data || [])
+  }
+
+  async function loadInmuebles(administradorId) {
+    const { data } = await supabase.from('inmuebles').select('id, codigo, calle, piso, propietario_id, propietarios!inmuebles_propietario_id_fkey(id, nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos))').eq('administrador_finca_id', administradorId).order('codigo')
+    setInmuebles(data || [])
   }
 
   async function selectRow(row) {
     setSelected(row)
     loadContactos(row.id)
+    loadInmuebles(row.id)
   }
 
   async function save() {
@@ -111,6 +121,12 @@ export default function AdministradoresFinca({ perfil }) {
   const f = key => e => setForm({ ...form, [key]: e.target.value })
   const fC = key => e => setContactoForm(prev => ({ ...prev, [key]: e.target.value }))
   const initials = r => (r.nombre || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const propietariosDe = i => {
+    const list = []
+    if (i.propietarios) list.push(i.propietarios)
+    ;(i.inmueble_propietarios || []).forEach(x => { if (x.propietarios && !list.some(p => p.id === x.propietarios.id)) list.push(x.propietarios) })
+    return list
+  }
 
   const contactosTab = (
     <div>
@@ -124,6 +140,7 @@ export default function AdministradoresFinca({ perfil }) {
             <div className="form-group"><label>Nombre *</label><input value={contactoForm.nombre ?? ''} onChange={fC('nombre')} /></div>
             <div className="form-group"><label>Apellidos</label><input value={contactoForm.apellidos ?? ''} onChange={fC('apellidos')} /></div>
             <div className="form-group"><label>Cargo</label><input value={contactoForm.cargo ?? ''} onChange={fC('cargo')} /></div>
+            <div className="form-group"><label>Broker/Cía.</label><input value={contactoForm.broker_cia ?? ''} onChange={fC('broker_cia')} placeholder="Si no trabaja directamente con la compañía" /></div>
             <div className="form-group"><label>Teléfono</label><input value={contactoForm.telefono ?? ''} onChange={fC('telefono')} /></div>
             <div className="form-group"><label>Móvil</label><input value={contactoForm.movil ?? ''} onChange={fC('movil')} /></div>
             <div className="form-group"><label>Email</label><input value={contactoForm.email ?? ''} onChange={fC('email')} /></div>
@@ -138,12 +155,13 @@ export default function AdministradoresFinca({ perfil }) {
       )}
       {contactos.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin contactos</div> : (
         <table>
-          <thead><tr><th>Nombre</th><th>Cargo</th><th>Teléfono</th><th>Móvil</th><th>Email</th>{!readOnly && <th></th>}</tr></thead>
+          <thead><tr><th>Nombre</th><th>Cargo</th><th>Broker/Cía.</th><th>Teléfono</th><th>Móvil</th><th>Email</th>{!readOnly && <th></th>}</tr></thead>
           <tbody>
             {contactos.map(c => (
               <tr key={c.id}>
                 <td>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}</td>
                 <td>{c.cargo || '—'}</td>
+                <td>{c.broker_cia || '—'}</td>
                 <td>{c.telefono || '—'}</td>
                 <td>{c.movil || '—'}</td>
                 <td style={{ color: 'var(--info-text)' }}>{c.email || '—'}</td>
@@ -221,9 +239,26 @@ export default function AdministradoresFinca({ perfil }) {
                   <div key={c.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
                     <i className="ti ti-user" style={{ color: 'var(--text3)', marginTop: 2 }} />
                     <div>
-                      <div style={{ fontWeight: 500 }}>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}{c.cargo ? ` — ${c.cargo}` : ''}</div>
+                      <div style={{ fontWeight: 500 }}>{`${c.nombre || ''} ${c.apellidos || ''}`.trim()}{c.cargo ? ` — ${c.cargo}` : ''}{c.broker_cia ? ` (${c.broker_cia})` : ''}</div>
                       <div style={{ color: 'var(--text3)', fontSize: 12 }}>{[c.movil || c.telefono, c.email].filter(Boolean).join(' · ')}</div>
                     </div>
+                  </div>
+                ))
+              )}
+              <div className="field-section">Inmuebles gestionados ({inmuebles.length})</div>
+              {inmuebles.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin inmuebles</div> : (
+                inmuebles.map(i => (
+                  <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                    <i className="ti ti-building" style={{ color: 'var(--brand)' }} />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 500, color: 'var(--info-text)', cursor: 'pointer' }} onClick={() => navigate(`/inmuebles?sel=${i.id}`)}>{i.codigo}</span>
+                    <span style={{ color: 'var(--text2)', fontSize: 13 }}>{i.calle}{i.piso ? `, ${i.piso}` : ''}</span>
+                    {propietariosDe(i).length > 0 && (
+                      <span style={{ color: 'var(--text3)', fontSize: 12 }}>
+                        · {propietariosDe(i).map((p, idx) => (
+                          <span key={p.id}>{idx > 0 ? ', ' : ''}<span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={() => navigate(`/propietarios?sel=${p.id}`)}>{`${p.nombre || ''} ${p.apellidos || ''}`.trim()}</span></span>
+                        ))}
+                      </span>
+                    )}
                   </div>
                 ))
               )}
@@ -243,12 +278,13 @@ export default function AdministradoresFinca({ perfil }) {
               {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
               {modal === 'edit' && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['contactos',`Contactos (${contactos.length})`]].map(([v,l]) => (
+                  {[['datos','Datos'],['contactos',`Contactos (${contactos.length})`],['correos',`Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tab === v ? 'btn-tab-active' : ''}`} onClick={() => setTab(v)}>{l}</button>
                   ))}
                 </div>
               )}
               {modal === 'edit' && tab === 'contactos' && contactosTab}
+              {modal === 'edit' && tab === 'correos' && <Correos entidadTipo="administrador_finca" entidadId={form.id} email={form.email} readOnly={readOnly} onCountChange={setCorreoCount} contactoIds={contactos.map(c => c.id)} />}
               {(modal === 'new' || tab === 'datos') && <div className="form-grid">
                 <div className="form-group form-full"><label>Nombre / Razón social *</label><input value={form.nombre || ''} onChange={f('nombre')} /></div>
                 <div className="form-group"><label>Teléfono</label><input value={form.telefono || ''} onChange={f('telefono')} /></div>

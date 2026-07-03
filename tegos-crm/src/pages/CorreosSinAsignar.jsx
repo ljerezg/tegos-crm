@@ -6,30 +6,36 @@ const TIPOS = [
   { tipo: 'inquilino', col: 'inquilino_id', tabla: 'inquilinos', label: 'Inquilino' },
   { tipo: 'propietario', col: 'propietario_id', tabla: 'propietarios', label: 'Propietario' },
   { tipo: 'contacto', col: 'contacto_id', tabla: 'persona_contacto', label: 'Contacto' },
+  { tipo: 'administrador_finca', col: 'administrador_finca_id', tabla: 'administrador_finca', label: 'Adm. Finca' },
+  { tipo: 'seguro', col: 'seguro_id', tabla: 'seguro', label: 'Seguro' },
 ]
 
 export default function CorreosSinAsignar({ perfil }) {
   const readOnly = perfil?.rol === 'visor'
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [opciones, setOpciones] = useState({ inquilino: [], propietario: [], contacto: [] })
+  const [opciones, setOpciones] = useState({ inquilino: [], propietario: [], contacto: [], administrador_finca: [], seguro: [] })
   const [sel, setSel] = useState({})
 
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    const [{ data: correos }, { data: inq }, { data: prop }, { data: cont }] = await Promise.all([
-      supabase.from('correo').select('*').is('inquilino_id', null).is('propietario_id', null).is('contacto_id', null).order('fecha', { ascending: false }).order('id', { ascending: false }),
+    const [{ data: correos }, { data: inq }, { data: prop }, { data: cont }, { data: adm }, { data: seg }] = await Promise.all([
+      supabase.from('correo').select('*').is('inquilino_id', null).is('propietario_id', null).is('contacto_id', null).is('administrador_finca_id', null).is('seguro_id', null).order('fecha', { ascending: false }).order('id', { ascending: false }),
       supabase.from('inquilinos').select('id, nombre, apellidos').order('nombre'),
       supabase.from('propietarios').select('id, nombre, apellidos').order('nombre'),
       supabase.from('persona_contacto').select('id, nombre, apellidos').order('nombre'),
+      supabase.from('administrador_finca').select('id, nombre').order('nombre'),
+      supabase.from('seguro').select('id, compania').order('compania'),
     ])
     const lbl = r => `${r.nombre || ''} ${r.apellidos || ''}`.trim() || '(sin nombre)'
     setOpciones({
       inquilino: (inq || []).map(r => ({ id: r.id, label: lbl(r) })),
       propietario: (prop || []).map(r => ({ id: r.id, label: lbl(r) })),
       contacto: (cont || []).map(r => ({ id: r.id, label: lbl(r) })),
+      administrador_finca: (adm || []).map(r => ({ id: r.id, label: r.nombre || '(sin nombre)' })),
+      seguro: (seg || []).map(r => ({ id: r.id, label: r.compania || '(sin nombre)' })),
     })
     setRows(correos || [])
     setLoading(false)
