@@ -4,10 +4,10 @@ import { useCtrlG } from '../lib/useCtrlG'
 import { useSortable } from '../components/SortableTable.jsx'
 import { useSearchParams } from 'react-router-dom'
 
-const EMPTY = { nombre: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
+const EMPTY = { compania: '', calle: '', numero: '', piso: '', municipio: '', provincia: '', cod_postal: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '', fecha_baja: '' }
 const CONTACTO_EMPTY = { nombre: '', apellidos: '', cargo: '', telefono: '', movil: '', email: '', email_2: '', observaciones: '' }
 
-export default function AdministradoresFinca({ perfil }) {
+export default function Seguros({ perfil }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -20,7 +20,7 @@ export default function AdministradoresFinca({ perfil }) {
   const [contactoForm, setContactoForm] = useState(null)
   const [guardandoContacto, setGuardandoContacto] = useState(false)
   const readOnly = perfil?.rol === 'visor'
-  const { sortData, sortIcon, thProps } = useSortable('nombre')
+  const { sortData, sortIcon, thProps } = useSortable('compania')
   const [searchParams, setSearchParams] = useSearchParams()
 
   useEffect(() => { load() }, [])
@@ -29,15 +29,15 @@ export default function AdministradoresFinca({ perfil }) {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('administrador_finca').select('*').order('nombre')
+    const { data } = await supabase.from('seguro').select('*').order('compania')
     setRows(data || [])
     const sel = searchParams.get('sel')
     if (sel) { const found = (data || []).find(r => String(r.id) === String(sel)); if (found) selectRow(found); setSearchParams({}, { replace: true }) }
     setLoading(false)
   }
 
-  async function loadContactos(administradorId) {
-    const { data } = await supabase.from('persona_contacto').select('id, nombre, apellidos, cargo, telefono, movil, email, email_2, observaciones').eq('administrador_finca_id', administradorId).order('nombre')
+  async function loadContactos(seguroId) {
+    const { data } = await supabase.from('persona_contacto').select('id, nombre, apellidos, cargo, telefono, movil, email, email_2, observaciones').eq('seguro_id', seguroId).order('nombre')
     setContactos(data || [])
   }
 
@@ -49,20 +49,20 @@ export default function AdministradoresFinca({ perfil }) {
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null })
-    if (!data.nombre) return alert('El nombre es obligatorio')
+    if (!data.compania) return alert('La compañía es obligatoria')
     if (modal === 'new') {
-      await supabase.from('administrador_finca').insert(data)
+      await supabase.from('seguro').insert(data)
     } else {
       const { id: _id, ...updateData } = data
-      const { error } = await supabase.from('administrador_finca').update(updateData).eq('id', form.id)
+      const { error } = await supabase.from('seguro').update(updateData).eq('id', form.id)
       if (error) { alert('Error: ' + error.message); return }
     }
     setModal(null); load()
   }
 
   async function del(id) {
-    if (!confirm('¿Eliminar este administrador?')) return
-    await supabase.from('administrador_finca').delete().eq('id', id)
+    if (!confirm('¿Eliminar esta aseguradora?')) return
+    await supabase.from('seguro').delete().eq('id', id)
     setSelected(null); load()
   }
 
@@ -72,7 +72,7 @@ export default function AdministradoresFinca({ perfil }) {
   async function guardarContacto() {
     if (!contactoForm?.nombre) { alert('El nombre del contacto es obligatorio'); return }
     setGuardandoContacto(true)
-    const data = { ...contactoForm, administrador_finca_id: form.id }
+    const data = { ...contactoForm, seguro_id: form.id }
     Object.keys(data).forEach(k => { if (data[k] === '') data[k] = null })
     let error
     if (data.id) {
@@ -99,7 +99,7 @@ export default function AdministradoresFinca({ perfil }) {
   function filtered() {
     const data = rows.filter(r => {
       const q = (search || '').toLowerCase()
-      const matchSearch = [r.nombre, r.email, r.telefono, r.municipio].join(' ').toLowerCase().includes(q)
+      const matchSearch = [r.compania, r.email, r.telefono, r.municipio].join(' ').toLowerCase().includes(q)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })
@@ -110,7 +110,7 @@ export default function AdministradoresFinca({ perfil }) {
   }
   const f = key => e => setForm({ ...form, [key]: e.target.value })
   const fC = key => e => setContactoForm(prev => ({ ...prev, [key]: e.target.value }))
-  const initials = r => (r.nombre || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const initials = r => (r.compania || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   const contactosTab = (
     <div>
@@ -163,7 +163,7 @@ export default function AdministradoresFinca({ perfil }) {
     <div>
       <div className="card">
         <div className="card-header">
-          <h2>Administradores de fincas <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered().length}</span></h2>
+          <h2>Seguros <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered().length}</span></h2>
           <div style={{ display: 'flex', gap: 6 }}>
             {[['vigor','En vigor'],['finalizados','Con baja'],['todos','Todos']].map(([v,l]) => (
               <button key={v} className={`btn btn-sm ${filtro === v ? 'btn-primary' : ''}`} onClick={() => setFiltro(v)}>{l}</button>
@@ -175,12 +175,12 @@ export default function AdministradoresFinca({ perfil }) {
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
             <table>
-              <thead><tr><th {...thProps('nombre')}>Nombre / Razón social <span style={{fontSize:10}}>{sortIcon('nombre')}</span></th><th {...thProps('municipio')}>Municipio <span style={{fontSize:10}}>{sortIcon('municipio')}</span></th><th {...thProps('telefono')}>Teléfono <span style={{fontSize:10}}>{sortIcon('telefono')}</span></th><th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th></tr></thead>
+              <thead><tr><th {...thProps('compania')}>Compañía <span style={{fontSize:10}}>{sortIcon('compania')}</span></th><th {...thProps('municipio')}>Municipio <span style={{fontSize:10}}>{sortIcon('municipio')}</span></th><th {...thProps('telefono')}>Teléfono <span style={{fontSize:10}}>{sortIcon('telefono')}</span></th><th {...thProps('email')}>Email <span style={{fontSize:10}}>{sortIcon('email')}</span></th></tr></thead>
               <tbody>
-                {filtered().length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin administradores</td></tr>}
+                {filtered().length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text3)', padding: 24 }}>Sin aseguradoras</td></tr>}
                 {filtered().map(r => (
                   <tr key={r.id} onClick={() => selectRow(r)} onDoubleClick={() => { selectRow(r); setForm({ ...r, fecha_baja: r.fecha_baja || '' }); setModal('edit') }}>
-                    <td><strong>{r.nombre}</strong></td>
+                    <td><strong>{r.compania}</strong></td>
                     <td>{r.municipio || '—'}</td>
                     <td>{r.telefono || r.movil || '—'}</td>
                     <td style={{ color: 'var(--info-text)' }}>{r.email || '—'}</td>
@@ -198,7 +198,7 @@ export default function AdministradoresFinca({ perfil }) {
           <div className="detail-panel">
             <div className="panel-header">
               <div className="panel-avatar av-blue">{initials(selected)}</div>
-              <div style={{ flex: 1 }}><h3>{selected.nombre}</h3><div className="panel-sub">{selected.municipio || ''}</div></div>
+              <div style={{ flex: 1 }}><h3>{selected.compania}</h3><div className="panel-sub">{selected.municipio || ''}</div></div>
               <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected }); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
               {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
@@ -236,7 +236,7 @@ export default function AdministradoresFinca({ perfil }) {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo administrador' : (readOnly ? 'Ver administrador' : 'Editar administrador')}</h2>
+              <h2>{modal === 'new' ? 'Nueva aseguradora' : (readOnly ? 'Ver aseguradora' : 'Editar aseguradora')}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
@@ -250,7 +250,7 @@ export default function AdministradoresFinca({ perfil }) {
               )}
               {modal === 'edit' && tab === 'contactos' && contactosTab}
               {(modal === 'new' || tab === 'datos') && <div className="form-grid">
-                <div className="form-group form-full"><label>Nombre / Razón social *</label><input value={form.nombre || ''} onChange={f('nombre')} /></div>
+                <div className="form-group form-full"><label>Compañía *</label><input value={form.compania || ''} onChange={f('compania')} /></div>
                 <div className="form-group"><label>Teléfono</label><input value={form.telefono || ''} onChange={f('telefono')} /></div>
                 <div className="form-group"><label>Móvil</label><input value={form.movil || ''} onChange={f('movil')} /></div>
                 <div className="form-group"><label>Email</label><input value={form.email || ''} onChange={f('email')} /></div>

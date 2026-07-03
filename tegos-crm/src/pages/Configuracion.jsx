@@ -229,7 +229,6 @@ export default function Configuracion() {
 
   const tabs = [
     { id: 'responsables', label: 'Responsables' },
-    { id: 'seguros', label: 'Seguros' },
     { id: 'tipo_inmueble', label: 'Tipos de inmueble' },
     { id: 'cia_energia', label: 'Cías. Luz y Gas' },
     { id: 'cia_agua', label: 'Cías. Agua' },
@@ -253,20 +252,6 @@ export default function Configuracion() {
           titulo="Responsables"
           tabla="responsable"
           columnas={[{ field: 'nombre_responsable', label: 'Nombre', full: true }]}
-        />
-      )}
-
-      {tab === 'seguros' && (
-        <TablaAuxiliar
-          titulo="Compañías de seguros"
-          tabla="seguro"
-          columnas={[
-            { field: 'compania', label: 'Compañía' },
-            { field: 'persona_contacto', label: 'Contacto' },
-            { field: 'telefono_1', label: 'Teléfono 1' },
-            { field: 'telefono_2', label: 'Teléfono 2' },
-            { field: 'correo_1', label: 'Email' },
-          ]}
         />
       )}
 
