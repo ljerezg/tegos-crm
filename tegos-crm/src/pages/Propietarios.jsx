@@ -52,10 +52,7 @@ export default function Propietarios({ perfil }) {
   const [guardandoAccion, setGuardandoAccion] = useState(false)
   const [inmueblesPorProp, setInmueblesPorProp] = useState({})
   const [correoCount, setCorreoCount] = useState(0)
-  useEffect(() => {
-    if (form.id) supabase.from('correo').select('id', { count: 'exact', head: true }).eq('propietario_id', form.id).then(({ count }) => setCorreoCount(count || 0))
-    else setCorreoCount(0)
-  }, [form.id])
+  const [docCount, setDocCount] = useState(0)
 
   useEffect(() => { load() }, [])
   useEffect(() => { if (modal) { setTabProp('datos'); setNuevaAccion(null) } }, [modal])
@@ -396,8 +393,6 @@ export default function Propietarios({ perfil }) {
               )}
               <div className="field-section">Documentos</div>
               <Documentos entidadTipo="propietario" entidadId={selected.id} readOnly={readOnly} />
-              <div className="field-section">Correos</div>
-              <Correos entidadTipo="propietario" entidadId={selected.id} email={selected.email} readOnly={readOnly} />
               <div className="field-section">Acciones ({acciones.length})</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">
@@ -428,13 +423,13 @@ export default function Propietarios({ perfil }) {
               {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs','Documentos'],['correos',`Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]].map(([v,l]) => (
+                  {[['datos','Datos'],['acc',`Acciones (${acciones.length})`],['docs',`Documentos${docCount > 0 ? ` (${docCount})` : ''}`],['correos',`Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tabProp === v ? 'btn-tab-active' : ''}`} onClick={() => setTabProp(v)}>{l}</button>
                   ))}
                 </div>
               )}
               {modal === 'edit' && tabProp === 'acc' && accionesTab}
-              {modal === 'edit' && tabProp === 'docs' && <Documentos entidadTipo="propietario" entidadId={form.id} readOnly={readOnly} />}
+              {modal === 'edit' && tabProp === 'docs' && <Documentos entidadTipo="propietario" entidadId={form.id} readOnly={readOnly} onCountChange={setDocCount} />}
               {modal === 'edit' && tabProp === 'correos' && <Correos entidadTipo="propietario" entidadId={form.id} email={form.email} readOnly={readOnly} onCountChange={setCorreoCount} />}
               {(modal !== 'edit' || tabProp === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Nombre</label><input value={form.nombre ?? ''} onChange={f('nombre')} /></div>
