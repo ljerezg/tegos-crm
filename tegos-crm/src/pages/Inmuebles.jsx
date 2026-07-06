@@ -37,6 +37,7 @@ export default function Inmuebles({ perfil }) {
   const [ciasAgua, setCiasAgua] = useState([])
   const [responsables, setResponsables] = useState([])
   const [tabInm, setTabInm] = useState('datos')
+  const [docCount, setDocCount] = useState(0)
   const [nuevaAccion, setNuevaAccion] = useState(null)
   const [guardandoAccion, setGuardandoAccion] = useState(false)
   const [inquilinosInm, setInquilinosInm] = useState([])
@@ -437,7 +438,7 @@ export default function Inmuebles({ perfil }) {
               {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
               {modal === 'edit' && form.id && (
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['inq',`Inquilinos (${inquilinosInm.length})`],['acc',`Acciones (${acciones.length})`],['docs','Documentos']].map(([v,l]) => (
+                  {[['datos','Datos'],['inq',`Inquilinos (${inquilinosInm.length})`],['acc',`Acciones (${acciones.length})`],['docs',`Documentos${docCount > 0 ? ` (${docCount})` : ''}`]].map(([v,l]) => (
                     <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
                   ))}
                 </div>
@@ -461,7 +462,7 @@ export default function Inmuebles({ perfil }) {
                 </div>
               )}
               {modal === 'edit' && tabInm === 'acc' && accionesTab}
-              {modal === 'edit' && tabInm === 'docs' && <Documentos entidadTipo="inmueble" entidadId={form.id} readOnly={readOnly} />}
+              {modal === 'edit' && tabInm === 'docs' && <Documentos entidadTipo="inmueble" entidadId={form.id} readOnly={readOnly} onCountChange={setDocCount} />}
               {(modal !== 'edit' || tabInm === 'datos') && <div className="form-grid">
                 <div className="form-group"><label>Código *</label><input value={form.codigo ?? ''} onChange={f('codigo')} /></div>
                 <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.en_comercializacion ?? false} onChange={e => setForm(prev => ({ ...prev, en_comercializacion: e.target.checked }))} style={{ width: 16, height: 16 }} /> En comercialización</label></div>

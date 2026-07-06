@@ -62,7 +62,7 @@ function cmpVals(va, vb, dir) {
   return dir === 'asc' ? c : -c
 }
 
-const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, aviso_fin: true, aviso_meses_antes: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '' }
+const EMPTY = { nombre: '', apellidos: '', dni_cif: '', tipo_id: '', responsable_id: '', telefono: '', movil: '', telefono_2: '', email: '', email_2: '', observaciones: '', nombre_conyuge: '', apellidos_conyuge: '', movil_conyuge: '', email_conyuge: '', telefono_2_conyuge: '', email_2_conyuge: '', otra_persona_contacto: '', movil_otra_persona: '', email_otra_persona: '', relacion_otra_persona: '', inmueble_id: '', fecha_contrato: '', fecha_inicio_devengo: '', duracion_contrato: 5, aviso_fin: true, aviso_meses_antes: 5, fecha_fin_contrato: '', mes_contrato: '', importe_fianza_ivima: '', importe_deposito: '', seguro_rentas_id: '', num_poliza_seg_rentas: '', carpeta_dropbox: '', fianza_ivima_url: '', contrato_url: '', nombre_inq2: '', apellidos_inq2: '', dni_inq2: '', tipo_inq2_id: '', relacion_inq2: '', telefono_inq2: '', telefono_2_inq2: '', movil_inq2: '', email_inq2: '', email_2_inq2: '', nombre_inq3: '', apellidos_inq3: '', dni_inq3: '', tipo_inq3_id: '', relacion_inq3: '', telefono_inq3: '', telefono_2_inq3: '', movil_inq3: '', email_inq3: '', email_2_inq3: '', fecha_baja: '' }
 
 export default function Inquilinos({ perfil }) {
   const [rows, setRows] = useState([])
@@ -90,10 +90,7 @@ export default function Inquilinos({ perfil }) {
   const [nuevaRenta, setNuevaRenta] = useState(null)
   const [guardandoRenta, setGuardandoRenta] = useState(false)
   const [correoCount, setCorreoCount] = useState(0)
-  useEffect(() => {
-    if (form.id) supabase.from('correo').select('id', { count: 'exact', head: true }).eq('inquilino_id', form.id).then(({ count }) => setCorreoCount(count || 0))
-    else setCorreoCount(0)
-  }, [form.id])
+  const [docCount, setDocCount] = useState(0)
 
   useEffect(() => { load() }, [])
   useEffect(() => { if (modal) { setTabInq('1'); setNuevaAccion(null); setNuevaRenta(null) } }, [modal])
@@ -408,7 +405,7 @@ export default function Inquilinos({ perfil }) {
 
   const inqTabs = conAcciones => (
     <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', 'Documentos'], ['correos', `Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]] : [])].map(([v,l]) => (
+      {[['1','Inquilino 1'],['2','2º inquilino'],['3','3º inquilino'], ...(conAcciones ? [['renta', `Renta (${rentas.length})`], ['acc', `Acciones (${acciones.length})`], ['docs', `Documentos${docCount > 0 ? ` (${docCount})` : ''}`], ['correos', `Correos${correoCount > 0 ? ` (${correoCount})` : ''}`]] : [])].map(([v,l]) => (
         <button key={v} className={`btn btn-sm ${tabInq === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInq(v)}>{l}</button>
       ))}
     </div>
@@ -516,7 +513,7 @@ export default function Inquilinos({ perfil }) {
 
   function sortedFiltered() {
     let data = rows.filter(r => {
-      const matchSearch = ms([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo], search)
+      const matchSearch = ms([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo, r.inmuebles?.calle, r.inmuebles?.numero_calle, r.inmuebles?.piso], search)
       const matchEstado = filtroEstado === 'todos' ? true : filtroEstado === 'vigor' ? !r.fecha_fin_contrato : !!r.fecha_fin_contrato
       return matchSearch && matchEstado
     })
@@ -677,8 +674,6 @@ export default function Inquilinos({ perfil }) {
               </>}
               <div className="field-section">Documentos</div>
               <Documentos entidadTipo="inquilino" entidadId={selected.id} readOnly={readOnly} />
-              <div className="field-section">Correos</div>
-              <Correos entidadTipo="inquilino" entidadId={selected.id} email={selected.email} readOnly={readOnly} />
               <div className="field-section">Acciones recientes</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">
@@ -707,7 +702,7 @@ export default function Inquilinos({ perfil }) {
                   {inqTabs(true)}
                   {tabInq === 'acc' && accionesTab}
                   {tabInq === 'renta' && rentaTab}
-                  {tabInq === 'docs' && <Documentos entidadTipo="inquilino" entidadId={form.id} readOnly={readOnly} />}
+                  {tabInq === 'docs' && <Documentos entidadTipo="inquilino" entidadId={form.id} readOnly={readOnly} onCountChange={setDocCount} />}
                   {tabInq === 'correos' && <Correos entidadTipo="inquilino" entidadId={form.id} email={form.email} readOnly={readOnly} onCountChange={setCorreoCount} />}
                   {tabInq === '2' && extraInqGrid('inq2')}
                   {tabInq === '3' && extraInqGrid('inq3')}
