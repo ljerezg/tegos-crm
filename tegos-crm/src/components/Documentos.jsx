@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { subirDocumento, obtenerDocumentos, eliminarDocumento } from '../lib/documentos'
 
-export default function Documentos({ entidadTipo, entidadId, readOnly }) {
+export default function Documentos({ entidadTipo, entidadId, readOnly, onCountChange }) {
   const [docs, setDocs] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -20,6 +20,7 @@ export default function Documentos({ entidadTipo, entidadId, readOnly }) {
     try {
       const data = await obtenerDocumentos(entidadTipo, entidadId)
       setDocs(data)
+      onCountChange?.(data.length)
     } catch(e) { console.error(e) }
     setLoading(false)
   }
