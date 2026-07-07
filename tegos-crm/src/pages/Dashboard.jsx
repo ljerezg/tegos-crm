@@ -29,13 +29,35 @@ export default function Dashboard({ perfil }) {
         return query.limit(8)
       }
       const tasks = [
-        aplicar(supabase.from('inmuebles').select('id, codigo, calle, poblacion'), ['codigo', 'calle', 'poblacion']),
-        aplicar(supabase.from('inquilinos').select('id, nombre, apellidos, movil, email, inmuebles(codigo)'), ['nombre', 'apellidos', 'dni_cif', 'movil', 'email']),
-        aplicar(supabase.from('propietarios').select('id, nombre, apellidos, movil, email'), ['nombre', 'apellidos', 'dni_cif', 'movil', 'email']),
+        aplicar(supabase.from('inmuebles').select('id, codigo, calle, poblacion'), [
+          'codigo', 'calle', 'poblacion', 'provincia', 'codigo_postal', 'observaciones',
+          'registro', 'num_finca_registral_vivienda', 'cru', 'num_catastro_vivienda',
+          'cia_electrica', 'num_contrato_electricidad', 'cups_electricidad', 'titular_contrato_electricidad',
+          'cia_gas', 'num_contrato_gas', 'cups_gas', 'titular_contrato_gas',
+          'cia_agua', 'num_contrato_agua', 'titular_contrato_agua',
+        ]),
+        aplicar(supabase.from('inquilinos').select('id, nombre, apellidos, movil, email, inmuebles(codigo)'), [
+          'nombre', 'apellidos', 'dni_cif', 'telefono', 'movil', 'telefono_2', 'email', 'email_2', 'observaciones',
+          'nombre_conyuge', 'apellidos_conyuge', 'movil_conyuge', 'email_conyuge', 'telefono_2_conyuge', 'email_2_conyuge',
+          'otra_persona_contacto', 'movil_otra_persona', 'email_otra_persona', 'relacion_otra_persona',
+          'nombre_inq2', 'apellidos_inq2', 'dni_inq2', 'relacion_inq2', 'telefono_inq2', 'telefono_2_inq2', 'movil_inq2', 'email_inq2', 'email_2_inq2',
+          'nombre_inq3', 'apellidos_inq3', 'dni_inq3', 'relacion_inq3', 'telefono_inq3', 'telefono_2_inq3', 'movil_inq3', 'email_inq3', 'email_2_inq3',
+        ]),
+        aplicar(supabase.from('propietarios').select('id, nombre, apellidos, movil, email'), [
+          'nombre', 'apellidos', 'dni_cif', 'telefono', 'movil', 'telefono_2', 'email', 'email_2',
+          'calle', 'numero', 'piso', 'municipio', 'provincia', 'cod_postal', 'observaciones', 'prop_final',
+          'nombre_conyuge', 'apellidos_conyuge', 'dni_conyuge', 'movil_conyuge', 'email_conyuge', 'telefono_2_conyuge', 'email_2_conyuge',
+          'otra_persona_contacto', 'movil_otra_persona', 'email_otra_persona', 'relacion_otra_persona',
+        ]),
       ]
       if (veTodo) {
-        tasks.push(aplicar(supabase.from('persona_contacto').select('id, nombre, apellidos, movil, email'), ['nombre', 'apellidos', 'movil', 'email']))
-        tasks.push(aplicar(supabase.from('administrador_finca').select('id, nombre, email'), ['nombre', 'email']))
+        tasks.push(aplicar(supabase.from('persona_contacto').select('id, nombre, apellidos, movil, email'), [
+          'nombre', 'apellidos', 'dni_cif', 'telefono', 'movil', 'telefono_2', 'email', 'email_2',
+          'calle', 'numero', 'piso', 'municipio', 'provincia', 'cod_postal', 'observaciones',
+          'empresa_tasacion', 'estado_civil', 'referenciado_por',
+          'nombre_conyuge', 'apellidos_conyuge', 'movil_conyuge', 'email_conyuge', 'telefono_2_conyuge', 'email_2_conyuge',
+        ]))
+        tasks.push(aplicar(supabase.from('administrador_finca').select('id, nombre, email'), ['nombre', 'email', 'email_2', 'telefono', 'movil', 'municipio', 'provincia', 'calle', 'observaciones']))
       }
       const res = await Promise.all(tasks)
       setGres({

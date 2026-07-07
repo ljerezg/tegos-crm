@@ -278,7 +278,12 @@ export default function Propietarios({ perfil }) {
 
   function filtered() {
     let data = rows.filter(r => {
-      const matchSearch = ms([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif], search)
+      const matchSearch = ms([
+        r.nombre, r.apellidos, r.dni_cif, r.telefono, r.movil, r.telefono_2, r.email, r.email_2,
+        r.calle, r.numero, r.piso, r.municipio, r.provincia, r.cod_postal, r.observaciones, r.prop_final,
+        r.nombre_conyuge, r.apellidos_conyuge, r.dni_conyuge, r.movil_conyuge, r.email_conyuge, r.telefono_2_conyuge, r.email_2_conyuge,
+        r.otra_persona_contacto, r.movil_otra_persona, r.email_otra_persona, r.relacion_otra_persona,
+      ], search)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })

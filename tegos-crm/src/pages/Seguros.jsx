@@ -109,7 +109,7 @@ export default function Seguros({ perfil }) {
   function filtered() {
     const data = rows.filter(r => {
       const q = (search || '').toLowerCase()
-      const matchSearch = [r.compania, r.email, r.telefono, r.municipio].join(' ').toLowerCase().includes(q)
+      const matchSearch = [r.compania, r.email, r.email_2, r.telefono, r.movil, r.municipio, r.provincia, r.cod_postal, r.calle, r.numero, r.piso, r.observaciones].join(' ').toLowerCase().includes(q)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })

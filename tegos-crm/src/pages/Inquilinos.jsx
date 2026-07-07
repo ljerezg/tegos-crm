@@ -513,7 +513,14 @@ export default function Inquilinos({ perfil }) {
 
   function sortedFiltered() {
     let data = rows.filter(r => {
-      const matchSearch = ms([r.nombre, r.apellidos, r.email, r.movil, r.dni_cif, r.inmuebles?.codigo, r.inmuebles?.calle, r.inmuebles?.numero_calle, r.inmuebles?.piso], search)
+      const matchSearch = ms([
+        r.nombre, r.apellidos, r.dni_cif, r.telefono, r.movil, r.telefono_2, r.email, r.email_2, r.observaciones,
+        r.nombre_conyuge, r.apellidos_conyuge, r.movil_conyuge, r.email_conyuge, r.telefono_2_conyuge, r.email_2_conyuge,
+        r.otra_persona_contacto, r.movil_otra_persona, r.email_otra_persona, r.relacion_otra_persona,
+        r.nombre_inq2, r.apellidos_inq2, r.dni_inq2, r.relacion_inq2, r.telefono_inq2, r.telefono_2_inq2, r.movil_inq2, r.email_inq2, r.email_2_inq2,
+        r.nombre_inq3, r.apellidos_inq3, r.dni_inq3, r.relacion_inq3, r.telefono_inq3, r.telefono_2_inq3, r.movil_inq3, r.email_inq3, r.email_2_inq3,
+        r.inmuebles?.codigo, r.inmuebles?.calle, r.inmuebles?.numero_calle, r.inmuebles?.piso,
+      ], search)
       const matchEstado = filtroEstado === 'todos' ? true : filtroEstado === 'vigor' ? !r.fecha_fin_contrato : !!r.fecha_fin_contrato
       return matchSearch && matchEstado
     })

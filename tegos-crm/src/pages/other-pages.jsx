@@ -148,7 +148,13 @@ export function Contactos({ perfil }) {
   const clsBadge = cl => ({ 'Propietario': 'badge-blue', 'Cliente potencial': 'badge-yellow', 'Proveedor': 'badge-gray', 'Administrador Finca': 'badge-green' })[cl] || 'badge-gray'
 
   function filtered() {
-    let data = rows.filter(r => ms([r.nombre, r.apellidos, r.email, r.movil, r.clasificacion_contacto?.clasificacion], search))
+    let data = rows.filter(r => ms([
+      r.nombre, r.apellidos, r.dni_cif, r.telefono, r.movil, r.telefono_2, r.email, r.email_2,
+      r.calle, r.numero, r.piso, r.municipio, r.provincia, r.cod_postal, r.observaciones,
+      r.empresa_tasacion, r.estado_civil, r.edad_estimada, r.referenciado_por,
+      r.nombre_conyuge, r.apellidos_conyuge, r.movil_conyuge, r.email_conyuge, r.telefono_2_conyuge, r.email_2_conyuge,
+      r.clasificacion_contacto?.clasificacion,
+    ], search))
     return sortData(data, (r, col) => {
       if (col === 'nombre') return nombre(r)
       if (col === 'clasificacion') return r.clasificacion_contacto?.clasificacion
@@ -712,7 +718,15 @@ export function Comercializando() {
   const propName = r => `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}`.trim()
 
   function filtered() {
-    let data = rows.filter(r => ms([r.codigo, r.calle, r.poblacion, propName(r)], search))
+    let data = rows.filter(r => ms([
+      r.codigo, r.calle, r.numero_calle, r.piso, r.poblacion, r.provincia, r.codigo_postal, r.observaciones,
+      r.registro, r.num_finca_registral_vivienda, r.cru, r.num_catastro_vivienda,
+      r.num_garaje_1, r.num_garaje_2, r.num_trastero, r.num_poliza_seg_hogar,
+      r.cia_electrica, r.num_contrato_electricidad, r.cups_electricidad, r.titular_contrato_electricidad,
+      r.cia_gas, r.num_contrato_gas, r.cups_gas, r.titular_contrato_gas,
+      r.cia_agua, r.num_contrato_agua, r.titular_contrato_agua,
+      propName(r), r.seguro?.compania,
+    ], search))
     return sortData(data, (r, col) => {
       if (col === 'propietario') return propName(r)
       if (col === 'seguro') return r.seguro?.compania

@@ -282,7 +282,17 @@ export default function Inmuebles({ perfil }) {
 
   function filtered() {
     let data = rows.filter(r => {
-      const matchSearch = ms([r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos], search)
+      const otrosPropNombres = (r.inmueble_propietarios || []).flatMap(ip => [ip.propietarios?.nombre, ip.propietarios?.apellidos])
+      const inquilinoNombres = (r.inquilinos || []).flatMap(i => [i.nombre, i.apellidos])
+      const matchSearch = ms([
+        r.codigo, r.calle, r.numero_calle, r.piso, r.poblacion, r.provincia, r.codigo_postal, r.observaciones,
+        r.registro, r.num_finca_registral_vivienda, r.cru, r.num_catastro_vivienda,
+        r.num_garaje_1, r.num_garaje_2, r.num_trastero, r.num_poliza_seg_hogar,
+        r.cia_electrica, r.num_contrato_electricidad, r.cups_electricidad, r.titular_contrato_electricidad,
+        r.cia_gas, r.num_contrato_gas, r.cups_gas, r.titular_contrato_gas,
+        r.cia_agua, r.num_contrato_agua, r.titular_contrato_agua,
+        r.propietarios?.nombre, r.propietarios?.apellidos, ...otrosPropNombres, ...inquilinoNombres,
+      ], search)
       const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : filtro === 'comercializando' ? r.en_comercializacion : !!r.fecha_baja
       return matchSearch && matchFiltro
     })
