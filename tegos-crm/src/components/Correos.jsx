@@ -110,10 +110,11 @@ export default function Correos({ entidadTipo, entidadId, email, readOnly, onCou
               <div key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <div
                   onClick={() => setExpanded(open ? null : r.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', cursor: 'pointer', userSelect: 'none' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 0', cursor: 'pointer', userSelect: 'none' }}
                 >
                   <i className={`ti ${open ? 'ti-chevron-down' : 'ti-chevron-right'}`} style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }} />
-                  <span className={`badge ${r.sentido === 'recibido' ? 'badge-blue' : 'badge-green'}`} style={{ flexShrink: 0 }}>{r.sentido === 'recibido' ? 'Recib.' : 'Env.'}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0, width: 64, whiteSpace: 'nowrap' }}>{fmt(r.fecha)}</span>
+                  <span className={`badge ${r.sentido === 'recibido' ? 'badge-blue' : 'badge-green'}`} style={{ flexShrink: 0, padding: '2px 6px' }}>{r.sentido === 'recibido' ? 'Recib.' : 'Env.'}</span>
                   <span style={{ fontSize: 13, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asunto || '(sin asunto)'}</span>
                   {r.archivo_url && <i className="ti ti-paperclip" style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }} />}
                   {!readOnly && <button className="btn btn-ghost btn-sm" title="Eliminar" onClick={e => { e.stopPropagation(); eliminar(r) }} style={{ padding: '0 4px', height: 'fit-content' }}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
