@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useCtrlG } from '../lib/useCtrlG'
 import { supabase } from '../lib/supabase'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Documentos from '../components/Documentos.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import { useSortable } from '../components/SortableTable.jsx'
@@ -16,7 +16,7 @@ function ms(fields, q) {
   return fields.some(function(f) { return norm(f).indexOf(n) !== -1 })
 }
 
-const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', tipo_inmueble_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '', en_comercializacion: false }
+const EMPTY = { codigo: '', calle: '', numero_calle: '', piso: '', poblacion: '', provincia: '', codigo_postal: '', propietario_id: '', tipo_inmueble_id: '', registro: '', num_finca_registral_vivienda: '', cru: '', num_catastro_vivienda: '', num_garaje_1: '', num_garaje_2: '', num_trastero: '', seguro_id: '', num_poliza_seg_hogar: '', administrador_finca_id: '', cia_electrica: '', num_contrato_electricidad: '', cups_electricidad: '', titular_contrato_electricidad: '', cia_gas: '', num_contrato_gas: '', cups_gas: '', titular_contrato_gas: '', cia_agua: '', num_contrato_agua: '', titular_contrato_agua: '', carpeta_dropbox: '', observaciones: '', fecha_baja: '' }
 
 export default function Inmuebles({ perfil }) {
   const [rows, setRows] = useState([])
@@ -31,143 +31,52 @@ export default function Inmuebles({ perfil }) {
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [acciones, setAcciones] = useState([])
-  const [otrosProps, setOtrosProps] = useState([])
-  const [tiposContacto, setTiposContacto] = useState([])
-  const [ciasEnergia, setCiasEnergia] = useState([])
-  const [ciasAgua, setCiasAgua] = useState([])
-  const [responsables, setResponsables] = useState([])
-  const [tabInm, setTabInm] = useState('datos')
-  const [docCount, setDocCount] = useState(0)
-  const [nuevaAccion, setNuevaAccion] = useState(null)
-  const [guardandoAccion, setGuardandoAccion] = useState(false)
-  const [inquilinosInm, setInquilinosInm] = useState([])
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const readOnly = perfil?.rol === 'visor'
   const { sortData, sortIcon, thProps } = useSortable('codigo')
 
   useEffect(() => { load() }, [])
-  useEffect(() => { if (modal) { setTabInm('datos'); setNuevaAccion(null) } }, [modal])
   useCtrlG(save, !!modal)
 
   async function load() {
     setLoading(true)
-    let inmuebleIds = null
-    if (perfil?.rol === 'propietario' && perfil?.propietario_id) {
-      const [{ data: dir }, { data: co }] = await Promise.all([
-        supabase.from('inmuebles').select('id').eq('propietario_id', perfil.propietario_id),
-        supabase.from('inmueble_propietarios').select('inmueble_id').eq('propietario_id', perfil.propietario_id),
-      ])
-      inmuebleIds = [...new Set([...(dir || []).map(i => i.id), ...(co || []).map(i => i.inmueble_id)])]
-    }
-    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }, { data: tc }, { data: resps }, { data: cen }, { data: cag }] = await Promise.all([
+    const [{ data: inmuebles }, { data: props }, { data: segs }, { data: adms }, { data: tipsinm }] = await Promise.all([
       (() => {
-        let q = supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo), inquilinos(id, nombre, apellidos, fecha_fin_contrato)').order('codigo')
-        if (inmuebleIds !== null) {
-          if (inmuebleIds.length === 0) q = q.eq('id', -1)
-          else q = q.in('id', inmuebleIds)
-        }
+        let q = supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo)').order('codigo')
+        if (perfil?.rol === 'propietario' && perfil?.propietario_id) q = q.eq('propietario_id', perfil.propietario_id)
         return q
       })(),
       supabase.from('propietarios').select('id, nombre, apellidos').order('nombre'),
       supabase.from('seguro').select('id, compania').order('compania'),
       supabase.from('administrador_finca').select('id, nombre').order('nombre'),
       supabase.from('tipo_inmueble').select('*').order('tipo'),
-      supabase.from('tipo_contacto').select('*'),
-      supabase.from('responsable').select('*'),
-      supabase.from('cia_energia').select('*').order('nombre'),
-      supabase.from('cia_agua').select('*').order('nombre'),
     ])
-    const listaInm = inmuebles || []
-    setRows(listaInm)
-    const sel = searchParams.get('sel')
-    if (sel) {
-      const encontrado = listaInm.find(r => String(r.id) === String(sel))
-      if (encontrado) selectRow(encontrado)
-      setSearchParams({}, { replace: true })
-    }
+    setRows(inmuebles || [])
     setPropietarios(props || [])
     setSeguros(segs || [])
     setAdmFincas(adms || [])
     setTiposInmueble(tipsinm || [])
-    setTiposContacto(tc || [])
-    setResponsables(resps || [])
-    setCiasEnergia(cen || [])
-    setCiasAgua(cag || [])
     setLoading(false)
-  }
-
-  async function loadAcciones(inmuebleId) {
-    const { data } = await supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inmueble_id', inmuebleId).order('fecha', { ascending: false })
-    setAcciones(data || [])
   }
 
   async function selectRow(row) {
     setSelected(row)
-    loadAcciones(row.id)
-    loadInquilinosInm(row.id)
-  }
-
-  async function loadInquilinosInm(inmuebleId) {
-    const { data } = await supabase.from('inquilinos').select('id, nombre, apellidos, fecha_contrato, fecha_fin_contrato').eq('inmueble_id', inmuebleId).order('fecha_contrato', { ascending: false })
-    setInquilinosInm(data || [])
-  }
-
-  async function guardarAccion() {
-    if (!form.id) return
-    if (!nuevaAccion?.fecha) { alert('Indica la fecha de la acción'); return }
-    setGuardandoAccion(true)
-    const { error } = await supabase.from('accion_inmueble').insert({
-      inmueble_id: form.id,
-      fecha: nuevaAccion.fecha || null,
-      hora: nuevaAccion.hora || null,
-      tipo_contacto_id: nuevaAccion.tipo_contacto_id || null,
-      responsable_id: nuevaAccion.responsable_id || null,
-      indicaciones: nuevaAccion.indicaciones || null,
-      proxima_fecha: nuevaAccion.proxima_fecha || null,
-      proxima_accion: nuevaAccion.proxima_accion || null,
-      documento: nuevaAccion.documento || null,
-      completada: false,
-    })
-    setGuardandoAccion(false)
-    if (error) { alert('Error al guardar la acción: ' + error.message); return }
-    setNuevaAccion(null)
-    loadAcciones(form.id)
-  }
-
-  async function completarAccion(id) {
-    await supabase.from('accion_inmueble').update({ completada: true }).eq('id', id)
-    if (form.id) loadAcciones(form.id)
+    const { data } = await supabase.from('accion_inmueble').select('*, responsable(nombre_responsable), tipo_contacto(tipo_contacto)').eq('inmueble_id', row.id).order('fecha', { ascending: false })
+    setAcciones(data || [])
   }
 
   async function save() {
     const data = { ...form }
     Object.keys(data).forEach(k => { if (data[k] === '' || data[k] === undefined) data[k] = null })
-    if (!data.codigo) { alert('El código es obligatorio'); return }
-    const codigoDup = rows.find(r => (r.codigo || '').trim().toLowerCase() === data.codigo.trim().toLowerCase() && r.id !== form.id)
-    if (codigoDup) { alert('Código ya utilizado'); return }
-    const errDuplicado = e => e && (e.code === '23505' || (e.message || '').toLowerCase().includes('inmuebles_codigo_unico'))
-    let inmuebleId = form.id
     if (modal === 'new') {
-      const { data: creado, error } = await supabase.from('inmuebles').insert(data).select('id').single()
-      if (error) { alert(errDuplicado(error) ? 'Código ya utilizado' : 'Error al guardar: ' + error.message); return }
-      inmuebleId = creado?.id
+      await supabase.from('inmuebles').insert(data)
     } else {
-      const { id: _id, propietarios: _, inmueble_propietarios: _____, seguro: __, administrador_finca: ___, tipo_inmueble: ____, inquilinos: ______, ...updateData } = data
+      const { id: _id, propietarios: _, seguro: __, administrador_finca: ___, ...updateData } = data
       const { error } = await supabase.from('inmuebles').update(updateData).eq('id', form.id)
-      if (error) { alert(errDuplicado(error) ? 'Código ya utilizado' : 'Error al guardar: ' + error.message); return }
-    }
-    if (inmuebleId) {
-      await supabase.from('inmueble_propietarios').delete().eq('inmueble_id', inmuebleId)
-      const extras = [...new Set(otrosProps.filter(pid => pid && String(pid) !== String(data.propietario_id ?? '')))]
-      if (extras.length > 0) {
-        const { error: errRel } = await supabase.from('inmueble_propietarios').insert(extras.map(pid => ({ inmueble_id: inmuebleId, propietario_id: pid })))
-        if (errRel) alert('Inmueble guardado, pero error al guardar propietarios adicionales: ' + errRel.message)
-      }
+      if (error) { alert('Error al guardar: ' + error.message); return }
     }
     setModal(null); load()
-    if (selected && inmuebleId) {
-      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios!inmuebles_propietario_id_fkey(nombre, apellidos), inmueble_propietarios(propietario_id, propietarios(id, nombre, apellidos)), seguro(compania), administrador_finca(nombre), tipo_inmueble(tipo), inquilinos(id, nombre, apellidos, fecha_fin_contrato)').eq('id', inmuebleId).single()
+    if (selected) {
+      const { data: updated } = await supabase.from('inmuebles').select('*, propietarios(nombre, apellidos), seguro(compania), administrador_finca(nombre)').eq('id', form.id).single()
       if (updated) setSelected(updated)
     }
   }
@@ -183,13 +92,13 @@ export default function Inmuebles({ perfil }) {
 
     const data = filtered().map(r => ({
       'Código': r.codigo || '',
-      'Dirección': r.calle || '',
+      'Calle': r.calle || '',
+      'Número': r.numero_calle || '',
+      'Piso': r.piso || '',
       'Población': r.poblacion || '',
       'Provincia': r.provincia || '',
       'Código postal': r.codigo_postal || '',
-      'Tipo inmueble': r.tipo_inmueble?.tipo || '',
       'Propietario': propNombre(r.propietarios),
-      'Otros propietarios': (r.inmueble_propietarios || []).map(x => propNombre(x.propietarios)).join(' | '),
       'Administrador finca': r.administrador_finca?.nombre || '',
       'Seguro hogar': r.seguro?.compania || '',
       'Nº póliza': r.num_poliza_seg_hogar || '',
@@ -224,85 +133,20 @@ export default function Inmuebles({ perfil }) {
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString('es-ES') : '—'
   const propNombre = p => p ? `${p.nombre || ''} ${p.apellidos || ''}`.trim() : '—'
-  const inqVigor = r => (r.inquilinos || []).find(i => !i.fecha_fin_contrato) || null
   const initials = s => s ? s.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '?'
   const f = key => e => setForm(prev => ({ ...prev, [key]: e.target.value }))
 
-  const fA = key => e => setNuevaAccion(prev => ({ ...prev, [key]: e.target.value }))
-
-  const accionesTab = (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 13, color: 'var(--text3)' }}>{acciones.length} {acciones.length === 1 ? 'acción' : 'acciones'}</span>
-        {!readOnly && !nuevaAccion && <button className="btn btn-primary btn-sm" onClick={() => setNuevaAccion({ fecha: new Date().toISOString().split('T')[0], hora: '', tipo_contacto_id: '', responsable_id: '', indicaciones: '', proxima_fecha: '', proxima_accion: '', documento: '' })}><i className="ti ti-plus" /> Nueva acción</button>}
-      </div>
-      {nuevaAccion && (
-        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 12, marginBottom: 14 }}>
-          <div className="form-grid">
-            <div className="form-group"><label>Fecha *</label><input type="date" value={nuevaAccion.fecha ?? ''} onChange={fA('fecha')} /></div>
-            <div className="form-group"><label>Hora</label><input type="time" value={nuevaAccion.hora ?? ''} onChange={fA('hora')} /></div>
-            <div className="form-group"><label>Tipo de contacto</label>
-              <select value={nuevaAccion.tipo_contacto_id ?? ''} onChange={fA('tipo_contacto_id')}>
-                <option value="">—</option>
-                {tiposContacto.map(t => <option key={t.id} value={t.id}>{t.tipo_contacto}</option>)}
-              </select>
-            </div>
-            <div className="form-group"><label>Responsable</label>
-              <select value={nuevaAccion.responsable_id ?? ''} onChange={fA('responsable_id')}>
-                <option value="">—</option>
-                {responsables.map(r => <option key={r.id} value={r.id}>{r.nombre_responsable}</option>)}
-              </select>
-            </div>
-            <div className="form-group form-full"><label>Indicaciones / Notas</label><textarea value={nuevaAccion.indicaciones ?? ''} onChange={fA('indicaciones')} rows={3} /></div>
-            <div className="form-group"><label>Próxima fecha</label><input type="date" value={nuevaAccion.proxima_fecha ?? ''} onChange={fA('proxima_fecha')} /></div>
-            <div className="form-group"><label>Próxima acción</label><input value={nuevaAccion.proxima_accion ?? ''} onChange={fA('proxima_accion')} /></div>
-            <div className="form-group form-full"><label>Documento (URL)</label><input value={nuevaAccion.documento ?? ''} onChange={fA('documento')} placeholder="https://..." /></div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
-            <button className="btn btn-sm" onClick={() => setNuevaAccion(null)}>Cancelar</button>
-            <button className="btn btn-primary btn-sm" onClick={guardarAccion} disabled={guardandoAccion}>{guardandoAccion ? <><i className="ti ti-loader ti-spin" /> Guardando...</> : 'Guardar acción'}</button>
-          </div>
-        </div>
-      )}
-      {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
-        <div className="timeline">
-          {acciones.map(a => (
-            <div className="tl-item" key={a.id}>
-              <div className="tl-dot" style={{ background: a.completada ? 'var(--accent)' : 'var(--border2)' }} />
-              <div className="tl-content">
-                <div className="tl-text">{a.indicaciones || '—'} {a.completada ? <span className="badge badge-green" style={{ fontSize: 10 }}>Completada</span> : <button className="btn btn-ghost btn-sm" title="Marcar completada" style={{ padding: '0 6px' }} onClick={() => completarAccion(a.id)}><i className="ti ti-check" style={{ color: 'var(--accent)' }} /></button>}</div>
-                <div className="tl-meta">{fmtDate(a.fecha)}{a.hora ? ` ${a.hora.slice(0,5)}` : ''} · {a.tipo_contacto?.tipo_contacto || ''} · {a.responsable?.nombre_responsable || '—'}{a.proxima_fecha ? ` · Próx: ${fmtDate(a.proxima_fecha)}${a.proxima_accion ? ' — ' + a.proxima_accion : ''}` : ''}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-
   function filtered() {
     let data = rows.filter(r => {
-      const otrosPropNombres = (r.inmueble_propietarios || []).flatMap(ip => [ip.propietarios?.nombre, ip.propietarios?.apellidos])
-      const inquilinoNombres = (r.inquilinos || []).flatMap(i => [i.nombre, i.apellidos])
-      const matchSearch = ms([
-        r.codigo, r.calle, r.numero_calle, r.piso, r.poblacion, r.provincia, r.codigo_postal, r.observaciones,
-        r.registro, r.num_finca_registral_vivienda, r.cru, r.num_catastro_vivienda,
-        r.num_garaje_1, r.num_garaje_2, r.num_trastero, r.num_poliza_seg_hogar,
-        r.cia_electrica, r.num_contrato_electricidad, r.cups_electricidad, r.titular_contrato_electricidad,
-        r.cia_gas, r.num_contrato_gas, r.cups_gas, r.titular_contrato_gas,
-        r.cia_agua, r.num_contrato_agua, r.titular_contrato_agua,
-        r.propietarios?.nombre, r.propietarios?.apellidos, ...otrosPropNombres, ...inquilinoNombres,
-      ], search)
-      const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : filtro === 'comercializando' ? r.en_comercializacion : !!r.fecha_baja
+      const matchSearch = ms([r.codigo, r.calle, r.poblacion, r.propietarios?.nombre, r.propietarios?.apellidos, `${r.propietarios?.nombre || ''} ${r.propietarios?.apellidos || ''}`], search)
+      const matchFiltro = filtro === 'todos' ? true : filtro === 'vigor' ? !r.fecha_baja : !!r.fecha_baja
       return matchSearch && matchFiltro
     })
     return sortData(data, (r, col) => {
       if (col === 'codigo') return r.codigo
       if (col === 'calle') return r.calle
       if (col === 'poblacion') return r.poblacion
-      if (col === 'tipo') return r.tipo_inmueble?.tipo
       if (col === 'propietario') return propNombre(r.propietarios)
-      if (col === 'inquilino') { const i = inqVigor(r); return i ? `${i.nombre || ''} ${i.apellidos || ''}`.trim() : '' }
       if (col === 'seguro') return r.seguro?.compania
       return r[col]
     })
@@ -314,13 +158,13 @@ export default function Inmuebles({ perfil }) {
         <div className="card-header">
           <h2>Inmuebles <span className="badge badge-gray" style={{ marginLeft: 6 }}>{filtered().length}</span></h2>
           <div style={{ display: 'flex', gap: 6 }}>
-            {[['vigor','En vigor'],['finalizados','Con baja'],['comercializando','Comercializando'],['todos','Todos']].map(([v,l]) => (
+            {[['vigor','En vigor'],['finalizados','Con baja'],['todos','Todos']].map(([v,l]) => (
               <button key={v} className={`btn btn-sm ${filtro === v ? 'btn-primary' : ''}`} onClick={() => setFiltro(v)}>{l}</button>
             ))}
           </div>
           <div className="search-input"><i className="ti ti-search" /><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} /></div>
           <button className="btn btn-sm" onClick={exportExcel} title="Exportar Excel"><i className="ti ti-file-spreadsheet" /> Excel</button>
-          {!readOnly && <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setOtrosProps([]); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>}
+          <button className="btn btn-primary btn-sm" onClick={() => { setForm(EMPTY); setModal('new') }}><i className="ti ti-plus" /> Nuevo</button>
         </div>
         <div className="table-wrap">
           {loading ? <div className="loading"><i className="ti ti-loader ti-spin" /> Cargando...</div> : (
@@ -329,23 +173,19 @@ export default function Inmuebles({ perfil }) {
                 <th {...thProps('codigo')}>Código <span style={{fontSize:10}}>{sortIcon('codigo')}</span></th>
                 <th {...thProps('calle')}>Dirección <span style={{fontSize:10}}>{sortIcon('calle')}</span></th>
                 <th {...thProps('poblacion')}>Población <span style={{fontSize:10}}>{sortIcon('poblacion')}</span></th>
-                <th {...thProps('tipo')}>Tipo <span style={{fontSize:10}}>{sortIcon('tipo')}</span></th>
                 <th {...thProps('propietario')}>Propietario <span style={{fontSize:10}}>{sortIcon('propietario')}</span></th>
-                <th {...thProps('inquilino')}>Inquilino en vigor <span style={{fontSize:10}}>{sortIcon('inquilino')}</span></th>
                 <th {...thProps('seguro')}>Seguro <span style={{fontSize:10}}>{sortIcon('seguro')}</span></th>
               </tr></thead>
               <tbody>
                 {filtered().map(r => (
                   <tr key={r.id}
                     onClick={() => selectRow(r)}
-                    onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '', tipo_inmueble_id: r.tipo_inmueble_id || '' }); setOtrosProps((r.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}
+                    onDoubleClick={() => { selectRow(r); setForm({ ...r, propietario_id: r.propietario_id || '', seguro_id: r.seguro_id || '', administrador_finca_id: r.administrador_finca_id || '' }); setModal('edit') }}
                     style={{ background: selected?.id === r.id ? 'var(--accent-bg)' : '' }}>
-                    <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong>{r.en_comercializacion && <span className="badge badge-yellow" style={{ marginLeft: 6, fontSize: 10 }}>Comerc.</span>}</td>
+                    <td><strong style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{r.codigo}</strong></td>
                     <td>{r.calle}{r.numero_calle ? ` ${r.numero_calle}` : ''}{r.piso ? `, ${r.piso}` : ''}</td>
                     <td>{r.poblacion || '—'}</td>
-                    <td>{r.tipo_inmueble?.tipo || '—'}</td>
-                    <td>{propNombre(r.propietarios)}{(r.inmueble_propietarios || []).length > 0 && <span className="badge badge-gray" style={{ marginLeft: 6, fontSize: 10 }}>+{r.inmueble_propietarios.length}</span>}</td>
-                    <td>{inqVigor(r) ? <span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={e => { e.stopPropagation(); navigate(`/inquilinos?sel=${inqVigor(r).id}`) }}>{`${inqVigor(r).nombre || ''} ${inqVigor(r).apellidos || ''}`.trim()}</span> : '—'}</td>
+                    <td>{propNombre(r.propietarios)}</td>
                     <td>{r.seguro?.compania ? <span className="badge badge-gray">{r.seguro.compania}</span> : '—'}</td>
                   </tr>
                 ))}
@@ -363,17 +203,17 @@ export default function Inmuebles({ perfil }) {
               <div className="panel-avatar av-green">{initials(selected.codigo)}</div>
               <div style={{ flex: 1 }}>
                 <h3>{selected.codigo}</h3>
-                <div className="panel-sub">{selected.calle}{selected.numero_calle ? ` ${selected.numero_calle}` : ''}{selected.piso ? `, ${selected.piso}` : ''}</div>
+                <div className="panel-sub">{selected.calle}{selected.piso ? `, ${selected.piso}` : ''}</div>
               </div>
-              <button className="btn btn-ghost btn-sm" title={readOnly ? 'Ver' : 'Editar'} onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', tipo_inmueble_id: selected.tipo_inmueble_id || '', fecha_baja: selected.fecha_baja || '' }); setOtrosProps((selected.inmueble_propietarios || []).map(x => x.propietario_id)); setModal('edit') }}><i className={readOnly ? 'ti ti-eye' : 'ti ti-edit'} /></button>
-              {!readOnly && <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>}
+              <button className="btn btn-ghost btn-sm" onClick={() => { setForm({ ...selected, propietario_id: selected.propietario_id || '', seguro_id: selected.seguro_id || '', administrador_finca_id: selected.administrador_finca_id || '', fecha_baja: selected.fecha_baja || '' }); setModal('edit') }}><i className="ti ti-edit" /></button>
+              <button className="btn btn-ghost btn-sm" onClick={() => del(selected.id)}><i className="ti ti-trash" style={{ color: 'var(--danger-text)' }} /></button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="panel-body">
               <div className="field-section">Localización</div>
               <div className="field-grid">
-                <div className="field"><label>Tipo inmueble</label><div className="val">{selected.tipo_inmueble?.tipo || '—'}</div></div>
-                <div className="field field-full"><label>Dirección</label><div className="val">{selected.calle || '—'}</div></div>
+                <div className="field"><label>Calle</label><div className="val">{selected.calle || '—'}</div></div>
+                <div className="field"><label>Nº / Piso</label><div className="val">{[selected.numero_calle, selected.piso].filter(Boolean).join(', ') || '—'}</div></div>
                 <div className="field"><label>Población</label><div className="val">{selected.poblacion || '—'}</div></div>
                 <div className="field"><label>Provincia</label><div className="val">{selected.provincia || '—'}</div></div>
                 <div className="field"><label>C.P.</label><div className="val">{selected.codigo_postal || '—'}</div></div>
@@ -381,8 +221,7 @@ export default function Inmuebles({ perfil }) {
               </div>
               <div className="field-section">Propietario y gestión</div>
               <div className="field-grid">
-                <div className="field"><label>Propietario</label><div className="val">{selected.propietario_id ? <span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={() => navigate(`/propietarios?sel=${selected.propietario_id}`)}>{propNombre(selected.propietarios)}</span> : '—'}</div></div>
-                <div className="field"><label>Otros propietarios</label><div className="val">{(selected.inmueble_propietarios || []).length > 0 ? selected.inmueble_propietarios.map((x, idx) => <span key={x.propietario_id}>{idx > 0 ? ', ' : ''}<span style={{ color: 'var(--info-text)', cursor: 'pointer' }} onClick={() => navigate(`/propietarios?sel=${x.propietario_id}`)}>{propNombre(x.propietarios)}</span></span>) : '—'}</div></div>
+                <div className="field"><label>Propietario</label><div className="val">{propNombre(selected.propietarios)}</div></div>
                 <div className="field"><label>Adm. finca</label><div className="val">{selected.administrador_finca?.nombre || '—'}</div></div>
                 <div className="field"><label>Seguro hogar</label><div className="val">{selected.seguro?.compania || '—'}</div></div>
                 <div className="field"><label>Nº póliza</label><div className="val">{selected.num_poliza_seg_hogar || '—'}</div></div>
@@ -417,7 +256,7 @@ export default function Inmuebles({ perfil }) {
                 <a href={selected.carpeta_dropbox} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ justifyContent: 'flex-start' }}><i className="ti ti-folder" /> Carpeta Dropbox</a>
               </>}
               <div className="field-section">Documentos</div>
-              <Documentos entidadTipo="inmueble" entidadId={selected.id} readOnly={readOnly} />
+              <Documentos entidadTipo="inmueble" entidadId={selected.id} />
               <div className="field-section">Acciones ({acciones.length})</div>
               {acciones.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Sin acciones</div> : (
                 <div className="timeline">
@@ -439,43 +278,14 @@ export default function Inmuebles({ perfil }) {
 
       {modal && (
         <div className={modal === 'edit' && selected ? "edit-modal-overlay" : "modal-overlay"} onClick={e => e.target === e.currentTarget && setModal(null)}>
-          <div className={`modal${readOnly ? ' modal-ro' : ''}`}>
+          <div className="modal">
             <div className="modal-header">
-              <h2>{modal === 'new' ? 'Nuevo inmueble' : `${readOnly ? 'Ver' : 'Editar'} — ${form.codigo}`}</h2>
+              <h2>{modal === 'new' ? 'Nuevo inmueble' : `Editar — ${form.codigo}`}</h2>
               <button className="btn btn-ghost btn-sm" onClick={() => setModal(null)}><i className="ti ti-x" /></button>
             </div>
             <div className="modal-body">
-              {readOnly && <div className="ro-banner"><i className="ti ti-eye" /> Solo lectura — no puedes modificar estos datos</div>}
-              {modal === 'edit' && form.id && (
-                <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                  {[['datos','Datos'],['inq',`Inquilinos (${inquilinosInm.length})`],['acc',`Acciones (${acciones.length})`],['docs',`Documentos${docCount > 0 ? ` (${docCount})` : ''}`]].map(([v,l]) => (
-                    <button key={v} className={`btn btn-sm ${tabInm === v ? 'btn-tab-active' : ''}`} onClick={() => setTabInm(v)}>{l}</button>
-                  ))}
-                </div>
-              )}
-              {modal === 'edit' && tabInm === 'inq' && (
-                <div>
-                  {inquilinosInm.length === 0 ? <div style={{ color: 'var(--text3)', fontSize: 13 }}>Este inmueble no tiene inquilinos</div> : (
-                    <table>
-                      <thead><tr><th>Inquilino</th><th>Inicio contrato</th><th>Fin contrato</th></tr></thead>
-                      <tbody>
-                        {inquilinosInm.map(i => (
-                          <tr key={i.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/inquilinos?sel=${i.id}`)}>
-                            <td><strong style={{ color: 'var(--info-text)' }}>{`${i.nombre || ''} ${i.apellidos || ''}`.trim() || '—'}</strong></td>
-                            <td>{fmtDate(i.fecha_contrato)}</td>
-                            <td>{i.fecha_fin_contrato ? fmtDate(i.fecha_fin_contrato) : <span className="badge badge-green">En vigor</span>}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-              {modal === 'edit' && tabInm === 'acc' && accionesTab}
-              {modal === 'edit' && tabInm === 'docs' && <Documentos entidadTipo="inmueble" entidadId={form.id} readOnly={readOnly} onCountChange={setDocCount} />}
-              {(modal !== 'edit' || tabInm === 'datos') && <div className="form-grid">
+              <div className="form-grid">
                 <div className="form-group"><label>Código *</label><input value={form.codigo ?? ''} onChange={f('codigo')} /></div>
-                <div className="form-group form-full"><label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><input type="checkbox" checked={form.en_comercializacion ?? false} onChange={e => setForm(prev => ({ ...prev, en_comercializacion: e.target.checked }))} style={{ width: 16, height: 16 }} /> En comercialización</label></div>
                 <div className="form-group"><label>Propietario</label>
                   <SearchSelect
                     options={propietarios.map(p => ({ id: p.id, label: propNombre(p) }))}
@@ -484,36 +294,10 @@ export default function Inmuebles({ perfil }) {
                     placeholder="Buscar propietario..."
                   />
                 </div>
-                <div className="form-group"><label>Otros propietarios</label>
-                  <SearchSelect
-                    options={propietarios.filter(p => String(p.id) !== String(form.propietario_id ?? '') && !otrosProps.some(x => String(x) === String(p.id))).map(p => ({ id: p.id, label: propNombre(p) }))}
-                    value={''}
-                    onChange={v => { if (v) setOtrosProps(prev => prev.some(x => String(x) === String(v)) ? prev : [...prev, v]) }}
-                    placeholder="Buscar propietario..."
-                    emptyLabel="— Añadir propietario —"
-                  />
-                  {otrosProps.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                      {otrosProps.map(pid => {
-                        const p = propietarios.find(x => String(x.id) === String(pid))
-                        return (
-                          <span key={pid} className="badge badge-gray" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            {p ? propNombre(p) : pid}
-                            <i className="ti ti-x" style={{ cursor: 'pointer' }} onClick={() => setOtrosProps(prev => prev.filter(x => String(x) !== String(pid)))} />
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="form-group"><label>Tipo inmueble</label>
-                  <select value={form.tipo_inmueble_id ?? ''} onChange={f('tipo_inmueble_id')}>
-                    <option value="">—</option>
-                    {tiposInmueble.map(t => <option key={t.id} value={t.id}>{t.tipo}</option>)}
-                  </select>
-                </div>
                 <div className="form-section-title">Localización</div>
-                <div className="form-group form-full"><label>Dirección</label><input value={form.calle ?? ''} onChange={f('calle')} placeholder="Calle, número, piso/puerta" /></div>
+                <div className="form-group form-full"><label>Calle</label><input value={form.calle ?? ''} onChange={f('calle')} /></div>
+                <div className="form-group"><label>Número</label><input value={form.numero_calle ?? ''} onChange={f('numero_calle')} /></div>
+                <div className="form-group"><label>Piso / Puerta</label><input value={form.piso ?? ''} onChange={f('piso')} /></div>
                 <div className="form-group"><label>Población</label><input value={form.poblacion ?? ''} onChange={f('poblacion')} /></div>
                 <div className="form-group"><label>Provincia</label><input value={form.provincia ?? ''} onChange={f('provincia')} /></div>
                 <div className="form-group"><label>Código postal</label><input value={form.codigo_postal ?? ''} onChange={f('codigo_postal')} /></div>
@@ -541,58 +325,19 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-group"><label>CRU</label><input value={form.cru ?? ''} onChange={f('cru')} /></div>
                 <div className="form-group"><label>Referencia catastral</label><input value={form.num_catastro_vivienda ?? ''} onChange={f('num_catastro_vivienda')} /></div>
                 <div className="form-section-title">Suministros — Electricidad</div>
-                <div className="form-group"><label>Compañía</label>
-                  <select value={form.cia_electrica ?? ''} onChange={f('cia_electrica')}>
-                    <option value="">—</option>
-                    {form.cia_electrica && !ciasEnergia.some(c => c.nombre === form.cia_electrica) && <option value={form.cia_electrica}>{form.cia_electrica}</option>}
-                    {ciasEnergia.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
-                  </select>
-                </div>
+                <div className="form-group"><label>Compañía</label><input value={form.cia_electrica ?? ''} onChange={f('cia_electrica')} /></div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_electricidad ?? ''} onChange={f('num_contrato_electricidad')} /></div>
                 <div className="form-group"><label>CUPS</label><input value={form.cups_electricidad ?? ''} onChange={f('cups_electricidad')} /></div>
-                <div className="form-group"><label>Titular</label>
-                  <select value={form.titular_contrato_electricidad ?? ''} onChange={f('titular_contrato_electricidad')}>
-                    <option value="">—</option>
-                    <option value="Propietario">Propietario</option>
-                    <option value="Inquilino">Inquilino</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
+                <div className="form-group"><label>Titular</label><input value={form.titular_contrato_electricidad ?? ''} onChange={f('titular_contrato_electricidad')} /></div>
                 <div className="form-section-title">Suministros — Gas</div>
-                <div className="form-group"><label>Compañía</label>
-                  <select value={form.cia_gas ?? ''} onChange={f('cia_gas')}>
-                    <option value="">—</option>
-                    {form.cia_gas && !ciasEnergia.some(c => c.nombre === form.cia_gas) && <option value={form.cia_gas}>{form.cia_gas}</option>}
-                    {ciasEnergia.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
-                  </select>
-                </div>
+                <div className="form-group"><label>Compañía</label><input value={form.cia_gas ?? ''} onChange={f('cia_gas')} /></div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_gas ?? ''} onChange={f('num_contrato_gas')} /></div>
                 <div className="form-group"><label>CUPS</label><input value={form.cups_gas ?? ''} onChange={f('cups_gas')} /></div>
-                <div className="form-group"><label>Titular</label>
-                  <select value={form.titular_contrato_gas ?? ''} onChange={f('titular_contrato_gas')}>
-                    <option value="">—</option>
-                    <option value="Propietario">Propietario</option>
-                    <option value="Inquilino">Inquilino</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
+                <div className="form-group"><label>Titular</label><input value={form.titular_contrato_gas ?? ''} onChange={f('titular_contrato_gas')} /></div>
                 <div className="form-section-title">Suministros — Agua</div>
-                <div className="form-group"><label>Compañía</label>
-                  <select value={form.cia_agua ?? ''} onChange={f('cia_agua')}>
-                    <option value="">—</option>
-                    {form.cia_agua && !ciasAgua.some(c => c.nombre === form.cia_agua) && <option value={form.cia_agua}>{form.cia_agua}</option>}
-                    {ciasAgua.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
-                  </select>
-                </div>
+                <div className="form-group"><label>Compañía</label><input value={form.cia_agua ?? ''} onChange={f('cia_agua')} /></div>
                 <div className="form-group"><label>Nº contrato</label><input value={form.num_contrato_agua ?? ''} onChange={f('num_contrato_agua')} /></div>
-                <div className="form-group form-full"><label>Titular</label>
-                  <select value={form.titular_contrato_agua ?? ''} onChange={f('titular_contrato_agua')}>
-                    <option value="">—</option>
-                    <option value="Propietario">Propietario</option>
-                    <option value="Inquilino">Inquilino</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
+                <div className="form-group form-full"><label>Titular</label><input value={form.titular_contrato_agua ?? ''} onChange={f('titular_contrato_agua')} /></div>
                 <div className="form-section-title">Garajes y trastero</div>
                 <div className="form-group"><label>Garaje 1</label><input value={form.num_garaje_1 ?? ''} onChange={f('num_garaje_1')} /></div>
                 <div className="form-group"><label>Garaje 2</label><input value={form.num_garaje_2 ?? ''} onChange={f('num_garaje_2')} /></div>
@@ -600,15 +345,9 @@ export default function Inmuebles({ perfil }) {
                 <div className="form-section-title">Enlace</div>
                 <div className="form-group form-full"><label>Carpeta Dropbox (URL)</label><input value={form.carpeta_dropbox ?? ''} onChange={f('carpeta_dropbox')} placeholder="https://..." /></div>
                 <div className="form-group form-full"><label>Observaciones</label><textarea value={form.observaciones ?? ''} onChange={f('observaciones')} /></div>
-              </div>}
-              {(modal !== 'edit' || tabInm === 'datos') && tabInm !== 'inq' && <div className="form-actions">
-                <button className="btn" onClick={() => setModal(null)}>{readOnly ? 'Cerrar' : 'Cancelar'}</button>
-                {!readOnly && <button className="btn btn-primary" onClick={save}>Guardar</button>}
-              </div>}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+              </div>
+              <div className="form-actions">
+                <button className="btn" onClick={() => setModal(null)}>Cancelar</button>
+                <button className="btn btn-primary" onClick={save}>Guardar</button>
+              </div>
+       
