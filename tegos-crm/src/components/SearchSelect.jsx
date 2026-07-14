@@ -3,7 +3,9 @@ import { useState, useRef, useEffect } from 'react'
 export default function SearchSelect({ options, value, onChange, placeholder = 'Buscar...', emptyLabel = '— Sin asignar —' }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
   const ref = useRef()
+  const triggerRef = useRef()
 
   const selected = options.find(o => String(o.id) === String(value))
 
@@ -13,20 +15,29 @@ export default function SearchSelect({ options, value, onChange, placeholder = '
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
+  function handleOpen() {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 2, left: rect.left, width: rect.width })
+    }
+    setOpen(o => !o)
+    setSearch('')
+  }
+
   const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase())).slice(0, 20)
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <div
-        className="ss-trigger"
-        onClick={() => { setOpen(!open); setSearch('') }}
+        ref={triggerRef}
+        onClick={handleOpen}
         style={{ padding: '8px 11px', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', fontSize: 13, background: 'var(--bg2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
       >
         <span style={{ color: selected ? 'var(--text)' : 'var(--text3)' }}>{selected ? selected.label : emptyLabel}</span>
         <i className="ti ti-chevron-down" style={{ fontSize: 14, color: 'var(--text3)' }} />
       </div>
       {open && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)', marginTop: 2 }}>
+        <div style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 9999, background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)' }}>
           <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--border)' }}>
             <input
               autoFocus
@@ -40,8 +51,8 @@ export default function SearchSelect({ options, value, onChange, placeholder = '
             <div
               onClick={() => { onChange(''); setOpen(false) }}
               style={{ padding: '7px 11px', fontSize: 13, cursor: 'pointer', color: 'var(--text3)' }}
-              onMouseEnter={e => e.target.style.background = 'var(--bg3)'}
-              onMouseLeave={e => e.target.style.background = ''}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg3)'}
+              onMouseLeave={e => e.currentTarget.style.background = ''}
             >{emptyLabel}</div>
             {filtered.map(o => (
               <div
