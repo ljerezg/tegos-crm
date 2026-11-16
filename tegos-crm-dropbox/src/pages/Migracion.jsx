@@ -105,23 +105,34 @@ export default function Migracion() {
     anotar(`Faltan ${pendientes.length}. Copiando...`)
     let hechos = 0
     const fallos = []
+    // Dropbox rechaza a veces escrituras simultáneas: cada archivo se reintenta hasta 5 veces
+    const copiarUno = async (ruta) => {
+      const urlCodificada = PREFIJO_STORAGE + ruta.split('/').map(encodeURIComponent).join('/')
+      const r = await dbx.rpc('files/save_url', { path: `${db.carpetaArchivos}/${ruta}`, url: urlCodificada })
+      if (r['.tag'] !== 'async_job_id') return
+      for (let i = 0; i < 200; i++) {
+        await new Promise(res => setTimeout(res, 1500))
+        const s = await dbx.rpc('files/save_url/check_job_status', { async_job_id: r.async_job_id })
+        if (s['.tag'] === 'complete') return
+        if (s['.tag'] === 'failed') throw new Error(JSON.stringify(s.failed))
+      }
+      throw new Error('Dropbox no terminó de descargarlo a tiempo')
+    }
     const copiar = async ([ruta]) => {
-      try {
-        const urlCodificada = PREFIJO_STORAGE + ruta.split('/').map(encodeURIComponent).join('/')
-        const r = await dbx.rpc('files/save_url', { path: `${db.carpetaArchivos}/${ruta}`, url: urlCodificada })
-        if (r['.tag'] === 'async_job_id') {
-          for (let i = 0; i < 120; i++) {
-            await new Promise(res => setTimeout(res, 1500))
-            const s = await dbx.rpc('files/save_url/check_job_status', { async_job_id: r.async_job_id })
-            if (s['.tag'] === 'complete') break
-            if (s['.tag'] === 'failed') throw new Error(JSON.stringify(s.failed))
-          }
+      let ultimoError = null
+      for (let intento = 1; intento <= 5; intento++) {
+        try { await copiarUno(ruta); ultimoError = null; break }
+        catch (e) {
+          ultimoError = e
+          if (/conflict.*file/.test(e.message)) { ultimoError = null; break } // ya existe
+          await new Promise(res => setTimeout(res, 2000 * intento))
         }
-      } catch (e) { fallos.push(`${ruta}: ${e.message}`) }
+      }
+      if (ultimoError) fallos.push(`${ruta}: ${ultimoError.message}`)
       hechos++
       if (hechos % 10 === 0 || hechos === pendientes.length) anotar(`Archivos: ${hechos} de ${pendientes.length}`)
     }
-    for (let i = 0; i < pendientes.length; i += 4) await Promise.all(pendientes.slice(i, i + 4).map(copiar))
+    for (let i = 0; i < pendientes.length; i += 2) await Promise.all(pendientes.slice(i, i + 2).map(copiar))
     if (fallos.length) { anotar(`${fallos.length} archivos no se pudieron copiar:`, 'error'); fallos.forEach(f => anotar(f, 'error')) }
     else anotar('Todos los archivos están en Dropbox', 'ok')
   }
