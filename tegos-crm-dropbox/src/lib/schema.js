@@ -81,6 +81,7 @@ export const FKS = [
 // Restricciones de unicidad que usan los upsert
 export const UNIQUE = { correo: ['dedupe_key'] }
 
+const TEXTO = new Set(['message_id']) // acaba en _id pero es texto
 const INT = new Set(['orden', 'mes_contrato', 'duracion_contrato', 'aviso_meses_antes', 'entidad_id'])
 const NUM = new Set(['porcentaje', 'importe', 'importe_fianza_ivima', 'importe_deposito'])
 const BOOL = new Set(['completada', 'en_comercializacion', 'aviso_fin', 'activo'])
@@ -89,6 +90,7 @@ const DATE = new Set(['fecha', 'proxima_fecha', 'fecha_baja', 'fecha_nacimiento'
 
 function tipoColumna(tabla, col, def) {
   if (def === 'uuid' || col === 'usuario_id') return 'uuid'
+  if (TEXTO.has(col)) return 'text'
   if (col === 'id' || col.endsWith('_id') || INT.has(col)) return 'int'
   if (NUM.has(col)) return 'num'
   if (BOOL.has(col)) return 'bool'
