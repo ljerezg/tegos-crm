@@ -11,25 +11,38 @@ Supabase sigue funcionando mientras tanto. Las dos versiones pueden convivir.
 
 ## 1. Crear la app de Dropbox (una sola vez)
 
-1. Entra en https://www.dropbox.com/developers/apps y pulsa **Create app**.
-2. Elige **Scoped access**, luego **Full Dropbox**, y ponle de nombre, por ejemplo, `Tegos CRM Luis`.
-3. En la pestaña **Permissions**, marca estos permisos y pulsa **Submit**:
+La consola de desarrolladores de Dropbox puede salirte en español o en inglés. Por eso cada botón lleva primero su nombre en español y, entre paréntesis, el nombre en inglés.
+
+1. Entra en https://www.dropbox.com/developers/apps con tu cuenta de Dropbox y pulsa **Crear app** (*Create app*).
+2. Rellena las tres preguntas:
+   - **Tipo de acceso:** *Acceso por ámbitos* (*Scoped access*).
+   - **Acceso que necesita:** *Dropbox completo* (*Full Dropbox*). No elijas *Carpeta de la app* (*App folder*), porque esa no se puede compartir con Carmen y Lorena.
+   - **Nombre:** por ejemplo `Tegos CRM Luis`. Tiene que ser único en todo Dropbox; si ya existe, añádele algo.
+   - Pulsa **Crear app** (*Create app*).
+3. Abre la pestaña **Permisos** (*Permissions*), marca estas casillas y pulsa **Enviar** (*Submit*), abajo del todo:
    - `account_info.read`
    - `files.metadata.read` y `files.metadata.write`
    - `files.content.read` y `files.content.write`
    - `sharing.read` y `sharing.write`
-4. En la pestaña **Settings**:
-   - En **OAuth 2 → Redirect URIs**, añade la dirección de la web nueva con `/` al final (por ejemplo `https://tegos-crm-dropbox.vercel.app/`). Si vas a probar en local, añade también `http://localhost:5173/`.
-   - En **Allow public clients (Implicit Grant & PKCE)**, elige **Allow**.
-   - Pulsa **Enable additional users**. Si no lo haces, solo podrás entrar tú y Carmen y Lorena no tendrán acceso.
-   - Copia el **App key**. El *App secret* no hace falta.
+
+   Los nombres de los permisos están siempre en inglés.
+4. Vuelve a la pestaña **Configuración** (*Settings*):
+   - En el apartado **OAuth 2**, busca **URI de redirección** (*Redirect URIs*). Escribe la dirección de la web nueva con `/` al final y pulsa **Añadir** (*Add*). Por ejemplo, `https://tegos-crm-dropbox.vercel.app/`. Esa dirección la tendrás después del paso 2; puedes volver aquí a añadirla.
+   - En **Permitir clientes públicos** (*Allow public clients (Implicit Grant & PKCE)*), elige **Permitir** (*Allow*).
+   - Arriba, en **Estado** (*Status*: *Development*), pulsa **Habilitar usuarios adicionales** (*Enable additional users*). Si no lo haces, solo podrás entrar tú y Carmen y Lorena no tendrán acceso.
+   - Copia la **Clave de la app** (*App key*). El *Secreto de la app* (*App secret*) no hace falta.
 
 ## 2. Publicar la web en Vercel (un proyecto nuevo, sin tocar el actual)
 
-1. En Vercel, pulsa **Add New → Project** e importa el mismo repositorio `ljerezg/tegos-crm`.
-2. En **Root Directory**, pon `tegos-crm-dropbox`.
-3. En **Environment Variables**, añade `VITE_DROPBOX_APP_KEY` con el App key que has copiado.
-4. Pulsa **Deploy**. Cuando termine, comprueba que la dirección que te da Vercel está en las Redirect URIs de Dropbox (punto 1.4).
+Vercel solo está en inglés.
+
+1. Entra en https://vercel.com y pulsa **Add New…** y después **Project** (añadir proyecto).
+2. Junto a `ljerezg/tegos-crm`, pulsa **Import** (importar). Es el mismo repositorio que ya usas.
+3. En **Root Directory** (carpeta raíz), pulsa **Edit** (editar), elige `tegos-crm-dropbox` y pulsa **Continue**.
+4. Despliega **Environment Variables** (variables de entorno) y rellena:
+   - **Key** (nombre): `VITE_DROPBOX_APP_KEY`
+   - **Value** (valor): la clave de la app que copiaste en Dropbox
+5. Pulsa **Deploy** (publicar). Al terminar, Vercel te da la dirección de la web, por ejemplo `https://tegos-crm-dropbox.vercel.app`. Añádela con `/` al final en las URI de redirección de Dropbox (punto 1.4).
 
 ## 3. Primera entrada e importación
 
@@ -43,15 +56,18 @@ Supabase sigue funcionando mientras tanto. Las dos versiones pueden convivir.
 
 ## 4. Tareas automáticas en GitHub
 
-1. En **Importar de Supabase**, pulsa **Generar clave para GitHub**, autoriza en Dropbox y copia los dos valores que aparecen.
-2. En GitHub, ve a **Settings → Secrets and variables → Actions** y crea estos secretos:
-   - `DROPBOX_APP_KEY` y `DROPBOX_REFRESH_TOKEN`, con los valores del paso anterior.
-   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` y `SMTP_PASS`, con los mismos datos de acens que usa ahora la Edge Function de Supabase.
-   - Los secretos `IMAP_*` ya existen y se reutilizan.
-3. *(Opcional, mientras convivan las dos versiones)* En la pestaña **Variables**, crea `INFORME_ASUNTO_PREFIJO` con el valor `[Dropbox] `. Así distinguirás los dos informes del día 1.
-4. Para probar, ve a **Actions → Informe mensual de acciones — Tegos CRM (Dropbox) → Run workflow**. Por defecto se envía marcado como [PRUEBA].
+GitHub solo está en inglés.
 
-GitHub desactiva las tareas programadas de un repositorio público cuando pasan 60 días sin cambios en el código. Si ocurre, vuelve a activarlas en **Actions** o sube cualquier cambio.
+1. En la web nueva, entra en **Importar de Supabase** y pulsa **Generar clave para GitHub**. Autoriza en Dropbox y copia los dos valores que aparecen.
+2. En GitHub, abre el repositorio `ljerezg/tegos-crm` y ve a **Settings** (configuración), luego **Secrets and variables** (secretos y variables) y luego **Actions**.
+3. En la pestaña **Secrets**, pulsa **New repository secret** (nuevo secreto) una vez por cada uno. En **Name** va el nombre y en **Secret** el valor. Pulsa **Add secret** (añadir) cada vez.
+   - `DROPBOX_APP_KEY` y `DROPBOX_REFRESH_TOKEN`: los dos valores del paso 1.
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` y `SMTP_PASS`: los datos del correo de acens con el que se envía el informe (info@tegos.es). Son los mismos que usa ahora la tarea de Supabase.
+   - Los secretos `IMAP_*` ya existen y se reutilizan.
+4. *(Opcional, mientras convivan las dos versiones)* En la pestaña **Variables**, pulsa **New repository variable** (nueva variable) y crea `INFORME_ASUNTO_PREFIJO` con el valor `[Dropbox] `. Así distinguirás los dos informes del día 1.
+5. Para probar el informe, ve a la pestaña **Actions** del repositorio. Elige **Informe mensual de acciones — Tegos CRM (Dropbox)** y pulsa **Run workflow** (ejecutar). Por defecto se envía marcado como [PRUEBA].
+
+GitHub desactiva las tareas programadas de un repositorio público cuando pasan 60 días sin cambios en el código. Si ocurre, vuelve a activarlas en **Actions** (botón **Enable workflow**) o sube cualquier cambio.
 
 ## 5. Cuando todo esté comprobado
 
