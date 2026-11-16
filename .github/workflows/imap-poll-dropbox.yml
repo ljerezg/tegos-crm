@@ -1,0 +1,33 @@
+name: IMAP Poll — Tegos CRM (Dropbox)
+
+on:
+  schedule:
+    # Cada 15 minutos (a los 7, 22, 37 y 52 para no coincidir con la versión antigua)
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+jobs:
+  poll:
+    name: Sondeo IMAP → Dropbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+        working-directory: .github/scripts-dropbox
+      - name: Ejecutar sondeo IMAP
+        run: node .github/scripts-dropbox/imap-poll.mjs
+        env:
+          IMAP_HOST: ${{ secrets.IMAP_HOST }}
+          IMAP_PORT: ${{ secrets.IMAP_PORT }}
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASS: ${{ secrets.IMAP_PASS }}
+          IMAP_USER2: ${{ secrets.IMAP_USER2 }}
+          IMAP_PASS2: ${{ secrets.IMAP_PASS2 }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_CARPETA: ${{ vars.DROPBOX_CARPETA }}

@@ -1,0 +1,12 @@
+{
+  "name": "tegos-crm-dropbox-tareas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tareas automáticas del CRM Tegos (versión Dropbox): sondeo IMAP e informe mensual",
+  "dependencies": {
+    "imap": "^0.8.19",
+    "mailparser": "^3.7.1",
+    "nodemailer": "^6.9.16"
+  }
+}

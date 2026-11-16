@@ -1,0 +1,45 @@
+name: Informe mensual de acciones — Tegos CRM (Dropbox)
+
+on:
+  schedule:
+    # Día 1 de cada mes a las 7:00 UTC (8:00 en invierno, 9:00 en verano en Madrid)
+    - cron: '0 7 1 * *'
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: 'Mes AAAA-MM (vacío = mes actual)'
+        required: false
+      destino:
+        description: 'Enviar a (vacío = ljerezg@tegos.es)'
+        required: false
+      prueba:
+        description: 'Marcar como [PRUEBA]'
+        type: boolean
+        default: true
+
+jobs:
+  informe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+        working-directory: .github/scripts-dropbox
+      - name: Enviar informe
+        run: node .github/scripts-dropbox/informe-mensual.mjs
+        env:
+          MES: ${{ inputs.mes }}
+          DESTINO: ${{ inputs.destino }}
+          PRUEBA: ${{ inputs.prueba && '1' || '0' }}
+          ASUNTO_PREFIJO: ${{ vars.INFORME_ASUNTO_PREFIJO }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_CARPETA: ${{ vars.DROPBOX_CARPETA }}
