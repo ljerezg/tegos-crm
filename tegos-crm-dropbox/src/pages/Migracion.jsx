@@ -21,41 +21,50 @@ export function convertirUrl(url, archivos) {
 export default function Migracion() {
   const [email, setEmail] = useState('ljerezg@tegos.es')
   const [password, setPassword] = useState('')
+  const [clave, setClave] = useState('')
   const [log, setLog] = useState([])
   const [trabajando, setTrabajando] = useState(false)
   const [conArchivos, setConArchivos] = useState(true)
-  const [clave] = useState(() => { const c = sessionStorage.getItem('clave-servicio'); sessionStorage.removeItem('clave-servicio'); return c })
+  const [claveServicio] = useState(() => { const c = sessionStorage.getItem('clave-servicio'); sessionStorage.removeItem('clave-servicio'); return c })
 
   const anotar = (texto, tipo = '') => setLog(l => [...l, { texto, tipo, t: new Date().toLocaleTimeString() }])
 
   async function importar() {
-    if (!password) return alert('Escribe la contraseña del CRM antiguo')
+    if (!password && !clave) return alert('Escribe la contraseña del CRM antiguo o la clave de exportación')
     if (!confirm('Esto sustituye los datos de la versión Dropbox por los del CRM antiguo (Supabase). Los cambios hechos solo en la versión Dropbox se perderán. ¿Seguimos?')) return
     setTrabajando(true); setLog([])
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
-      const { error: errLogin } = await sb.auth.signInWithPassword({ email, password })
-      if (errLogin) throw new Error('No se pudo entrar en Supabase: ' + errLogin.message)
-      anotar('Conectado al CRM antiguo')
+      let datos = {}
+      if (clave) {
+        // Exportación con clave temporal (sin iniciar sesión en Supabase)
+        const { data, error } = await sb.rpc('exportar_crm', { p_clave: clave.trim() })
+        if (error) throw new Error('No se pudo exportar de Supabase: ' + error.message)
+        datos = data
+        anotar('Datos leídos del CRM antiguo con la clave de exportación')
+      } else {
+        const { error: errLogin } = await sb.auth.signInWithPassword({ email: email.trim(), password })
+        if (errLogin) throw new Error('No se pudo entrar en Supabase: ' + errLogin.message)
+        anotar('Conectado al CRM antiguo')
+        for (const tabla of NOMBRES_TABLAS) {
+          let filas = [], desde = 0
+          for (;;) {
+            const { data, error } = await sb.from(tabla).select('*').order('id').range(desde, desde + 999)
+            if (error) throw new Error(`Error leyendo ${tabla}: ${error.message}`)
+            filas = filas.concat(data)
+            if (data.length < 1000) break
+            desde += 1000
+          }
+          datos[tabla] = filas
+        }
+      }
+      for (const t of NOMBRES_TABLAS) datos[t] = datos[t] || []
 
       const db = base()
       const cuenta = await cuentaActual()
       const perfilesActuales = await db.tabla('perfil_usuario').catch(() => [])
       const archivos = new Map()
-      const datos = {}
-
-      for (const tabla of NOMBRES_TABLAS) {
-        let filas = [], desde = 0
-        for (;;) {
-          const { data, error } = await sb.from(tabla).select('*').order('id').range(desde, desde + 999)
-          if (error) throw new Error(`Error leyendo ${tabla}: ${error.message}`)
-          filas = filas.concat(data)
-          if (data.length < 1000) break
-          desde += 1000
-        }
-        datos[tabla] = filas
-      }
 
       // URLs de archivos → Dropbox
       for (const d of datos.documento) d.url_archivo = convertirUrl(d.url_archivo, archivos)
@@ -80,7 +89,7 @@ export default function Migracion() {
         await db.reemplazarTabla(tabla, datos[tabla])
         anotar(`${tabla}: ${datos[tabla].length} registros`, 'ok')
       }
-      await sb.auth.signOut()
+      if (!clave) await sb.auth.signOut()
 
       if (conArchivos) await copiarArchivos(db, archivos)
       await db.sincronizar(true)
@@ -147,6 +156,7 @@ export default function Migracion() {
         <div className="form-grid" style={{ maxWidth: 520 }}>
           <div className="form-group"><label>Usuario del CRM antiguo</label><input value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div className="form-group"><label>Contraseña</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+          <div className="form-group form-full"><label>…o clave de exportación (si te la ha dado Claude; entonces no hace falta la contraseña)</label><input value={clave} onChange={e => setClave(e.target.value)} autoComplete="off" /></div>
           <div className="form-group form-full">
             <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input type="checkbox" checked={conArchivos} onChange={e => setConArchivos(e.target.checked)} style={{ width: 'auto' }} />
@@ -160,10 +170,10 @@ export default function Migracion() {
         <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           <h3 style={{ fontSize: 15, margin: '0 0 6px' }}>Clave para las tareas automáticas (GitHub)</h3>
           <p style={{ margin: '0 0 10px' }}>El sondeo de correos y el informe del día 1 se ejecutan en GitHub y necesitan permiso para leer y escribir en tu Dropbox. Pulsa el botón, autoriza en Dropbox y copia los dos valores en GitHub → Settings → Secrets and variables → Actions.</p>
-          {clave ? (
+          {claveServicio ? (
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: 10, wordBreak: 'break-all' }}>
               <div><strong>DROPBOX_APP_KEY</strong> = {APP_KEY}</div>
-              <div style={{ marginTop: 6 }}><strong>DROPBOX_REFRESH_TOKEN</strong> = {clave}</div>
+              <div style={{ marginTop: 6 }}><strong>DROPBOX_REFRESH_TOKEN</strong> = {claveServicio}</div>
               <div style={{ marginTop: 8, color: 'var(--danger-text)', fontFamily: 'inherit' }}>Cópiala ahora: no se vuelve a mostrar. No la pegues en ningún otro sitio.</div>
             </div>
           ) : (
