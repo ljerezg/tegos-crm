@@ -139,7 +139,7 @@ export default function Migracion() {
           <div className="form-group form-full">
             <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input type="checkbox" checked={conArchivos} onChange={e => setConArchivos(e.target.checked)} style={{ width: 'auto' }} />
-              Copiar también los documentos y adjuntos (la primera vez tarda: son unos 1,8 GB)
+              Copiar también los documentos y adjuntos que usa el CRM (la primera vez tarda unos minutos)
             </label>
           </div>
         </div>

@@ -165,6 +165,10 @@ async function processEmail(parsed) {
   const firstAttachment = parsed.attachments?.[0];
 
   for (const row of rows) {
+    // Si ya está guardado (se vuelve a ver en cada sondeo), no subir otra vez el adjunto
+    const { data: yaEsta } = await supabase.from('correo').select('id').eq('dedupe_key', row.dedupeKey).limit(1);
+    if (yaEsta && yaEsta.length) continue;
+
     let archivoUrl = null, archivoNombre = null;
     if (firstAttachment && row.id && row.tipo) {
       const up = await uploadAttachment(firstAttachment, row.tipo, row.id);

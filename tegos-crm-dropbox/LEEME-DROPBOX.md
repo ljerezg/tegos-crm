@@ -37,7 +37,7 @@ Supabase sigue funcionando mientras tanto. Las dos versiones pueden convivir.
 2. La primera vez te dirá que no encuentra la carpeta. Pulsa **Crear carpeta**.
 3. En el menú, entra en **Importar de Supabase**. Escribe el usuario y la contraseña del CRM antiguo y pulsa **Importar ahora**.
    - Se copian todas las tablas.
-   - Dropbox descarga los documentos directamente desde Supabase (unos 1,8 GB). La primera vez tarda.
+   - Dropbox descarga los documentos directamente desde Supabase. Solo se copian los que usa el CRM (unos 60 documentos y los adjuntos de 154 correos). Los otros 7.000 ficheros que hay en Supabase son copias repetidas de adjuntos: el sondeo antiguo los volvía a subir cada 15 minutos. La versión nueva ya no lo hace.
    - Se puede repetir mientras convivan las dos versiones. Cada importación **sustituye** los datos de la versión Dropbox por los de Supabase. Los documentos que ya estén en Dropbox no se vuelven a copiar.
 4. En **Usuarios**, revisa el correo de Dropbox de cada persona. Para compartirle la carpeta, marca **Compartirle ahora la carpeta del CRM en Dropbox**. Le llegará una invitación por correo.
 
