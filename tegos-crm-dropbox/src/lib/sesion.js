@@ -3,7 +3,8 @@
 
 import { crearClienteDropbox, renovarToken } from './dropbox.js'
 
-export const APP_KEY = import.meta.env.VITE_DROPBOX_APP_KEY
+// La clave de la app de Dropbox es pública (no es un secreto): se puede dejar escrita aquí
+export const APP_KEY = import.meta.env.VITE_DROPBOX_APP_KEY || 'whovvet6t39u1yp'
 export const CARPETA = import.meta.env.VITE_DROPBOX_CARPETA || '/Tegos CRM'
 const NOMBRE_CARPETA = CARPETA.split('/').filter(Boolean).pop()
 

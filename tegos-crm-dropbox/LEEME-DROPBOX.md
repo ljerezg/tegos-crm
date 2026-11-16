@@ -39,9 +39,7 @@ Vercel solo está en inglés.
 1. Entra en https://vercel.com y pulsa **Add New…** y después **Project** (añadir proyecto).
 2. Junto a `ljerezg/tegos-crm`, pulsa **Import** (importar). Es el mismo repositorio que ya usas.
 3. En **Root Directory** (carpeta raíz), pulsa **Edit** (editar), elige `tegos-crm-dropbox` y pulsa **Continue**.
-4. Despliega **Environment Variables** (variables de entorno) y rellena:
-   - **Key** (nombre): `VITE_DROPBOX_APP_KEY`
-   - **Value** (valor): la clave de la app que copiaste en Dropbox
+4. No hace falta añadir variables de entorno: la clave de la app (`whovvet6t39u1yp`) ya va escrita en el código.
 5. Pulsa **Deploy** (publicar). Al terminar, Vercel te da la dirección de la web, por ejemplo `https://tegos-crm-dropbox.vercel.app`. Añádela con `/` al final en las URI de redirección de Dropbox (punto 1.4).
 
 ## 3. Primera entrada e importación
@@ -61,7 +59,7 @@ GitHub solo está en inglés.
 1. En la web nueva, entra en **Importar de Supabase** y pulsa **Generar clave para GitHub**. Autoriza en Dropbox y copia los dos valores que aparecen.
 2. En GitHub, abre el repositorio `ljerezg/tegos-crm` y ve a **Settings** (configuración), luego **Secrets and variables** (secretos y variables) y luego **Actions**.
 3. En la pestaña **Secrets**, pulsa **New repository secret** (nuevo secreto) una vez por cada uno. En **Name** va el nombre y en **Secret** el valor. Pulsa **Add secret** (añadir) cada vez.
-   - `DROPBOX_APP_KEY` y `DROPBOX_REFRESH_TOKEN`: los dos valores del paso 1.
+   - `DROPBOX_REFRESH_TOKEN`: el valor del paso 1. `DROPBOX_APP_KEY` no hace falta, porque ya va en el código.
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` y `SMTP_PASS`: los datos del correo de acens con el que se envía el informe (info@tegos.es). Son los mismos que usa ahora la tarea de Supabase.
    - Los secretos `IMAP_*` ya existen y se reutilizan.
 4. *(Opcional, mientras convivan las dos versiones)* En la pestaña **Variables**, pulsa **New repository variable** (nueva variable) y crea `INFORME_ASUNTO_PREFIJO` con el valor `[Dropbox] `. Así distinguirás los dos informes del día 1.
